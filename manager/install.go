@@ -73,7 +73,7 @@ func (cmd *installCommand) Execute(rawInput interface{}) (interface{}, error) {
 		return nil, err
 	}
 
-	return nil, nil
+	return b, nil
 }
 
 type InstallCmdConf struct {
@@ -84,7 +84,7 @@ type InstallCmdConf struct {
 
 func NewInstallCommand(conf *InstallCmdConf) Command {
 	return &installCommand{
-		cmdName:   GetCommandName,
+		cmdName:   InstallCommandName,
 		osWrap:    conf.OsWrap,
 		installer: conf.BundleInstaller,
 		loader:    conf.FileLoader,

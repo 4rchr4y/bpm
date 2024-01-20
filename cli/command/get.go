@@ -38,11 +38,19 @@ func runGetCmd(cmd *cobra.Command, args []string) {
 
 	bpmClient.RegisterCommand(
 		manager.NewInstallCommand(&manager.InstallCmdConf{
-			OsWrap:     osWrap,
-			FileLoader: gitLoader,
+			OsWrap:          osWrap,
+			BundleInstaller: manager.NewBundleInstaller(osWrap, tomlEncoder),
+			FileLoader:      gitLoader,
+		}),
+
+		manager.NewGetCommand(&manager.GetCmdConf{
+			OsWrap:      osWrap,
+			TomlEncoder: tomlEncoder,
+			FileLoader:  gitLoader,
 		}),
 	)
 
+	// TODO: some bug here. If command in not found, then should be err, panic now
 	getCmd, err := bpmClient.Command(manager.GetCommandName)
 	if err != nil {
 		log.Fatal(err)
@@ -55,7 +63,7 @@ func runGetCmd(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	if _, err := getCmd.Execute(&manager.InstallCmdInput{
+	if _, err := getCmd.Execute(&manager.GetCmdInput{
 		URL:     pathToBundle,
 		Version: version,
 	}); err != nil {

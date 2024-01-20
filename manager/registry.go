@@ -7,38 +7,47 @@ type Registry struct {
 	store []Command
 }
 
-func NewRegistry() *Registry {
+func NewRegistry(size ...uint) *Registry {
+	initialSize := 0
+	if len(size) > 0 {
+		initialSize = int(size[0])
+	}
+
 	return &Registry{
 		table: make(map[string]int),
-		store: make([]Command, 0),
+		store: make([]Command, 0, initialSize),
 	}
 }
 
-func (cr *Registry) get(name string) (Command, error) {
-	idx, ok := cr.table[name]
+func (r *Registry) lookup(name string) bool {
+	_, ok := r.table[name]
+	return ok
+}
+
+func (r *Registry) get(name string) (Command, error) {
+	idx, ok := r.table[name]
 	if !ok {
 		return nil, fmt.Errorf("command '%s' is doesn't exists", name)
 	}
 
-	return cr.store[idx], nil
+	return r.store[idx], nil
 }
 
-func (cr *Registry) set(command Command) error {
-	_, ok := cr.table[command.Name()]
-	if ok {
-		return fmt.Errorf("command '%s' is already exists", command.Name())
+func (r *Registry) set(command Command) error {
+	if _, ok := r.table[command.Name()]; ok {
+		return fmt.Errorf("command '%s' already exists", command.Name())
 	}
 
-	cr.table[command.Name()] = len(cr.store)
-	cr.store = append(cr.store, command)
+	r.table[command.Name()] = len(r.store)
+	r.store = append(r.store, command)
 
-	for i := range command.Requires() {
-		idx, ok := cr.table[command.Requires()[i]]
+	for _, req := range command.Requires() {
+		idx, ok := r.table[req]
 		if !ok {
-			return fmt.Errorf("command '%s' is doesn't exists", command.Requires()[i])
+			return fmt.Errorf("command '%s' does not exist", req)
 		}
 
-		cr.store[cr.table[command.Name()]].SetCommand(cr.store[idx])
+		r.store[r.table[command.Name()]].SetCommand(r.store[idx])
 	}
 
 	return nil

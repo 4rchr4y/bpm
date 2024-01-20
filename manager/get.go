@@ -45,12 +45,14 @@ func (cmd *getCommand) Requires() []string {
 }
 
 func (cmd *getCommand) SetCommand(c Command) error {
-	_, err := cmd.subregistry.get(c.Name())
-	if err != nil {
-		return err
+	if ok := cmd.subregistry.lookup(c.Name()); ok {
+		return fmt.Errorf("command '%s' in '%s' in already installed", c.Name(), cmd.cmdName)
 	}
 
-	cmd.subregistry.set(c)
+	if err := cmd.subregistry.set(c); err != nil {
+		return fmt.Errorf("error occurred command '%s' in command '%s' setting: %v", c.Name(), cmd.cmdName, err)
+	}
+
 	return nil
 }
 
@@ -65,9 +67,22 @@ func (cmd *getCommand) Execute(rawInput interface{}) (interface{}, error) {
 		return nil, fmt.Errorf("type '%s' is invalid input type for '%s' command", reflect.TypeOf(rawInput), cmd.cmdName)
 	}
 
-	b, err := cmd.loader.DownloadBundle(input.URL, input.Version)
+	installCmd, err := cmd.subregistry.get(InstallCommandName)
 	if err != nil {
 		return nil, err
+	}
+
+	result, err := installCmd.Execute(&InstallCmdInput{
+		Version: input.Version,
+		URL:     input.URL,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	b, ok := result.(*bundle.Bundle)
+	if !ok {
+		return nil, fmt.Errorf("type '%s' is invalid type for '%s' command result", reflect.TypeOf(input).Elem().Kind().String(), InstallCommandName)
 	}
 
 	fmt.Println(b.BundleFile.Package.Name)
@@ -115,9 +130,10 @@ type GetCmdConf struct {
 
 func NewGetCommand(conf *GetCmdConf) Command {
 	return &getCommand{
-		cmdName: GetCommandName,
-		osWrap:  conf.OsWrap,
-		encoder: conf.TomlEncoder,
-		loader:  conf.FileLoader,
+		cmdName:     GetCommandName,
+		osWrap:      conf.OsWrap,
+		encoder:     conf.TomlEncoder,
+		loader:      conf.FileLoader,
+		subregistry: NewRegistry(1),
 	}
 }
