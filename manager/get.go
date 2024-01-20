@@ -7,7 +7,7 @@ import (
 	"os"
 	"reflect"
 
-	"github.com/4rchr4y/bpm/loader"
+	"github.com/4rchr4y/bpm/bundle"
 )
 
 type getCmdOSWrapper interface {
@@ -24,7 +24,7 @@ type getCmdTOMLEncoder interface {
 }
 
 type getCmdLoader interface {
-	DownloadBundle(url string, tag string) (*loader.DownloadResult, error)
+	DownloadBundle(url string, tag string) (*bundle.Bundle, error)
 }
 
 type getCommand struct {
@@ -65,12 +65,12 @@ func (cmd *getCommand) Execute(rawInput interface{}) (interface{}, error) {
 		return nil, fmt.Errorf("type '%s' is invalid input type for '%s' command", reflect.TypeOf(rawInput), cmd.cmdName)
 	}
 
-	result, err := cmd.loader.DownloadBundle(input.URL, input.Version)
+	b, err := cmd.loader.DownloadBundle(input.URL, input.Version)
 	if err != nil {
 		return nil, err
 	}
 
-	fmt.Println(result.Bundle.BundleFile.Package.Name)
+	fmt.Println(b.BundleFile.Package.Name)
 
 	// homeDir, err := cmd.osWrap.UserHomeDir()
 	// if err != nil {

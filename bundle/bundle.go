@@ -2,9 +2,15 @@ package bundle
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/4rchr4y/bpm/constant"
 	"github.com/go-git/go-git/v5/plumbing/object"
+)
+
+const (
+	dateFormat      = "20060102150405"
+	shortHashLength = 12
 )
 
 type VersionExpr struct {
@@ -14,17 +20,14 @@ type VersionExpr struct {
 }
 
 func NewVersionExpr(commit *object.Commit, tag string) *VersionExpr {
-	timestamp := commit.Committer.When.UTC().Format("20060102150405")
-	shortHash := commit.Hash.String()[:12]
-
-	if tag == "" {
+	if strings.TrimSpace(tag) == "" {
 		tag = constant.BundlePseudoVersion
 	}
 
 	return &VersionExpr{
 		Version:   tag,
-		Timestamp: timestamp,
-		Hash:      shortHash,
+		Timestamp: commit.Committer.When.UTC().Format(dateFormat),
+		Hash:      commit.Hash.String()[:shortHashLength],
 	}
 }
 

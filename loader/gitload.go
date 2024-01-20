@@ -32,12 +32,7 @@ func NewGitLoader(gitClient gitClient, bparser bundleFileifier) *GitLoader {
 	}
 }
 
-type DownloadResult struct {
-	Hash   string // commit hash
-	Bundle *bundle.Bundle
-}
-
-func (loader *GitLoader) DownloadBundle(url string, tag string) (*DownloadResult, error) {
+func (loader *GitLoader) DownloadBundle(url string, tag string) (*bundle.Bundle, error) {
 	repo, err := git.Clone(memory.NewStorage(), nil, &git.CloneOptions{URL: url})
 	if err != nil {
 		return nil, err
@@ -74,10 +69,8 @@ func (loader *GitLoader) DownloadBundle(url string, tag string) (*DownloadResult
 
 	b, err := loader.fileifier.Fileify(files)
 	b.Version = bundle.NewVersionExpr(commit, tag)
-	return &DownloadResult{
-		Hash:   ref.Hash().String(),
-		Bundle: b,
-	}, nil
+
+	return b, nil
 }
 
 func getRef(repo *git.Repository, tag string) (*plumbing.Reference, error) {
