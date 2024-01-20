@@ -32,7 +32,7 @@ type getCommand struct {
 	encoder     getCmdTOMLEncoder
 	loader      getCmdLoader
 	osWrap      getCmdOSWrapper
-	subregistry commandRegistry
+	subregistry *Registry
 }
 
 func (cmd *getCommand) bpmCmd()      {}
@@ -45,12 +45,12 @@ func (cmd *getCommand) Requires() []string {
 }
 
 func (cmd *getCommand) SetCommand(c Command) error {
-	_, ok := cmd.subregistry[c.Name()]
-	if ok {
-		return fmt.Errorf("command '%s' in '%s' command is already exists", c.Name(), cmd.cmdName)
+	_, err := cmd.subregistry.get(c.Name())
+	if err != nil {
+		return err
 	}
 
-	cmd.subregistry[c.Name()] = c
+	cmd.subregistry.set(c)
 	return nil
 }
 

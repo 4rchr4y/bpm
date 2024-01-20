@@ -2,32 +2,43 @@ package manager
 
 import "fmt"
 
-type commandRegistry map[string]Command
+type Registry struct {
+	table map[string]int
+	store []Command
+}
 
-func (cr commandRegistry) get(name string) (Command, error) {
-	cmd, ok := cr[name]
+func NewRegistry() *Registry {
+	return &Registry{
+		table: make(map[string]int),
+		store: make([]Command, 0),
+	}
+}
+
+func (cr *Registry) get(name string) (Command, error) {
+	idx, ok := cr.table[name]
 	if !ok {
 		return nil, fmt.Errorf("command '%s' is doesn't exists", name)
 	}
 
-	return cmd, nil
+	return cr.store[idx], nil
 }
 
-func (cr commandRegistry) set(command Command) error {
-	_, ok := cr[command.Name()]
+func (cr *Registry) set(command Command) error {
+	_, ok := cr.table[command.Name()]
 	if ok {
 		return fmt.Errorf("command '%s' is already exists", command.Name())
 	}
 
-	cr[command.Name()] = command
+	cr.table[command.Name()] = len(cr.store)
+	cr.store = append(cr.store, command)
 
 	for i := range command.Requires() {
-		cmd, ok := cr[command.Requires()[i]]
+		idx, ok := cr.table[command.Requires()[i]]
 		if !ok {
 			return fmt.Errorf("command '%s' is doesn't exists", command.Requires()[i])
 		}
 
-		cr[command.Name()].SetCommand(cmd)
+		cr.store[cr.table[command.Name()]].SetCommand(cr.store[idx])
 	}
 
 	return nil

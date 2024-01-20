@@ -1,12 +1,12 @@
 package manager
 
 type Bpm struct {
-	registry commandRegistry
+	registry *Registry
 }
 
 func NewBpm() *Bpm {
 	return &Bpm{
-		registry: make(commandRegistry),
+		registry: NewRegistry(),
 	}
 }
 
