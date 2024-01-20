@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/4rchr4y/bpm/command"
+	"github.com/4rchr4y/bpm/cli/command"
 )
 
 func main() {
