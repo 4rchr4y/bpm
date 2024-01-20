@@ -1,4 +1,4 @@
-package bpm
+package loader
 
 import (
 	"fmt"
@@ -8,7 +8,9 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/storage/memory"
 
-	gitcli "github.com/4rchr4y/bpm/internal/domain/service/git"
+	"github.com/4rchr4y/bpm/bundle"
+	gitcli "github.com/4rchr4y/bpm/internal/git"
+	"github.com/4rchr4y/bpm/parser"
 )
 
 type gitClient interface {
@@ -16,7 +18,7 @@ type gitClient interface {
 }
 
 type bundleParser interface {
-	Parse(input *ParseInput) (*Bundle, error)
+	Parse(input *parser.ParseInput) (*bundle.Bundle, error)
 }
 
 type GitLoader struct {
@@ -34,7 +36,7 @@ func NewGitLoader(gitClient gitClient, bparser bundleParser) *GitLoader {
 type DownloadResult struct {
 	Hash    string // commit hash
 	Version string // github tag
-	Bundle  *Bundle
+	Bundle  *bundle.Bundle
 }
 
 func (loader *GitLoader) DownloadBundle(url string, tag string) (*DownloadResult, error) {
@@ -72,7 +74,7 @@ func (loader *GitLoader) DownloadBundle(url string, tag string) (*DownloadResult
 		return nil, err
 	}
 
-	parserInput := &ParseInput{
+	parserInput := &parser.ParseInput{
 		FileName: "test1234",
 		Files:    files,
 	}

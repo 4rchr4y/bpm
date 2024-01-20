@@ -1,8 +1,11 @@
-package bpm
+package parser
 
 import (
 	"fmt"
 	"path/filepath"
+
+	"github.com/4rchr4y/bpm/bundle"
+	"github.com/4rchr4y/bpm/constant"
 
 	"github.com/open-policy-agent/opa/ast"
 )
@@ -27,10 +30,10 @@ type ParseInput struct {
 }
 
 // TODO: check that file is not empty; isEmpty(content)
-func (bp *BundleParser) Parse(input *ParseInput) (*Bundle, error) {
-	bundle := &Bundle{
+func (bp *BundleParser) Parse(input *ParseInput) (*bundle.Bundle, error) {
+	b := &bundle.Bundle{
 		FileName:  filepath.Clean(input.FileName),
-		RegoFiles: make(map[string]*RawRegoFile),
+		RegoFiles: make(map[string]*bundle.RawRegoFile),
 	}
 
 	for filePath, content := range input.Files {
@@ -41,7 +44,7 @@ func (bp *BundleParser) Parse(input *ParseInput) (*Bundle, error) {
 				return nil, err
 			}
 
-			bundle.RegoFiles[filePath] = &RawRegoFile{
+			b.RegoFiles[filePath] = &bundle.RawRegoFile{
 				Path:   filePath,
 				Parsed: parsed,
 			}
@@ -52,7 +55,7 @@ func (bp *BundleParser) Parse(input *ParseInput) (*Bundle, error) {
 				return nil, err
 			}
 
-			bundle.BundleFile = bundlefile
+			b.BundleFile = bundlefile
 
 		case isBPMLockFile(filePath):
 			bundlelock, err := bp.parseBPMLockFile(content)
@@ -60,7 +63,7 @@ func (bp *BundleParser) Parse(input *ParseInput) (*Bundle, error) {
 				return nil, err
 			}
 
-			bundle.BundleLockFile = bundlelock
+			b.BundleLockFile = bundlelock
 
 		case isBPMWorkFile(filePath):
 			bpmwork, err := bp.parseBPMWorkFile(content)
@@ -68,11 +71,11 @@ func (bp *BundleParser) Parse(input *ParseInput) (*Bundle, error) {
 				return nil, err
 			}
 
-			bundle.BpmWorkFile = bpmwork
+			b.BpmWorkFile = bpmwork
 		}
 	}
 
-	return bundle, nil
+	return b, nil
 }
 
 func (bp *BundleParser) parseRegoFile(fileContent []byte, filePath string) (*ast.Module, error) {
@@ -84,8 +87,8 @@ func (bp *BundleParser) parseRegoFile(fileContent []byte, filePath string) (*ast
 	return parsed, nil
 }
 
-func (bp *BundleParser) parseBPMWorkFile(fileContent []byte) (*BpmWorkFile, error) {
-	var bpmwork BpmWorkFile
+func (bp *BundleParser) parseBPMWorkFile(fileContent []byte) (*bundle.BpmWorkFile, error) {
+	var bpmwork bundle.BpmWorkFile
 	if err := bp.decoder.Decode(string(fileContent), &bpmwork); err != nil {
 		return nil, fmt.Errorf("error parsing bpm.work content: %v", err)
 	}
@@ -93,8 +96,8 @@ func (bp *BundleParser) parseBPMWorkFile(fileContent []byte) (*BpmWorkFile, erro
 	return &bpmwork, nil
 }
 
-func (bp *BundleParser) parseBPMLockFile(fileContent []byte) (*BundleLockFile, error) {
-	var bundlelock BundleLockFile
+func (bp *BundleParser) parseBPMLockFile(fileContent []byte) (*bundle.BundleLockFile, error) {
+	var bundlelock bundle.BundleLockFile
 	if err := bp.decoder.Decode(string(fileContent), &bundlelock); err != nil {
 		return nil, fmt.Errorf("error parsing bundle.lock content: %v", err)
 	}
@@ -102,8 +105,8 @@ func (bp *BundleParser) parseBPMLockFile(fileContent []byte) (*BundleLockFile, e
 	return &bundlelock, nil
 }
 
-func (bp *BundleParser) parseBPMFile(fileContent []byte) (*BundleFile, error) {
-	var bundlefile BundleFile
+func (bp *BundleParser) parseBPMFile(fileContent []byte) (*bundle.BundleFile, error) {
+	var bundlefile bundle.BundleFile
 	if err := bp.decoder.Decode(string(fileContent), &bundlefile); err != nil {
 		return nil, fmt.Errorf("error parsing bundle.toml content: %v", err)
 	}
@@ -111,7 +114,7 @@ func (bp *BundleParser) parseBPMFile(fileContent []byte) (*BundleFile, error) {
 	return &bundlefile, nil
 }
 
-func isRegoFile(filePath string) bool    { return filepath.Ext(filePath) == RegoExt }
-func isBPMFile(filePath string) bool     { return filePath == BPMBundleFile }
-func isBPMLockFile(filePath string) bool { return filePath == BPMLockFile }
-func isBPMWorkFile(filePath string) bool { return filePath == BPMWorkFile }
+func isRegoFile(filePath string) bool    { return filepath.Ext(filePath) == constant.RegoFileExt }
+func isBPMFile(filePath string) bool     { return filePath == constant.BundleFileName }
+func isBPMLockFile(filePath string) bool { return filePath == constant.LockFileName }
+func isBPMWorkFile(filePath string) bool { return filePath == constant.WorkFileName }

@@ -1,4 +1,4 @@
-package bpm
+package manager
 
 import (
 	"fmt"
@@ -6,6 +6,8 @@ import (
 	"io/fs"
 	"os"
 	"reflect"
+
+	"github.com/4rchr4y/bpm/loader"
 )
 
 type installCmdOSWrapper interface {
@@ -22,7 +24,7 @@ type installCmdTOMLEncoder interface {
 }
 
 type installCmdLoader interface {
-	DownloadBundle(url string, tag string) (*DownloadResult, error)
+	DownloadBundle(url string, tag string) (*loader.DownloadResult, error)
 }
 
 type installCmdBundleInstaller interface {
@@ -31,7 +33,6 @@ type installCmdBundleInstaller interface {
 
 type installCommand struct {
 	cmdName   string
-	encoder   installCmdTOMLEncoder
 	installer installCmdBundleInstaller
 	loader    installCmdLoader
 	osWrap    installCmdOSWrapper
@@ -72,29 +73,11 @@ func (cmd *installCommand) Execute(rawInput interface{}) (interface{}, error) {
 		return nil, err
 	}
 
-	// for filePath, file := range result.Bundle.RegoFiles {
-	// 	pathToSave := fmt.Sprintf(".bpm/%s/%s/%s", "test", "0.0.1", filePath)
-	// 	dirToSave := filepath.Dir(pathToSave)
-
-	// 	if _, err := os.Stat(dirToSave); os.IsNotExist(err) {
-	// 		if err := os.MkdirAll(dirToSave, 0755); err != nil {
-	// 			return nil, fmt.Errorf("failed to create directory '%s': %v", dirToSave, err)
-	// 		}
-	// 	} else if err != nil {
-	// 		return nil, fmt.Errorf("error checking directory '%s': %v", dirToSave, err)
-	// 	}
-
-	// 	if err := cmd.osWrap.WriteFile(pathToSave, file.Raw, 0644); err != nil {
-	// 		return nil, fmt.Errorf("failed to write file '%s': %v", pathToSave, err)
-	// 	}
-	// }
-
 	return nil, nil
 }
 
 type InstallCmdConf struct {
 	OsWrap          installCmdOSWrapper
-	TomlEncoder     installCmdTOMLEncoder
 	FileLoader      installCmdLoader
 	BundleInstaller installCmdBundleInstaller
 }
@@ -103,7 +86,6 @@ func NewInstallCommand(conf *InstallCmdConf) Command {
 	return &installCommand{
 		cmdName:   GetCommandName,
 		osWrap:    conf.OsWrap,
-		encoder:   conf.TomlEncoder,
 		installer: conf.BundleInstaller,
 		loader:    conf.FileLoader,
 	}

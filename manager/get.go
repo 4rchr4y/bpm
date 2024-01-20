@@ -1,4 +1,4 @@
-package bpm
+package manager
 
 import (
 	"fmt"
@@ -6,6 +6,8 @@ import (
 	"io/fs"
 	"os"
 	"reflect"
+
+	"github.com/4rchr4y/bpm/loader"
 )
 
 type getCmdOSWrapper interface {
@@ -22,7 +24,7 @@ type getCmdTOMLEncoder interface {
 }
 
 type getCmdLoader interface {
-	DownloadBundle(url string, tag string) (*DownloadResult, error)
+	DownloadBundle(url string, tag string) (*loader.DownloadResult, error)
 }
 
 type getCommand struct {
@@ -49,12 +51,12 @@ func (cmd *getCommand) Execute(rawInput interface{}) (interface{}, error) {
 		return nil, fmt.Errorf("type '%s' is invalid input type for '%s' command", reflect.TypeOf(rawInput), cmd.cmdName)
 	}
 
-	bundle, err := cmd.loader.DownloadBundle(input.URL, input.Version)
+	result, err := cmd.loader.DownloadBundle(input.URL, input.Version)
 	if err != nil {
 		return nil, err
 	}
 
-	fmt.Println(bundle.Bundle.BundleFile.Package.Name)
+	fmt.Println(result.Bundle.BundleFile.Package.Name)
 
 	// homeDir, err := cmd.osWrap.UserHomeDir()
 	// if err != nil {

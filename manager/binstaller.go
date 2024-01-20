@@ -1,4 +1,4 @@
-package bpm
+package manager
 
 import (
 	"fmt"
@@ -6,6 +6,9 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+
+	"github.com/4rchr4y/bpm/bundle"
+	"github.com/4rchr4y/bpm/constant"
 )
 
 type biOSWrapper interface {
@@ -31,11 +34,11 @@ func NewBundleInstaller(osWrap biOSWrapper, encoder biTOMLEncoder) *BundleInstal
 
 type BundleInstallInput struct {
 	HomeDir string
-	Bundle  *Bundle
+	Bundle  *bundle.Bundle
 }
 
 func (cmd *BundleInstaller) Install(input *BundleInstallInput) error {
-	dirPath := fmt.Sprintf("%s/%s/%s/%s", input.HomeDir, BPMDir, input.Bundle.BundleFile.Package.Name, input.Bundle.BundleFile.Package.Version)
+	dirPath := fmt.Sprintf("%s/%s/%s/%s", input.HomeDir, constant.BPMDirName, input.Bundle.BundleFile.Package.Name, input.Bundle.BundleFile.Package.Version)
 
 	if err := cmd.processRegoFiles(input.Bundle.RegoFiles, dirPath); err != nil {
 		return fmt.Errorf("error occurred rego files processing: %v", err)
@@ -52,8 +55,8 @@ func (cmd *BundleInstaller) Install(input *BundleInstallInput) error {
 	return nil
 }
 
-func (cmd *BundleInstaller) processBundleLockFile(bundleLockFile *BundleLockFile, bundleVersionDir string) error {
-	file, err := cmd.osWrap.Create(fmt.Sprintf("%s/%s", bundleVersionDir, BPMLockFile))
+func (cmd *BundleInstaller) processBundleLockFile(bundleLockFile *bundle.BundleLockFile, bundleVersionDir string) error {
+	file, err := cmd.osWrap.Create(fmt.Sprintf("%s/%s", bundleVersionDir, constant.LockFileName))
 	if err != nil {
 		return err
 	}
@@ -65,8 +68,8 @@ func (cmd *BundleInstaller) processBundleLockFile(bundleLockFile *BundleLockFile
 	return nil
 }
 
-func (cmd *BundleInstaller) processBundleFile(bundleFile *BundleFile, bundleVersionDir string) error {
-	file, err := cmd.osWrap.Create(fmt.Sprintf("%s/%s", bundleVersionDir, BPMBundleFile))
+func (cmd *BundleInstaller) processBundleFile(bundleFile *bundle.BundleFile, bundleVersionDir string) error {
+	file, err := cmd.osWrap.Create(fmt.Sprintf("%s/%s", bundleVersionDir, constant.BundleFileName))
 	if err != nil {
 		return err
 	}
@@ -78,7 +81,7 @@ func (cmd *BundleInstaller) processBundleFile(bundleFile *BundleFile, bundleVers
 	return nil
 }
 
-func (cmd *BundleInstaller) processRegoFiles(files map[string]*RawRegoFile, bundleVersionDir string) error {
+func (cmd *BundleInstaller) processRegoFiles(files map[string]*bundle.RawRegoFile, bundleVersionDir string) error {
 	for filePath, file := range files {
 		pathToSave := filepath.Join(bundleVersionDir, filePath)
 		dirToSave := filepath.Dir(pathToSave)

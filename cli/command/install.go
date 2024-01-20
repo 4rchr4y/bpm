@@ -3,9 +3,11 @@ package command
 import (
 	"log"
 
-	"github.com/4rchr4y/bpm"
-	"github.com/4rchr4y/bpm/internal/domain/encode"
-	gitcli "github.com/4rchr4y/bpm/internal/domain/service/git"
+	"github.com/4rchr4y/bpm/internal/encode"
+	gitcli "github.com/4rchr4y/bpm/internal/git"
+	"github.com/4rchr4y/bpm/loader"
+	"github.com/4rchr4y/bpm/manager"
+	"github.com/4rchr4y/bpm/parser"
 	"github.com/4rchr4y/godevkit/syswrap"
 	"github.com/spf13/cobra"
 )
@@ -25,24 +27,23 @@ func init() {
 
 func runInstallCmd(cmd *cobra.Command, args []string) {
 	pathToBundle := args[0]
-	bpmClient := bpm.NewBpm()
+	bpmClient := manager.NewBpm()
 	osWrap := new(syswrap.OsWrapper)
 	tomlEncoder := encode.NewTomlEncoder()
 
-	bundleParser := bpm.NewBundleParser(tomlEncoder)
+	bundleParser := parser.NewBundleParser(tomlEncoder)
 	gitService := gitcli.NewClient()
-	gitLoader := bpm.NewGitLoader(gitService, bundleParser)
+	gitLoader := loader.NewGitLoader(gitService, bundleParser)
 
 	bpmClient.RegisterCommand(
-		bpm.NewInstallCommand(&bpm.InstallCmdConf{
+		manager.NewInstallCommand(&manager.InstallCmdConf{
 			OsWrap:          osWrap,
-			TomlEncoder:     tomlEncoder,
-			BundleInstaller: bpm.NewBundleInstaller(osWrap, tomlEncoder),
+			BundleInstaller: manager.NewBundleInstaller(osWrap, tomlEncoder),
 			FileLoader:      gitLoader,
 		}),
 	)
 
-	getCmd, err := bpmClient.Command(bpm.GetCommandName)
+	getCmd, err := bpmClient.Command(manager.GetCommandName)
 	if err != nil {
 		log.Fatal(err)
 		return
@@ -54,7 +55,7 @@ func runInstallCmd(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	if _, err := getCmd.Execute(&bpm.InstallCmdInput{
+	if _, err := getCmd.Execute(&manager.InstallCmdInput{
 		URL:     pathToBundle,
 		Version: version,
 	}); err != nil {

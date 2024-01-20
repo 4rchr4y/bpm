@@ -1,4 +1,4 @@
-package bpm
+package manager
 
 type Bpm struct {
 	registry commandRegistry

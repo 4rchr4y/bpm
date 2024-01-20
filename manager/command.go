@@ -1,4 +1,4 @@
-package bpm
+package manager
 
 const (
 	ValidateCommandName = "validate"
