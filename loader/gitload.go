@@ -10,33 +10,31 @@ import (
 
 	"github.com/4rchr4y/bpm/bundle"
 	gitcli "github.com/4rchr4y/bpm/internal/git"
-	"github.com/4rchr4y/bpm/parser"
 )
 
 type gitClient interface {
 	PlainClone(input *gitcli.PlainCloneInput) (*git.Repository, error)
 }
 
-type bundleParser interface {
-	Parse(input *parser.ParseInput) (*bundle.Bundle, error)
+type bundleFileifier interface {
+	Fileify(files map[string][]byte) (*bundle.Bundle, error)
 }
 
 type GitLoader struct {
-	bparser bundleParser
-	gitCli  gitClient
+	fileifier bundleFileifier
+	gitCli    gitClient
 }
 
-func NewGitLoader(gitClient gitClient, bparser bundleParser) *GitLoader {
+func NewGitLoader(gitClient gitClient, bparser bundleFileifier) *GitLoader {
 	return &GitLoader{
-		gitCli:  gitClient,
-		bparser: bparser,
+		gitCli:    gitClient,
+		fileifier: bparser,
 	}
 }
 
 type DownloadResult struct {
-	Hash    string // commit hash
-	Version string // github tag
-	Bundle  *bundle.Bundle
+	Hash   string // commit hash
+	Bundle *bundle.Bundle
 }
 
 func (loader *GitLoader) DownloadBundle(url string, tag string) (*DownloadResult, error) {
@@ -74,17 +72,11 @@ func (loader *GitLoader) DownloadBundle(url string, tag string) (*DownloadResult
 		return nil, err
 	}
 
-	parserInput := &parser.ParseInput{
-		FileName: "test1234",
-		Files:    files,
-	}
-
-	bundle, err := loader.bparser.Parse(parserInput)
-
+	b, err := loader.fileifier.Fileify(files)
+	b.Version = bundle.NewVersionExpr(commit, tag)
 	return &DownloadResult{
-		Version: tag,
-		Hash:    ref.Hash().String(),
-		Bundle:  bundle,
+		Hash:   ref.Hash().String(),
+		Bundle: b,
 	}, nil
 }
 

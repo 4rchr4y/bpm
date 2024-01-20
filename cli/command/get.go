@@ -3,11 +3,11 @@ package command
 import (
 	"log"
 
+	"github.com/4rchr4y/bpm/fileifier"
 	"github.com/4rchr4y/bpm/internal/encode"
 	gitcli "github.com/4rchr4y/bpm/internal/git"
 	"github.com/4rchr4y/bpm/loader"
 	"github.com/4rchr4y/bpm/manager"
-	"github.com/4rchr4y/bpm/parser"
 	"github.com/4rchr4y/godevkit/syswrap"
 	"github.com/spf13/cobra"
 )
@@ -32,7 +32,7 @@ func runGetCmd(cmd *cobra.Command, args []string) {
 	osWrap := new(syswrap.OsWrapper)
 	tomlEncoder := encode.NewTomlEncoder()
 
-	bundleParser := parser.NewBundleParser(tomlEncoder)
+	bundleParser := fileifier.NewFileifier(tomlEncoder)
 	gitService := gitcli.NewClient()
 	gitLoader := loader.NewGitLoader(gitService, bundleParser)
 

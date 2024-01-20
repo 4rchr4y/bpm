@@ -3,6 +3,7 @@ package manager
 const (
 	ValidateCommandName = "validate"
 	GetCommandName      = "get"
+	InstallCommandName  = "install"
 )
 
 type Command interface {

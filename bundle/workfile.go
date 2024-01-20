@@ -12,5 +12,5 @@ type BpmWorkFile struct {
 	Workspace *WorkspaceDef `toml:"workspace"`
 }
 
-func (*BpmWorkFile) bpmFile()     {}
-func (*BpmWorkFile) Name() string { return constant.WorkFileName }
+func (*BpmWorkFile) bpmFile()         {}
+func (*BpmWorkFile) FileName() string { return constant.WorkFileName }

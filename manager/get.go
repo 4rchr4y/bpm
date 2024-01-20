@@ -28,17 +28,31 @@ type getCmdLoader interface {
 }
 
 type getCommand struct {
-	cmdName string
-	encoder getCmdTOMLEncoder
-
-	loader getCmdLoader
-	osWrap getCmdOSWrapper
+	cmdName     string
+	encoder     getCmdTOMLEncoder
+	loader      getCmdLoader
+	osWrap      getCmdOSWrapper
+	subregistry commandRegistry
 }
 
-func (cmd *getCommand) bpmCmd()                  {}
-func (cmd *getCommand) Name() string             { return cmd.cmdName }
-func (cmd *getCommand) Requires() []string       { return nil }
-func (cmd *getCommand) SetCommand(Command) error { return nil }
+func (cmd *getCommand) bpmCmd()      {}
+func (cmd *getCommand) Name() string { return cmd.cmdName }
+
+func (cmd *getCommand) Requires() []string {
+	return []string{
+		InstallCommandName,
+	}
+}
+
+func (cmd *getCommand) SetCommand(c Command) error {
+	_, ok := cmd.subregistry[c.Name()]
+	if ok {
+		return fmt.Errorf("command '%s' in '%s' command is already exists", c.Name(), cmd.cmdName)
+	}
+
+	cmd.subregistry[c.Name()] = c
+	return nil
+}
 
 type GetCmdInput struct {
 	Version string // bundle package version

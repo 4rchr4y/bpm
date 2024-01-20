@@ -14,5 +14,5 @@ type BundleLockFile struct {
 	Modules []*ModuleDef `toml:"modules"`
 }
 
-func (*BundleLockFile) bpmFile()     {}
-func (*BundleLockFile) Name() string { return constant.LockFileName }
+func (*BundleLockFile) bpmFile()         {}
+func (*BundleLockFile) FileName() string { return constant.LockFileName }

@@ -8,7 +8,6 @@ import (
 
 type PackageDef struct {
 	Name        string   `toml:"name" validate:"required"`
-	Version     string   `toml:"version" validate:"required"`
 	Author      []string `toml:"author"`
 	Description string   `toml:"description"`
 }
@@ -24,8 +23,8 @@ type BundleFile struct {
 	Dependencies map[string]*DependencyDef `toml:"dependencies"`
 }
 
-func (*BundleFile) bpmFile()     {}
-func (*BundleFile) Name() string { return constant.BundleFileName }
+func (*BundleFile) bpmFile()         {}
+func (*BundleFile) FileName() string { return constant.BundleFileName }
 
 type validateClient interface {
 	ValidateStruct(s interface{}) error
@@ -33,7 +32,7 @@ type validateClient interface {
 
 func (bf *BundleFile) Validate(validator validateClient) error {
 	if err := validator.ValidateStruct(bf); err != nil {
-		return fmt.Errorf("failed to validate %s file: %v", bf.Name(), err)
+		return fmt.Errorf("failed to validate %s file: %v", bf.FileName(), err)
 	}
 
 	return nil

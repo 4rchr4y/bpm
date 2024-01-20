@@ -38,18 +38,18 @@ type BundleInstallInput struct {
 }
 
 func (cmd *BundleInstaller) Install(input *BundleInstallInput) error {
-	dirPath := fmt.Sprintf("%s/%s/%s/%s", input.HomeDir, constant.BPMDirName, input.Bundle.BundleFile.Package.Name, input.Bundle.BundleFile.Package.Version)
+	dirPath := fmt.Sprintf("%s/%s/%s/%s", input.HomeDir, constant.BPMDirName, input.Bundle.BundleFile.Package.Name, input.Bundle.Version.String())
 
 	if err := cmd.processRegoFiles(input.Bundle.RegoFiles, dirPath); err != nil {
 		return fmt.Errorf("error occurred rego files processing: %v", err)
 	}
 
 	if err := cmd.processBundleLockFile(input.Bundle.BundleLockFile, dirPath); err != nil {
-		return fmt.Errorf("failed to encode %s file: %v", input.Bundle.BundleLockFile.Name(), err)
+		return fmt.Errorf("failed to encode %s file: %v", input.Bundle.BundleLockFile.FileName(), err)
 	}
 
 	if err := cmd.processBundleFile(input.Bundle.BundleFile, dirPath); err != nil {
-		return fmt.Errorf("failed to encode %s file: %v", input.Bundle.BundleFile.Name(), err)
+		return fmt.Errorf("failed to encode %s file: %v", input.Bundle.BundleFile.FileName(), err)
 	}
 
 	return nil

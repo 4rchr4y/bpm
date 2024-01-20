@@ -1,4 +1,4 @@
-package parser
+package fileifier
 
 import (
 	"fmt"
@@ -14,29 +14,23 @@ type bpTOMLDecoder interface {
 	Decode(data string, v interface{}) error
 }
 
-type BundleParser struct {
+type Fileifier struct {
 	decoder bpTOMLDecoder
 }
 
-func NewBundleParser(decoder bpTOMLDecoder) *BundleParser {
-	return &BundleParser{
+func NewFileifier(decoder bpTOMLDecoder) *Fileifier {
+	return &Fileifier{
 		decoder: decoder,
 	}
 }
 
-type ParseInput struct {
-	FileName string
-	Files    map[string][]byte
-}
-
 // TODO: check that file is not empty; isEmpty(content)
-func (bp *BundleParser) Parse(input *ParseInput) (*bundle.Bundle, error) {
+func (bp *Fileifier) Fileify(files map[string][]byte) (*bundle.Bundle, error) {
 	b := &bundle.Bundle{
-		FileName:  filepath.Clean(input.FileName),
 		RegoFiles: make(map[string]*bundle.RawRegoFile),
 	}
 
-	for filePath, content := range input.Files {
+	for filePath, content := range files {
 		switch {
 		case isRegoFile(filePath):
 			parsed, err := bp.parseRegoFile(content, filePath)
@@ -78,7 +72,7 @@ func (bp *BundleParser) Parse(input *ParseInput) (*bundle.Bundle, error) {
 	return b, nil
 }
 
-func (bp *BundleParser) parseRegoFile(fileContent []byte, filePath string) (*ast.Module, error) {
+func (bp *Fileifier) parseRegoFile(fileContent []byte, filePath string) (*ast.Module, error) {
 	parsed, err := ast.ParseModule(filePath, string(fileContent))
 	if err != nil {
 		return nil, fmt.Errorf("error parsing file contents: %v", err)
@@ -87,7 +81,7 @@ func (bp *BundleParser) parseRegoFile(fileContent []byte, filePath string) (*ast
 	return parsed, nil
 }
 
-func (bp *BundleParser) parseBPMWorkFile(fileContent []byte) (*bundle.BpmWorkFile, error) {
+func (bp *Fileifier) parseBPMWorkFile(fileContent []byte) (*bundle.BpmWorkFile, error) {
 	var bpmwork bundle.BpmWorkFile
 	if err := bp.decoder.Decode(string(fileContent), &bpmwork); err != nil {
 		return nil, fmt.Errorf("error parsing bpm.work content: %v", err)
@@ -96,7 +90,7 @@ func (bp *BundleParser) parseBPMWorkFile(fileContent []byte) (*bundle.BpmWorkFil
 	return &bpmwork, nil
 }
 
-func (bp *BundleParser) parseBPMLockFile(fileContent []byte) (*bundle.BundleLockFile, error) {
+func (bp *Fileifier) parseBPMLockFile(fileContent []byte) (*bundle.BundleLockFile, error) {
 	var bundlelock bundle.BundleLockFile
 	if err := bp.decoder.Decode(string(fileContent), &bundlelock); err != nil {
 		return nil, fmt.Errorf("error parsing bundle.lock content: %v", err)
@@ -105,7 +99,7 @@ func (bp *BundleParser) parseBPMLockFile(fileContent []byte) (*bundle.BundleLock
 	return &bundlelock, nil
 }
 
-func (bp *BundleParser) parseBPMFile(fileContent []byte) (*bundle.BundleFile, error) {
+func (bp *Fileifier) parseBPMFile(fileContent []byte) (*bundle.BundleFile, error) {
 	var bundlefile bundle.BundleFile
 	if err := bp.decoder.Decode(string(fileContent), &bundlefile); err != nil {
 		return nil, fmt.Errorf("error parsing bundle.toml content: %v", err)

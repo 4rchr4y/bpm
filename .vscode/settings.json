@@ -5,10 +5,13 @@
         "bpmwork",
         "bundlefile",
         "bundlelock",
+        "Fileifier",
+        "Fileify",
         "gitcli",
         "godevkit",
         "rchr",
         "rego",
+        "subregistry",
         "syswrap"
     ]
 }
