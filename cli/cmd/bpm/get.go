@@ -1,8 +1,9 @@
-package command
+package main
 
 import (
 	"log"
 
+	"github.com/4rchr4y/bpm/cli/require"
 	"github.com/4rchr4y/bpm/fileifier"
 	"github.com/4rchr4y/bpm/internal/encode"
 	gitcli "github.com/4rchr4y/bpm/internal/git"
@@ -12,18 +13,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var GetCmd = &cobra.Command{
-	Use:   "get",
-	Short: "Get a new dependency",
-	Long:  ``,
-	// Args:  validateGetCmdArgs,
-	Run: runGetCmd,
-}
+func newGetCmd(args []string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "get",
+		Short: "Get a new dependency",
+		Args:  require.ExactArgs(1),
+		Run:   runGetCmd,
+	}
 
-func init() {
-	RootCmd.AddCommand(GetCmd)
-
-	GetCmd.Flags().StringP("version", "v", "", "Bundle version")
+	cmd.Flags().StringP("version", "v", "", "Bundle version")
+	return cmd
 }
 
 func runGetCmd(cmd *cobra.Command, args []string) {
@@ -50,7 +49,6 @@ func runGetCmd(cmd *cobra.Command, args []string) {
 		}),
 	)
 
-	// TODO: some bug here. If command in not found, then should be err, panic now
 	getCmd, err := bpmClient.Command(manager.GetCommandName)
 	if err != nil {
 		log.Fatal(err)
