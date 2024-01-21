@@ -5,7 +5,6 @@ import (
 	"io"
 	"io/fs"
 	"os"
-	"reflect"
 
 	"github.com/4rchr4y/bpm/bundle"
 )
@@ -31,35 +30,45 @@ type installCmdBundleInstaller interface {
 	Install(input *BundleInstallInput) error
 }
 
-type installCommand struct {
-	cmdName   string
-	installer installCmdBundleInstaller
-	loader    installCmdLoader
-	osWrap    installCmdOSWrapper
-}
-
-func (cmd *installCommand) bpmCmd()                  {}
-func (cmd *installCommand) Name() string             { return cmd.cmdName }
-func (cmd *installCommand) Requires() []string       { return nil }
-func (cmd *installCommand) SetCommand(Command) error { return nil }
-
-type InstallCmdInput struct {
-	Version string // bundle package version
-	URL     string // url to download bundle
-}
-
-func (cmd *installCommand) Execute(rawInput interface{}) (interface{}, error) {
-	input, ok := rawInput.(*InstallCmdInput)
-	if !ok {
-		return nil, fmt.Errorf("type '%s' is invalid input type for '%s' command", reflect.TypeOf(rawInput), cmd.cmdName)
+type (
+	InstallCmdHub struct {
+		OsWrap          installCmdOSWrapper
+		FileLoader      installCmdLoader
+		BundleInstaller installCmdBundleInstaller
 	}
 
-	b, err := cmd.loader.DownloadBundle(input.URL, input.Version)
+	InstallCmdInput struct {
+		Version string // specified bundle version that should be installed
+		URL     string // url to the specified repository with bundle
+	}
+
+	InstallCmdResult struct {
+		Bundle *bundle.Bundle
+	}
+)
+
+type installCommand = Command[*InstallCmdHub, *InstallCmdInput, *InstallCmdResult]
+type installCommandGuardFn = func(*installCommand, *InstallCmdInput) error
+
+func NewInstallCommand(hub *InstallCmdHub) Commander {
+	return &installCommand{
+		Name: InstallCmdName,
+		Hub:  hub,
+		Run:  runInstallCmd,
+		Guards: []installCommandGuardFn{
+			validateInstallCmdInputURL,
+		},
+	}
+}
+
+func runInstallCmd(cmd *installCommand, input *InstallCmdInput) (*InstallCmdResult, error) {
+	repoURL := fmt.Sprintf("https://%s.git", input.URL)
+	b, err := cmd.Hub.FileLoader.DownloadBundle(repoURL, input.Version)
 	if err != nil {
 		return nil, err
 	}
 
-	homeDir, err := cmd.osWrap.UserHomeDir()
+	homeDir, err := cmd.Hub.OsWrap.UserHomeDir()
 	if err != nil {
 		return nil, err
 	}
@@ -69,24 +78,15 @@ func (cmd *installCommand) Execute(rawInput interface{}) (interface{}, error) {
 		Bundle:  b,
 	}
 
-	if err := cmd.installer.Install(installInput); err != nil {
+	if err := cmd.Hub.BundleInstaller.Install(installInput); err != nil {
 		return nil, err
 	}
 
-	return b, nil
+	return &InstallCmdResult{
+		Bundle: b,
+	}, nil
 }
 
-type InstallCmdConf struct {
-	OsWrap          installCmdOSWrapper
-	FileLoader      installCmdLoader
-	BundleInstaller installCmdBundleInstaller
-}
-
-func NewInstallCommand(conf *InstallCmdConf) Command {
-	return &installCommand{
-		cmdName:   InstallCmdName,
-		osWrap:    conf.OsWrap,
-		installer: conf.BundleInstaller,
-		loader:    conf.FileLoader,
-	}
+func validateInstallCmdInputURL(cmd *installCommand, input *InstallCmdInput) error {
+	return validateRepoURL(input.URL)
 }

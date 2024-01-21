@@ -36,13 +36,13 @@ func runGetCmd(cmd *cobra.Command, args []string) {
 	gitLoader := loader.NewGitLoader(gitService, bundleParser)
 
 	bpmClient.RegisterCommand(
-		manager.NewInstallCommand(&manager.InstallCmdConf{
+		manager.NewInstallCommand(&manager.InstallCmdHub{
 			OsWrap:          osWrap,
 			BundleInstaller: manager.NewBundleInstaller(osWrap, tomlEncoder),
 			FileLoader:      gitLoader,
 		}),
 
-		manager.NewGetCommand(&manager.GetCmdConf{
+		manager.NewGetCommand(&manager.GetCmdHub{
 			OsWrap:      osWrap,
 			TomlEncoder: tomlEncoder,
 			FileLoader:  gitLoader,
@@ -61,7 +61,7 @@ func runGetCmd(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	if _, err := getCmd.Execute(&manager.GetCmdInput{
+	if _, err := manager.ExecuteGetCmd(getCmd, &manager.GetCmdInput{
 		URL:     pathToBundle,
 		Version: version,
 	}); err != nil {

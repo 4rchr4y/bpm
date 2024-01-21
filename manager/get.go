@@ -5,7 +5,6 @@ import (
 	"io"
 	"io/fs"
 	"os"
-	"reflect"
 
 	"github.com/4rchr4y/bpm/bundle"
 )
@@ -27,65 +26,52 @@ type getCmdLoader interface {
 	DownloadBundle(url string, tag string) (*bundle.Bundle, error)
 }
 
-type getCommand struct {
-	cmdName     string
-	encoder     getCmdTOMLEncoder
-	loader      getCmdLoader
-	osWrap      getCmdOSWrapper
-	subregistry *Registry
-}
+type (
+	GetCmdHub struct {
+		OsWrap      getCmdOSWrapper
+		TomlEncoder getCmdTOMLEncoder
+		FileLoader  getCmdLoader
+	}
 
-func (cmd *getCommand) bpmCmd()      {}
-func (cmd *getCommand) Name() string { return cmd.cmdName }
+	GetCmdInput struct {
+		Version string // specified bundle version that should be installed
+		URL     string // url to the specified repository with bundle
+	}
 
-func (cmd *getCommand) Requires() []string {
-	return []string{
-		InstallCmdName,
+	GetCmdResult struct{}
+)
+
+type getCommand = Command[*GetCmdHub, *GetCmdInput, *GetCmdResult]
+
+func NewGetCommand(hub *GetCmdHub) Commander {
+	return &getCommand{
+		Name:     GetCmdName,
+		Hub:      hub,
+		Run:      runGetCmd,
+		Registry: NewRegistry(1),
+		Requires: []string{
+			InstallCmdName,
+		},
 	}
 }
 
-func (cmd *getCommand) SetCommand(c Command) error {
-	if ok := cmd.subregistry.lookup(c.Name()); ok {
-		return fmt.Errorf("command '%s' in '%s' in already installed", c.Name(), cmd.cmdName)
-	}
-
-	if err := cmd.subregistry.set(c); err != nil {
-		return fmt.Errorf("error occurred command '%s' in command '%s' setting: %v", c.Name(), cmd.cmdName, err)
-	}
-
-	return nil
-}
-
-type GetCmdInput struct {
-	Version string // bundle package version
-	URL     string // url to download bundle
-}
-
-func (cmd *getCommand) Execute(rawInput interface{}) (interface{}, error) {
-	input, ok := rawInput.(*GetCmdInput)
-	if !ok {
-		return nil, fmt.Errorf("type '%s' is invalid input type for '%s' command", reflect.TypeOf(rawInput), cmd.cmdName)
-	}
-
-	installCmd, err := cmd.subregistry.get(InstallCmdName)
+func runGetCmd(cmd *getCommand, input *GetCmdInput) (*GetCmdResult, error) {
+	installCmd, err := cmd.Registry.get(InstallCmdName)
 	if err != nil {
 		return nil, err
 	}
 
-	result, err := installCmd.Execute(&InstallCmdInput{
+	inp := &InstallCmdInput{
 		Version: input.Version,
 		URL:     input.URL,
-	})
+	}
+
+	result, err := ExecuteInstallCmd(installCmd, inp)
 	if err != nil {
 		return nil, err
 	}
 
-	b, ok := result.(*bundle.Bundle)
-	if !ok {
-		return nil, fmt.Errorf("type '%s' is invalid type for '%s' command result", reflect.TypeOf(input).Elem().Kind().String(), InstallCmdName)
-	}
-
-	fmt.Println(b.BundleFile.Package.Name)
+	fmt.Println(result.Bundle.BundleFile.Package.Name)
 
 	// homeDir, err := cmd.osWrap.UserHomeDir()
 	// if err != nil {
@@ -120,20 +106,4 @@ func (cmd *getCommand) Execute(rawInput interface{}) (interface{}, error) {
 	// }
 
 	return nil, nil
-}
-
-type GetCmdConf struct {
-	OsWrap      getCmdOSWrapper
-	TomlEncoder getCmdTOMLEncoder
-	FileLoader  getCmdLoader
-}
-
-func NewGetCommand(conf *GetCmdConf) Command {
-	return &getCommand{
-		cmdName:     GetCmdName,
-		osWrap:      conf.OsWrap,
-		encoder:     conf.TomlEncoder,
-		loader:      conf.FileLoader,
-		subregistry: NewRegistry(1),
-	}
 }

@@ -38,14 +38,14 @@ func runInstallCmd(cmd *cobra.Command, args []string) {
 	gitLoader := loader.NewGitLoader(gitService, bundleParser)
 
 	bpmClient.RegisterCommand(
-		manager.NewInstallCommand(&manager.InstallCmdConf{
+		manager.NewInstallCommand(&manager.InstallCmdHub{
 			OsWrap:          osWrap,
 			BundleInstaller: manager.NewBundleInstaller(osWrap, tomlEncoder),
 			FileLoader:      gitLoader,
 		}),
 	)
 
-	getCmd, err := bpmClient.Command(manager.InstallCmdName)
+	installCmd, err := bpmClient.Command(manager.InstallCmdName)
 	if err != nil {
 		log.Fatal(err)
 		return
@@ -57,7 +57,7 @@ func runInstallCmd(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	if _, err := getCmd.Execute(&manager.InstallCmdInput{
+	if _, err := manager.ExecuteInstallCmd(installCmd, &manager.InstallCmdInput{
 		URL:     pathToBundle,
 		Version: version,
 	}); err != nil {

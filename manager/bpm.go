@@ -10,7 +10,7 @@ func NewBpm() *Bpm {
 	}
 }
 
-func (bpm *Bpm) RegisterCommand(commands ...Command) error {
+func (bpm *Bpm) RegisterCommand(commands ...Commander) error {
 	for i := range commands {
 		if err := bpm.registry.set(commands[i]); err != nil {
 			return err
@@ -20,6 +20,6 @@ func (bpm *Bpm) RegisterCommand(commands ...Command) error {
 	return nil
 }
 
-func (bpm *Bpm) Command(cmdName string) (Command, error) {
+func (bpm *Bpm) Command(cmdName string) (Commander, error) {
 	return bpm.registry.get(cmdName)
 }
