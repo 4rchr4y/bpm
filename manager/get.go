@@ -40,7 +40,7 @@ func (cmd *getCommand) Name() string { return cmd.cmdName }
 
 func (cmd *getCommand) Requires() []string {
 	return []string{
-		InstallCommandName,
+		InstallCmdName,
 	}
 }
 
@@ -67,7 +67,7 @@ func (cmd *getCommand) Execute(rawInput interface{}) (interface{}, error) {
 		return nil, fmt.Errorf("type '%s' is invalid input type for '%s' command", reflect.TypeOf(rawInput), cmd.cmdName)
 	}
 
-	installCmd, err := cmd.subregistry.get(InstallCommandName)
+	installCmd, err := cmd.subregistry.get(InstallCmdName)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func (cmd *getCommand) Execute(rawInput interface{}) (interface{}, error) {
 
 	b, ok := result.(*bundle.Bundle)
 	if !ok {
-		return nil, fmt.Errorf("type '%s' is invalid type for '%s' command result", reflect.TypeOf(input).Elem().Kind().String(), InstallCommandName)
+		return nil, fmt.Errorf("type '%s' is invalid type for '%s' command result", reflect.TypeOf(input).Elem().Kind().String(), InstallCmdName)
 	}
 
 	fmt.Println(b.BundleFile.Package.Name)
@@ -130,7 +130,7 @@ type GetCmdConf struct {
 
 func NewGetCommand(conf *GetCmdConf) Command {
 	return &getCommand{
-		cmdName:     GetCommandName,
+		cmdName:     GetCmdName,
 		osWrap:      conf.OsWrap,
 		encoder:     conf.TomlEncoder,
 		loader:      conf.FileLoader,

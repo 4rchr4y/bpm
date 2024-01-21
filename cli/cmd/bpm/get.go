@@ -49,7 +49,7 @@ func runGetCmd(cmd *cobra.Command, args []string) {
 		}),
 	)
 
-	getCmd, err := bpmClient.Command(manager.GetCommandName)
+	getCmd, err := bpmClient.Command(manager.GetCmdName)
 	if err != nil {
 		log.Fatal(err)
 		return

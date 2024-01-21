@@ -8,6 +8,7 @@ require (
 	github.com/go-git/go-git/v5 v5.11.0
 	github.com/open-policy-agent/opa v0.60.0
 	github.com/spf13/cobra v1.8.0
+	github.com/stretchr/testify v1.8.4
 )
 
 require (
@@ -31,8 +32,6 @@ require (
 	github.com/sergi/go-diff v1.3.1 // indirect
 	github.com/skeema/knownhosts v1.2.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/stretchr/objx v0.5.0 // indirect
-	github.com/stretchr/testify v1.8.4 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect

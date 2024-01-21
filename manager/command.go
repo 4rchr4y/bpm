@@ -1,9 +1,9 @@
 package manager
 
 const (
-	ValidateCommandName = "validate"
-	GetCommandName      = "get"
-	InstallCommandName  = "install"
+	ValidateCmdName = "validate"
+	GetCmdName      = "get"
+	InstallCmdName  = "install"
 )
 
 type Command interface {

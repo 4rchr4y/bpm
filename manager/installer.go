@@ -11,21 +11,21 @@ import (
 	"github.com/4rchr4y/bpm/constant"
 )
 
-type biOSWrapper interface {
+type installerOSWrapper interface {
 	Create(name string) (*os.File, error)
 	WriteFile(name string, data []byte, perm fs.FileMode) error
 }
 
-type biTOMLEncoder interface {
+type installerTOMLEncoder interface {
 	Encode(w io.Writer, v interface{}) error
 }
 
 type BundleInstaller struct {
-	osWrap  biOSWrapper
-	encoder biTOMLEncoder
+	osWrap  installerOSWrapper
+	encoder installerTOMLEncoder
 }
 
-func NewBundleInstaller(osWrap biOSWrapper, encoder biTOMLEncoder) *BundleInstaller {
+func NewBundleInstaller(osWrap installerOSWrapper, encoder installerTOMLEncoder) *BundleInstaller {
 	return &BundleInstaller{
 		osWrap:  osWrap,
 		encoder: encoder,

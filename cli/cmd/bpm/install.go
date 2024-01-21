@@ -16,10 +16,10 @@ import (
 
 func newInstallCmd(args []string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "install",
+		Use:     "install [REPOSITORY]",
 		Aliases: []string{"i"},
 		Args:    require.ExactArgs(1),
-		Short:   "Install a new dependency",
+		Short:   "Install a package from the specified repository",
 		Run:     runInstallCmd,
 	}
 
@@ -45,7 +45,7 @@ func runInstallCmd(cmd *cobra.Command, args []string) {
 		}),
 	)
 
-	getCmd, err := bpmClient.Command(manager.InstallCommandName)
+	getCmd, err := bpmClient.Command(manager.InstallCmdName)
 	if err != nil {
 		log.Fatal(err)
 		return

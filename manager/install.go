@@ -84,7 +84,7 @@ type InstallCmdConf struct {
 
 func NewInstallCommand(conf *InstallCmdConf) Command {
 	return &installCommand{
-		cmdName:   InstallCommandName,
+		cmdName:   InstallCmdName,
 		osWrap:    conf.OsWrap,
 		installer: conf.BundleInstaller,
 		loader:    conf.FileLoader,
