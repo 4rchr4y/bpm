@@ -18,6 +18,10 @@ type DependencyDef struct {
 	Include []string `toml:"include"`
 }
 
+type WorkspaceDef struct {
+	Ignore []string `toml:"ignore"`
+}
+
 type BundleFile struct {
 	Package      *PackageDef               `toml:"package" validate:"required"`
 	Dependencies map[string]*DependencyDef `toml:"dependencies"`

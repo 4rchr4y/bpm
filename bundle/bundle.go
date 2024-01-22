@@ -39,7 +39,6 @@ type Bundle struct {
 	Version        *VersionExpr
 	BundleFile     *BundleFile
 	BundleLockFile *BundleLockFile
-	BpmWorkFile    *BpmWorkFile
 	RegoFiles      map[string]*RawRegoFile
 }
 

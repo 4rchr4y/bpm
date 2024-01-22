@@ -58,14 +58,6 @@ func (bp *Fileifier) Fileify(files map[string][]byte) (*bundle.Bundle, error) {
 			}
 
 			b.BundleLockFile = bundlelock
-
-		case isBPMWorkFile(filePath):
-			bpmwork, err := bp.parseBPMWorkFile(content)
-			if err != nil {
-				return nil, err
-			}
-
-			b.BpmWorkFile = bpmwork
 		}
 	}
 
@@ -79,15 +71,6 @@ func (bp *Fileifier) parseRegoFile(fileContent []byte, filePath string) (*ast.Mo
 	}
 
 	return parsed, nil
-}
-
-func (bp *Fileifier) parseBPMWorkFile(fileContent []byte) (*bundle.BpmWorkFile, error) {
-	var bpmwork bundle.BpmWorkFile
-	if err := bp.decoder.Decode(string(fileContent), &bpmwork); err != nil {
-		return nil, fmt.Errorf("error parsing bpm.work content: %v", err)
-	}
-
-	return &bpmwork, nil
 }
 
 func (bp *Fileifier) parseBPMLockFile(fileContent []byte) (*bundle.BundleLockFile, error) {
@@ -111,4 +94,3 @@ func (bp *Fileifier) parseBPMFile(fileContent []byte) (*bundle.BundleFile, error
 func isRegoFile(filePath string) bool    { return filepath.Ext(filePath) == constant.RegoFileExt }
 func isBPMFile(filePath string) bool     { return filePath == constant.BundleFileName }
 func isBPMLockFile(filePath string) bool { return filePath == constant.LockFileName }
-func isBPMWorkFile(filePath string) bool { return filePath == constant.WorkFileName }
