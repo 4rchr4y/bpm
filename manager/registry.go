@@ -7,7 +7,7 @@ type Registry struct {
 	store []Commander
 }
 
-func NewRegistry(size ...uint) *Registry {
+func NewRegistry(size ...int) *Registry {
 	initialSize := 0
 	if len(size) > 0 {
 		initialSize = int(size[0])

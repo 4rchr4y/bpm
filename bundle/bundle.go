@@ -39,46 +39,9 @@ type Bundle struct {
 	Version        *VersionExpr
 	BundleFile     *BundleFile
 	BundleLockFile *BundleLockFile
+	IgnoreFiles    map[string]struct{}
 	RegoFiles      map[string]*RawRegoFile
+	OtherFiles     map[string][]byte
 }
 
 func (b *Bundle) Name() string { return b.BundleFile.Package.Name }
-
-func (b *Bundle) UpdateLock() bool {
-	if len(b.RegoFiles) < 1 {
-		// no rego files, then nothing to update
-		return false
-	}
-
-	if b.BundleLockFile == nil {
-		b.BundleLockFile = &BundleLockFile{
-			Version: 1,
-			Modules: make([]*ModuleDef, len(b.RegoFiles)),
-		}
-	}
-
-	var i uint
-	for path, file := range b.RegoFiles {
-		b.BundleLockFile.Modules[i] = &ModuleDef{
-			Name:     file.Package(),
-			Source:   path,
-			Checksum: file.Sum(),
-			Dependencies: func() []string {
-				result := make([]string, len(file.Parsed.Imports))
-				for i, _import := range file.Parsed.Imports {
-					result[i] = _import.Path.String()
-				}
-
-				return result
-			}(),
-		}
-
-		i++
-	}
-
-	return true
-}
-
-func (b *Bundle) Validation() error {
-	panic("not implemented")
-}

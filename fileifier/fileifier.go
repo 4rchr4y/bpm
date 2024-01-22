@@ -1,8 +1,11 @@
 package fileifier
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/4rchr4y/bpm/bundle"
 	"github.com/4rchr4y/bpm/constant"
@@ -24,14 +27,27 @@ func NewFileifier(decoder bpTOMLDecoder) *Fileifier {
 	}
 }
 
-// TODO: check that file is not empty; isEmpty(content)
 func (bp *Fileifier) Fileify(files map[string][]byte) (*bundle.Bundle, error) {
 	b := &bundle.Bundle{
-		RegoFiles: make(map[string]*bundle.RawRegoFile),
+		RegoFiles:  make(map[string]*bundle.RawRegoFile),
+		OtherFiles: make(map[string][]byte),
+	}
+
+	ignoreFileContent, exist := files[constant.IgnoreFile]
+	if exist && !isEmpty(ignoreFileContent) {
+		ignoreList, err := bp.parseIgnoreFile(ignoreFileContent)
+		if err != nil {
+			return nil, err
+		}
+
+		b.IgnoreFiles = ignoreList
 	}
 
 	for filePath, content := range files {
 		switch {
+		case shouldIgnore(b.IgnoreFiles, filePath):
+			continue
+
 		case isRegoFile(filePath):
 			parsed, err := bp.parseRegoFile(content, filePath)
 			if err != nil {
@@ -58,6 +74,13 @@ func (bp *Fileifier) Fileify(files map[string][]byte) (*bundle.Bundle, error) {
 			}
 
 			b.BundleLockFile = bundlelock
+
+		default:
+			if isEmpty(ignoreFileContent) {
+				continue
+			}
+
+			b.OtherFiles[filePath] = content
 		}
 	}
 
@@ -91,6 +114,38 @@ func (bp *Fileifier) parseBPMFile(fileContent []byte) (*bundle.BundleFile, error
 	return &bundlefile, nil
 }
 
+func (bp *Fileifier) parseIgnoreFile(fileContent []byte) (map[string]struct{}, error) {
+	result := make(map[string]struct{})
+
+	scanner := bufio.NewScanner(bytes.NewReader(fileContent))
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		result[line] = struct{}{}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("error reading '%s' input: %v", constant.IgnoreFile, err)
+	}
+
+	return result, nil
+}
+
+func shouldIgnore(ignoreList map[string]struct{}, path string) bool {
+	if path == "" || len(ignoreList) == 0 {
+		return false
+	}
+
+	dir := filepath.Dir(path)
+	if dir == "." {
+		return false
+	}
+
+	topLevelDir := strings.Split(dir, string(filepath.Separator))[0]
+	_, found := ignoreList[topLevelDir]
+	return found
+}
+
 func isRegoFile(filePath string) bool    { return filepath.Ext(filePath) == constant.RegoFileExt }
 func isBPMFile(filePath string) bool     { return filePath == constant.BundleFileName }
 func isBPMLockFile(filePath string) bool { return filePath == constant.LockFileName }
+func isEmpty(content []byte) bool        { return len(content) < 1 }

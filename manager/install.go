@@ -31,7 +31,7 @@ type installCmdBundleInstaller interface {
 }
 
 type (
-	InstallCmdHub struct {
+	InstallCmdResources struct {
 		OsWrap          installCmdOSWrapper
 		FileLoader      installCmdLoader
 		BundleInstaller installCmdBundleInstaller
@@ -47,14 +47,14 @@ type (
 	}
 )
 
-type installCommand = Command[*InstallCmdHub, *InstallCmdInput, *InstallCmdResult]
+type installCommand = Command[*InstallCmdResources, *InstallCmdInput, *InstallCmdResult]
 type installCommandGuardFn = func(*installCommand, *InstallCmdInput) error
 
-func NewInstallCommand(hub *InstallCmdHub) Commander {
+func NewInstallCommand(resources *InstallCmdResources) Commander {
 	return &installCommand{
-		Name: InstallCmdName,
-		Hub:  hub,
-		Run:  runInstallCmd,
+		Name:      InstallCmdName,
+		Resources: resources,
+		Run:       runInstallCmd,
 		Guards: []installCommandGuardFn{
 			validateInstallCmdInputURL,
 		},
@@ -63,12 +63,12 @@ func NewInstallCommand(hub *InstallCmdHub) Commander {
 
 func runInstallCmd(cmd *installCommand, input *InstallCmdInput) (*InstallCmdResult, error) {
 	repoURL := fmt.Sprintf("https://%s.git", input.URL)
-	b, err := cmd.Hub.FileLoader.DownloadBundle(repoURL, input.Version)
+	b, err := cmd.Resources.FileLoader.DownloadBundle(repoURL, input.Version)
 	if err != nil {
 		return nil, err
 	}
 
-	homeDir, err := cmd.Hub.OsWrap.UserHomeDir()
+	homeDir, err := cmd.Resources.OsWrap.UserHomeDir()
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +78,7 @@ func runInstallCmd(cmd *installCommand, input *InstallCmdInput) (*InstallCmdResu
 		Bundle:  b,
 	}
 
-	if err := cmd.Hub.BundleInstaller.Install(installInput); err != nil {
+	if err := cmd.Resources.BundleInstaller.Install(installInput); err != nil {
 		return nil, err
 	}
 

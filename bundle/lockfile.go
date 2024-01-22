@@ -9,6 +9,12 @@ type ModuleDef struct {
 	Dependencies []string `toml:"dependencies"`
 }
 
+type DependencyDef struct {
+	Version string   `toml:"version"`
+	Source  string   `toml:"source"`
+	Include []string `toml:"include"`
+}
+
 type BundleLockFile struct {
 	Version int          `toml:"version"`
 	Modules []*ModuleDef `toml:"modules"`

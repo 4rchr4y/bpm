@@ -17,6 +17,7 @@ func newRootCmd(out io.Writer, args []string) (*cobra.Command, error) {
 		newInstallCmd(args),
 		newGetCmd(args),
 		newNewCmd(args),
+		newCheckCmd(args),
 	)
 
 	return cmd, nil

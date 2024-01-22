@@ -29,23 +29,23 @@ func newInstallCmd(args []string) *cobra.Command {
 
 func runInstallCmd(cmd *cobra.Command, args []string) {
 	pathToBundle := args[0]
-	bpmClient := manager.NewBpm()
+	bpmManager := manager.NewBpm()
 	osWrap := new(syswrap.OsWrapper)
 	tomlEncoder := encode.NewTomlEncoder()
 
-	bundleParser := fileifier.NewFileifier(tomlEncoder)
-	gitService := gitcli.NewClient()
-	gitLoader := loader.NewGitLoader(gitService, bundleParser)
+	fileifier := fileifier.NewFileifier(tomlEncoder)
+	gitClient := gitcli.NewClient()
+	gitLoader := loader.NewGitLoader(gitClient, fileifier)
 
-	bpmClient.RegisterCommand(
-		manager.NewInstallCommand(&manager.InstallCmdHub{
+	bpmManager.RegisterCommand(
+		manager.NewInstallCommand(&manager.InstallCmdResources{
 			OsWrap:          osWrap,
 			BundleInstaller: manager.NewBundleInstaller(osWrap, tomlEncoder),
 			FileLoader:      gitLoader,
 		}),
 	)
 
-	installCmd, err := bpmClient.Command(manager.InstallCmdName)
+	installCmd, err := bpmManager.Command(manager.InstallCmdName)
 	if err != nil {
 		log.Fatal(err)
 		return

@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"github.com/4rchr4y/bpm/cli/require"
 	"github.com/4rchr4y/bpm/fileifier"
@@ -29,23 +30,25 @@ func runGetCmd(cmd *cobra.Command, args []string) {
 	pathToBundle := args[0]
 	bpmClient := manager.NewBpm()
 	osWrap := new(syswrap.OsWrapper)
+	ioWrap := new(syswrap.IoWrapper)
 	tomlEncoder := encode.NewTomlEncoder()
 
-	bundleParser := fileifier.NewFileifier(tomlEncoder)
-	gitService := gitcli.NewClient()
-	gitLoader := loader.NewGitLoader(gitService, bundleParser)
+	filef := fileifier.NewFileifier(tomlEncoder)
+	gitLoader := loader.NewGitLoader(gitcli.NewClient(), filef)
+	fsLoader := loader.NewFsLoader(osWrap, ioWrap, filef)
 
 	bpmClient.RegisterCommand(
-		manager.NewInstallCommand(&manager.InstallCmdHub{
+		manager.NewInstallCommand(&manager.InstallCmdResources{
 			OsWrap:          osWrap,
 			BundleInstaller: manager.NewBundleInstaller(osWrap, tomlEncoder),
 			FileLoader:      gitLoader,
 		}),
 
-		manager.NewGetCommand(&manager.GetCmdHub{
+		manager.NewGetCommand(&manager.GetCmdResources{
 			OsWrap:      osWrap,
 			TomlEncoder: tomlEncoder,
-			FileLoader:  gitLoader,
+			GitLoader:   gitLoader,
+			FsLoader:    fsLoader,
 		}),
 	)
 
@@ -61,9 +64,16 @@ func runGetCmd(cmd *cobra.Command, args []string) {
 		return
 	}
 
+	wd, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
 	if _, err := manager.ExecuteGetCmd(getCmd, &manager.GetCmdInput{
 		URL:     pathToBundle,
 		Version: version,
+		Dir:     wd,
 	}); err != nil {
 		log.Fatal(err)
 		return

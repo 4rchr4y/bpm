@@ -16,10 +16,7 @@ type gitClient interface {
 	PlainClone(input *gitcli.PlainCloneInput) (*git.Repository, error)
 }
 
-type bundleFileifier interface {
-	Fileify(files map[string][]byte) (*bundle.Bundle, error)
-}
-
+// GitLoader is a loader from the specified repository
 type GitLoader struct {
 	fileifier bundleFileifier
 	gitCli    gitClient
@@ -53,6 +50,7 @@ func (loader *GitLoader) DownloadBundle(url string, tag string) (*bundle.Bundle,
 		return nil, err
 	}
 
+	// TODO: do file filtering
 	files := make(map[string][]byte)
 	err = filesIter.ForEach(func(f *object.File) error {
 		content, err := f.Contents()

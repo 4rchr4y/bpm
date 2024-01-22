@@ -5,9 +5,9 @@ import (
 )
 
 const (
-	ValidateCmdName = "validate"
-	GetCmdName      = "get"
-	InstallCmdName  = "install"
+	CheckCmdName   = "validate"
+	GetCmdName     = "get"
+	InstallCmdName = "install"
 )
 
 type Commander interface {
@@ -16,13 +16,13 @@ type Commander interface {
 	GetRequires() []string
 }
 
-type Command[Hub, Input, Result any] struct {
-	Name     string
-	Hub      Hub
-	Run      func(*Command[Hub, Input, Result], Input) (Result, error)
-	Requires []string
-	Guards   []func(*Command[Hub, Input, Result], Input) error
-	Registry *Registry
+type Command[Resources, Input, Result any] struct {
+	Name      string
+	Resources Resources
+	Run       func(*Command[Resources, Input, Result], Input) (Result, error)
+	Requires  []string
+	Guards    []func(*Command[Resources, Input, Result], Input) error
+	Registry  *Registry
 }
 
 func (cmd *Command[H, I, R]) GetName() string       { return cmd.Name }
@@ -58,9 +58,13 @@ func Execute[Hub, Input, Result any](cmd Commander, input Input) (result Result,
 }
 
 func ExecuteInstallCmd(cmd Commander, input *InstallCmdInput) (*InstallCmdResult, error) {
-	return Execute[*InstallCmdHub, *InstallCmdInput, *InstallCmdResult](cmd, input)
+	return Execute[*InstallCmdResources, *InstallCmdInput, *InstallCmdResult](cmd, input)
 }
 
 func ExecuteGetCmd(cmd Commander, input *GetCmdInput) (*GetCmdResult, error) {
-	return Execute[*GetCmdHub, *GetCmdInput, *GetCmdResult](cmd, input)
+	return Execute[*GetCmdResources, *GetCmdInput, *GetCmdResult](cmd, input)
+}
+
+func ExecuteCheckCmd(cmd Commander, input *CheckCmdInput) (*CheckCmdResult, error) {
+	return Execute[*CheckCmdResources, *CheckCmdInput, *CheckCmdResult](cmd, input)
 }

@@ -7,12 +7,14 @@ import (
 	"os"
 
 	"github.com/4rchr4y/bpm/bundle"
+	"github.com/4rchr4y/bpm/constant"
 )
 
 type getCmdOSWrapper interface {
 	Mkdir(name string, perm fs.FileMode) error
 	Stat(name string) (fs.FileInfo, error)
 	MkdirAll(path string, perm fs.FileMode) error
+	Open(name string) (*os.File, error)
 	Create(name string) (*os.File, error)
 	UserHomeDir() (string, error)
 	WriteFile(name string, data []byte, perm fs.FileMode) error
@@ -22,18 +24,24 @@ type getCmdTOMLEncoder interface {
 	Encode(w io.Writer, v interface{}) error
 }
 
-type getCmdLoader interface {
+type getCmdGitLoader interface {
 	DownloadBundle(url string, tag string) (*bundle.Bundle, error)
 }
 
+type getCmdFsLoader interface {
+	LoadBundle(dirPath string) (*bundle.Bundle, error)
+}
+
 type (
-	GetCmdHub struct {
+	GetCmdResources struct {
 		OsWrap      getCmdOSWrapper
 		TomlEncoder getCmdTOMLEncoder
-		FileLoader  getCmdLoader
+		GitLoader   getCmdGitLoader
+		FsLoader    getCmdFsLoader
 	}
 
 	GetCmdInput struct {
+		Dir     string // bundle working directory
 		Version string // specified bundle version that should be installed
 		URL     string // url to the specified repository with bundle
 	}
@@ -41,38 +49,60 @@ type (
 	GetCmdResult struct{}
 )
 
-type getCommand = Command[*GetCmdHub, *GetCmdInput, *GetCmdResult]
+type getCommand = Command[*GetCmdResources, *GetCmdInput, *GetCmdResult]
+type getCommandGuardFn = func(*getCommand, *GetCmdInput) error
 
-func NewGetCommand(hub *GetCmdHub) Commander {
+func NewGetCommand(resources *GetCmdResources) Commander {
+	requires := []string{
+		InstallCmdName,
+	}
+
 	return &getCommand{
-		Name:     GetCmdName,
-		Hub:      hub,
-		Run:      runGetCmd,
-		Registry: NewRegistry(1),
-		Requires: []string{
-			InstallCmdName,
+		Name:      GetCmdName,
+		Resources: resources,
+		Run:       runGetCmd,
+		Requires:  requires,
+		Registry:  NewRegistry(len(requires)),
+		Guards: []getCommandGuardFn{
+			validateGetCmdBundleDir,
 		},
 	}
 }
 
 func runGetCmd(cmd *getCommand, input *GetCmdInput) (*GetCmdResult, error) {
+	b, err := cmd.Resources.FsLoader.LoadBundle(input.Dir)
+	if err != nil {
+		return nil, err
+	}
+
 	installCmd, err := cmd.Registry.get(InstallCmdName)
 	if err != nil {
 		return nil, err
 	}
 
-	inp := &InstallCmdInput{
+	installCmdInput := &InstallCmdInput{
 		Version: input.Version,
 		URL:     input.URL,
 	}
 
-	result, err := ExecuteInstallCmd(installCmd, inp)
+	result, err := ExecuteInstallCmd(installCmd, installCmdInput)
 	if err != nil {
 		return nil, err
 	}
 
-	fmt.Println(result.Bundle.BundleFile.Package.Name)
+	b.BundleFile.Dependencies[result.Bundle.Name()] = result.Bundle.Version.Version
 
+	bundlefilePath := fmt.Sprintf("%s/%s", input.Dir, constant.BundleFileName)
+	bundlefile, err := os.OpenFile(bundlefilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := cmd.Resources.TomlEncoder.Encode(bundlefile, b.BundleFile); err != nil {
+		return nil, err
+	}
+
+	//cmd.Resources.OsWrap.WriteFile()
 	// homeDir, err := cmd.osWrap.UserHomeDir()
 	// if err != nil {
 	// 	return nil, err
@@ -106,4 +136,13 @@ func runGetCmd(cmd *getCommand, input *GetCmdInput) (*GetCmdResult, error) {
 	// }
 
 	return nil, nil
+}
+
+func validateGetCmdBundleDir(cmd *getCommand, input *GetCmdInput) error {
+	f, err := cmd.Resources.OsWrap.Stat(fmt.Sprintf("%s/%s", input.Dir, constant.BundleFileName))
+	if f == nil {
+		return fmt.Errorf("cannot find '%s' providing bundle", constant.BundleFileName)
+	}
+
+	return err
 }

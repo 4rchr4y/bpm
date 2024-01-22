@@ -5,6 +5,7 @@
         "bpmwork",
         "bundlefile",
         "bundlelock",
+        "filef",
         "Fileifier",
         "Fileify",
         "gitcli",
