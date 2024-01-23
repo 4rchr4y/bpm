@@ -6,20 +6,21 @@ import (
 	"github.com/4rchr4y/bpm/constant"
 )
 
-type PackageDef struct {
+type BundleFilePackage struct {
 	Name        string   `toml:"name" validate:"required"`
-	Author      []string `toml:"author"`
+	Author      []string `toml:"author,omitempty"`
 	Repository  string   `toml:"repository" validate:"required"`
-	Description string   `toml:"description"`
+	Description string   `toml:"description,omitempty"`
 }
 
-type WorkspaceDef struct {
-	Ignore []string `toml:"ignore"`
+type BundleFileRequirement struct {
+	Name    string `toml:"name" validate:"required"`
+	Version string `toml:"version" validate:"required"`
 }
 
 type BundleFile struct {
-	Package *PackageDef       `toml:"package" validate:"required"`
-	Require map[string]string `toml:"require"`
+	Package *BundleFilePackage                `toml:"package" validate:"required"`
+	Require map[string]*BundleFileRequirement `toml:"require,omitempty"`
 }
 
 func (*BundleFile) bpmFile()         {}

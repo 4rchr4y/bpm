@@ -66,13 +66,13 @@ func runInitCmd(cmd *initCommand, input *InitCmdInput) (*InitCmdResult, error) {
 func bundleFileContent(resources *InitCmdResources, repo string, author *bundle.AuthorExpr) ([]byte, error) {
 	repoName := path.Base(repo)
 	bundlefile := &bundle.BundleFile{
-		Package: &bundle.PackageDef{
+		Package: &bundle.BundleFilePackage{
 			Name:        repoName,
 			Author:      []string{author.String()},
 			Repository:  repo,
 			Description: fmt.Sprintf("Some description about '%s' bundle.", repoName),
 		},
-		Require: make(map[string]string),
+		Require: make(map[string]*bundle.BundleFileRequirement),
 	}
 
 	bytes, err := resources.TomlEncoder.Encode(bundlefile)

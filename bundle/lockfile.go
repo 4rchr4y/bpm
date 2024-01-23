@@ -2,21 +2,27 @@ package bundle
 
 import "github.com/4rchr4y/bpm/constant"
 
-type ModuleDef struct {
-	Name         string   `toml:"name"`
-	Source       string   `toml:"source"`
-	Checksum     string   `toml:"checksum"`
-	Dependencies []string `toml:"dependencies"`
+// type DependencyDef struct {
+// 	Version string   `toml:"version"`
+// 	Source  string   `toml:"source"`
+// 	Include []string `toml:"include"`
+// }
+
+type Requirement struct {
+	Package    string       `toml:"version" validate:"required"`
+	Version    *VersionExpr `toml:"version" validate:"required"`
+	Repository string       `toml:"repository" validate:"required"`
 }
 
-type DependencyDef struct {
-	Version string   `toml:"version"`
-	Source  string   `toml:"source"`
-	Include []string `toml:"include"`
+type ModuleDef struct {
+	Name     string         `toml:"name"`
+	Source   string         `toml:"source"`
+	Checksum string         `toml:"checksum"`
+	Require  []*Requirement `toml:"require"`
 }
 
 type BundleLockFile struct {
-	Version int          `toml:"version"`
+	Version int          `toml:"version"` // file revision version
 	Modules []*ModuleDef `toml:"modules"`
 }
 

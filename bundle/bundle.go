@@ -32,6 +32,10 @@ func NewVersionExpr(commit *object.Commit, tag string) *VersionExpr {
 }
 
 func (v *VersionExpr) String() string {
+	if v.Version != constant.BundlePseudoVersion {
+		return v.Version
+	}
+
 	return fmt.Sprintf("%s+%s-%s", v.Version, v.Timestamp, v.Hash)
 }
 
@@ -53,6 +57,19 @@ type Bundle struct {
 	OtherFiles     map[string][]byte
 }
 
-func (b *Bundle) Name() string               { return b.BundleFile.Package.Name }
-func (b *Bundle) Repository() string         { return b.BundleFile.Package.Repository }
-func (b *Bundle) Require() map[string]string { return b.BundleFile.Require }
+func (b *Bundle) Name() string                               { return b.BundleFile.Package.Name }
+func (b *Bundle) Repository() string                         { return b.BundleFile.Package.Repository }
+func (b *Bundle) Require() map[string]*BundleFileRequirement { return b.BundleFile.Require }
+
+func (b *Bundle) SetRequirement(requirement *Bundle) error {
+	if b.BundleFile.Require == nil {
+		b.BundleFile.Require = make(map[string]*BundleFileRequirement)
+	}
+
+	b.BundleFile.Require[requirement.Name()] = &BundleFileRequirement{
+		Name:    requirement.Name(),
+		Version: requirement.Version.String(),
+	}
+
+	return nil
+}

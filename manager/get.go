@@ -71,12 +71,12 @@ func NewGetCommand(resources *GetCmdResources) Commander {
 }
 
 func runGetCmd(cmd *getCommand, input *GetCmdInput) (*GetCmdResult, error) {
-	b, err := cmd.Resources.FsLoader.LoadBundle(input.Dir)
+	workingBundle, err := cmd.Resources.FsLoader.LoadBundle(input.Dir)
 	if err != nil {
 		return nil, err
 	}
 
-	if _, exist := b.BundleFile.Require[input.URL]; exist {
+	if _, exist := workingBundle.BundleFile.Require[input.URL]; exist {
 		log.Println("Already installed")
 		return nil, nil
 	}
@@ -96,14 +96,12 @@ func runGetCmd(cmd *getCommand, input *GetCmdInput) (*GetCmdResult, error) {
 		return nil, err
 	}
 
-	if b.BundleFile.Require == nil {
-		b.BundleFile.Require = make(map[string]string)
+	if err := workingBundle.SetRequirement(result.Bundle); err != nil {
+		return nil, err
 	}
 
-	b.BundleFile.Require[result.Bundle.BundleFile.Package.Repository] = getVersionStr(result.Bundle.Version)
-
 	bundlefilePath := filepath.Join(input.Dir, constant.BundleFileName)
-	bytes, err := cmd.Resources.TomlEncoder.Encode(b.BundleFile)
+	bytes, err := cmd.Resources.TomlEncoder.Encode(workingBundle.BundleFile)
 	if err != nil {
 		return nil, err
 	}

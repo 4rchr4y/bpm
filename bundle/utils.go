@@ -23,10 +23,13 @@ func UpdateLockFile(b *Bundle) bool {
 			Name:     file.Package(),
 			Source:   path,
 			Checksum: file.Sum(),
-			Dependencies: func() []string {
-				result := make([]string, len(file.Parsed.Imports))
+			Require: func() []*Requirement {
+				result := make([]*Requirement, len(file.Parsed.Imports))
+
 				for i, _import := range file.Parsed.Imports {
-					result[i] = _import.Path.String()
+					result[i] = &Requirement{
+						Package: _import.Path.String(),
+					}
 				}
 
 				return result
