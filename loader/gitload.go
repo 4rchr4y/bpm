@@ -30,7 +30,8 @@ func NewGitLoader(gitClient gitClient, bparser bundleFileifier) *GitLoader {
 }
 
 func (loader *GitLoader) DownloadBundle(url string, tag string) (*bundle.Bundle, error) {
-	repo, err := git.Clone(memory.NewStorage(), nil, &git.CloneOptions{URL: url})
+	repoURL := fmt.Sprintf("https://%s.git", url)
+	repo, err := git.Clone(memory.NewStorage(), nil, &git.CloneOptions{URL: repoURL})
 	if err != nil {
 		return nil, err
 	}
@@ -67,6 +68,7 @@ func (loader *GitLoader) DownloadBundle(url string, tag string) (*bundle.Bundle,
 
 	b, err := loader.fileifier.Fileify(files)
 	b.Version = bundle.NewVersionExpr(commit, tag)
+	b.BundleFile.Package.Repository = url
 
 	return b, nil
 }

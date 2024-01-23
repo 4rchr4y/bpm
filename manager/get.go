@@ -2,9 +2,10 @@ package manager
 
 import (
 	"fmt"
-	"io"
 	"io/fs"
+	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/4rchr4y/bpm/bundle"
 	"github.com/4rchr4y/bpm/constant"
@@ -21,7 +22,7 @@ type getCmdOSWrapper interface {
 }
 
 type getCmdTOMLEncoder interface {
-	Encode(w io.Writer, v interface{}) error
+	Encode(value interface{}) ([]byte, error)
 }
 
 type getCmdGitLoader interface {
@@ -75,6 +76,11 @@ func runGetCmd(cmd *getCommand, input *GetCmdInput) (*GetCmdResult, error) {
 		return nil, err
 	}
 
+	if _, exist := b.BundleFile.Require[input.URL]; exist {
+		log.Println("Already installed")
+		return nil, nil
+	}
+
 	installCmd, err := cmd.Registry.get(InstallCmdName)
 	if err != nil {
 		return nil, err
@@ -90,59 +96,45 @@ func runGetCmd(cmd *getCommand, input *GetCmdInput) (*GetCmdResult, error) {
 		return nil, err
 	}
 
-	b.BundleFile.Dependencies[result.Bundle.Name()] = result.Bundle.Version.Version
+	if b.BundleFile.Require == nil {
+		b.BundleFile.Require = make(map[string]string)
+	}
 
-	bundlefilePath := fmt.Sprintf("%s/%s", input.Dir, constant.BundleFileName)
-	bundlefile, err := os.OpenFile(bundlefilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	fmt.Println(b.BundleFile.Require == nil)
+
+	b.BundleFile.Require[result.Bundle.BundleFile.Package.Repository] = getVersionStr(result.Bundle.Version)
+
+	bundlefilePath := filepath.Join(input.Dir, constant.BundleFileName)
+	// bundlefile, err := os.OpenFile(bundlefilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	bytes, err := cmd.Resources.TomlEncoder.Encode(b.BundleFile)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := cmd.Resources.TomlEncoder.Encode(bundlefile, b.BundleFile); err != nil {
+	if err := cmd.Resources.OsWrap.WriteFile(bundlefilePath, bytes, 0644); err != nil {
 		return nil, err
 	}
-
-	//cmd.Resources.OsWrap.WriteFile()
-	// homeDir, err := cmd.osWrap.UserHomeDir()
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// bundle, err := cmd.loader.LoadBundle(typedInput.BundlePath)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// bpmDirPath := fmt.Sprintf("%s/%s", homeDir, constant.BPMDir)
-	// bundleName := bundle.BundleFile.Package.Name
-	// bundleVersion := bundle.BundleFile.Package.Version
-	// bundleVersionDir := fmt.Sprintf("%s/%s/%s", bpmDirPath, bundleName, bundleVersion)
-
-	// if !cmd.isAlreadyInstalled(bundleVersionDir) {
-	// 	fmt.Printf("Bundle '%s' with version '%s' is already installed\n", bundleName, bundleVersion)
-	// 	return nil, nil
-	// }
-
-	// // creating all the directories that are necessary to save files
-	// if err := cmd.osWrap.MkdirAll(bundleVersionDir, 0755); err != nil {
-	// 	return nil, err
-	// }
-
-	// if err := cmd.installer.Install(&BundleInstallInput{
-	// 	Dir:    bundleVersionDir,
-	// 	Bundle: bundle,
-	// }); err != nil {
-	// 	return nil, fmt.Errorf("can't install bundle '%s': %v", bundleName, err)
-	// }
 
 	return nil, nil
 }
 
 func validateGetCmdBundleDir(cmd *getCommand, input *GetCmdInput) error {
-	f, err := cmd.Resources.OsWrap.Stat(fmt.Sprintf("%s/%s", input.Dir, constant.BundleFileName))
+	f, err := cmd.Resources.OsWrap.Stat(filepath.Join(input.Dir, constant.BundleFileName))
 	if f == nil {
 		return fmt.Errorf("cannot find '%s' providing bundle", constant.BundleFileName)
 	}
 
 	return err
+}
+
+func getVersionStr(version *bundle.VersionExpr) string {
+	if version.Version != constant.BundlePseudoVersion {
+		return version.Version
+	}
+
+	return version.String()
 }

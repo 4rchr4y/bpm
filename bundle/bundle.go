@@ -44,4 +44,6 @@ type Bundle struct {
 	OtherFiles     map[string][]byte
 }
 
-func (b *Bundle) Name() string { return b.BundleFile.Package.Name }
+func (b *Bundle) Name() string               { return b.BundleFile.Package.Name }
+func (b *Bundle) Repository() string         { return b.BundleFile.Package.Repository }
+func (b *Bundle) Require() map[string]string { return b.BundleFile.Require }

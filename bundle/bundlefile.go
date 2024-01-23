@@ -9,6 +9,7 @@ import (
 type PackageDef struct {
 	Name        string   `toml:"name" validate:"required"`
 	Author      []string `toml:"author"`
+	Repository  string   `toml:"repository" validate:"required"`
 	Description string   `toml:"description"`
 }
 
@@ -17,8 +18,8 @@ type WorkspaceDef struct {
 }
 
 type BundleFile struct {
-	Package      *PackageDef       `toml:"package" validate:"required"`
-	Dependencies map[string]string `toml:"dependencies"`
+	Package *PackageDef       `toml:"package" validate:"required"`
+	Require map[string]string `toml:"require"`
 }
 
 func (*BundleFile) bpmFile()         {}

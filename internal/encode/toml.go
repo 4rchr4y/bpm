@@ -1,13 +1,21 @@
 package encode
 
 import (
+	"errors"
 	"fmt"
-	"io"
 	"regexp"
 	"strings"
 
 	"github.com/4rchr4y/godevkit/syswrap"
-	"github.com/BurntSushi/toml"
+	"github.com/pelletier/go-toml/v2"
+)
+
+const (
+	envVarString = `\$\{[A-Za-z_][A-Za-z0-9_]*\}`
+)
+
+var (
+	envVarPattern = regexp.MustCompile(envVarString)
 )
 
 type tomlEncoderOSWrapper interface {
@@ -24,9 +32,9 @@ func NewTomlEncoder() *TomlEncoder {
 	}
 }
 
-const envVarString = `\$\{[A-Za-z_][A-Za-z0-9_]*\}`
-
-var envVarPattern = regexp.MustCompile(envVarString)
+func (ts *TomlEncoder) Encode(value interface{}) ([]byte, error) {
+	return toml.Marshal(value)
+}
 
 func (ts *TomlEncoder) Decode(data string, value interface{}) error {
 	content, err := ts.interpolate(data)
@@ -34,7 +42,13 @@ func (ts *TomlEncoder) Decode(data string, value interface{}) error {
 		return err
 	}
 
-	if _, err := toml.Decode(content, value); err != nil {
+	if err = toml.Unmarshal([]byte(content), value); err != nil {
+		var decodeErr *toml.DecodeError
+		if ok := errors.As(err, &decodeErr); ok {
+			return errors.New(decodeErr.String())
+
+		}
+
 		return err
 	}
 
@@ -42,31 +56,28 @@ func (ts *TomlEncoder) Decode(data string, value interface{}) error {
 }
 
 func (ts *TomlEncoder) interpolate(data string) (string, error) {
-	// preliminary check for the presence of placeholders
 	if !strings.Contains(data, "${") {
 		return data, nil
 	}
 
 	var missingVars []string
-	result := envVarPattern.ReplaceAllStringFunc(data, func(match string) string {
+	var result strings.Builder
+
+	envVarPattern.ReplaceAllStringFunc(data, func(match string) string {
 		envKey := strings.Clone(match[2 : len(match)-1])
 		if value, exists := ts.osWrap.LookupEnv(envKey); exists {
-			return value
+			result.WriteString(value)
+			return ""
 		}
 
 		missingVars = append(missingVars, envKey)
-
-		return match
+		result.WriteString(match)
+		return ""
 	})
 
-	// check if there are any unresolved variables
 	if len(missingVars) > 0 {
 		return "", fmt.Errorf("environment variables not found: %s", strings.Join(missingVars, ", "))
 	}
 
-	return result, nil
-}
-
-func (ts *TomlEncoder) Encode(writer io.Writer, value interface{}) error {
-	return toml.NewEncoder(writer).Encode(value)
+	return result.String(), nil
 }

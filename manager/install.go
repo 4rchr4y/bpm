@@ -1,8 +1,6 @@
 package manager
 
 import (
-	"fmt"
-	"io"
 	"io/fs"
 	"os"
 
@@ -19,7 +17,7 @@ type installCmdOSWrapper interface {
 }
 
 type installCmdTOMLEncoder interface {
-	Encode(w io.Writer, v interface{}) error
+	Encode(value interface{}) ([]byte, error)
 }
 
 type installCmdLoader interface {
@@ -62,8 +60,7 @@ func NewInstallCommand(resources *InstallCmdResources) Commander {
 }
 
 func runInstallCmd(cmd *installCommand, input *InstallCmdInput) (*InstallCmdResult, error) {
-	repoURL := fmt.Sprintf("https://%s.git", input.URL)
-	b, err := cmd.Resources.FileLoader.DownloadBundle(repoURL, input.Version)
+	b, err := cmd.Resources.FileLoader.DownloadBundle(input.URL, input.Version)
 	if err != nil {
 		return nil, err
 	}

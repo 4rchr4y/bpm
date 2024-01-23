@@ -2,7 +2,6 @@ package manager
 
 import (
 	"fmt"
-	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -17,7 +16,7 @@ type installerOSWrapper interface {
 }
 
 type installerTOMLEncoder interface {
-	Encode(w io.Writer, v interface{}) error
+	Encode(value interface{}) ([]byte, error)
 }
 
 type BundleInstaller struct {
@@ -56,12 +55,22 @@ func (cmd *BundleInstaller) Install(input *BundleInstallInput) error {
 }
 
 func (cmd *BundleInstaller) processBundleLockFile(bundleLockFile *bundle.BundleLockFile, bundleVersionDir string) error {
-	file, err := cmd.osWrap.Create(fmt.Sprintf("%s/%s", bundleVersionDir, constant.LockFileName))
+	// file, err := cmd.osWrap.Create(fmt.Sprintf("%s/%s", bundleVersionDir, constant.LockFileName))
+	// if err != nil {
+	// 	return err
+	// }
+
+	// if err := cmd.encoder.Encode(file, bundleLockFile); err != nil {
+	// 	return err
+	// }
+
+	bytes, err := cmd.encoder.Encode(bundleLockFile)
 	if err != nil {
 		return err
 	}
 
-	if err := cmd.encoder.Encode(file, bundleLockFile); err != nil {
+	path := filepath.Join(bundleVersionDir, constant.LockFileName)
+	if err := cmd.osWrap.WriteFile(path, bytes, 0644); err != nil {
 		return err
 	}
 
@@ -69,12 +78,22 @@ func (cmd *BundleInstaller) processBundleLockFile(bundleLockFile *bundle.BundleL
 }
 
 func (cmd *BundleInstaller) processBundleFile(bundleFile *bundle.BundleFile, bundleVersionDir string) error {
-	file, err := cmd.osWrap.Create(fmt.Sprintf("%s/%s", bundleVersionDir, constant.BundleFileName))
+	// file, err := cmd.osWrap.Create(fmt.Sprintf("%s/%s", bundleVersionDir, constant.BundleFileName))
+	// if err != nil {
+	// 	return err
+	// }
+
+	// if err := cmd.encoder.Encode(file, bundleFile); err != nil {
+	// 	return err
+	// }
+
+	bytes, err := cmd.encoder.Encode(bundleFile)
 	if err != nil {
 		return err
 	}
 
-	if err := cmd.encoder.Encode(file, bundleFile); err != nil {
+	path := filepath.Join(bundleVersionDir, constant.BundleFileName)
+	if err := cmd.osWrap.WriteFile(path, bytes, 0644); err != nil {
 		return err
 	}
 
