@@ -4,9 +4,9 @@ go 1.21.3
 
 require (
 	github.com/4rchr4y/godevkit v0.0.1
-	github.com/BurntSushi/toml v1.3.2
 	github.com/go-git/go-git/v5 v5.11.0
 	github.com/open-policy-agent/opa v0.60.0
+	github.com/pelletier/go-toml/v2 v2.1.1
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.8.4
 )
@@ -26,7 +26,6 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
-	github.com/pelletier/go-toml/v2 v2.1.1 // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20200313005456-10cdbea86bc0 // indirect
