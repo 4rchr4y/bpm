@@ -3,15 +3,13 @@ package main
 import (
 	"fmt"
 	"os/exec"
-	"path"
 	"strings"
 
 	"github.com/4rchr4y/bpm/bundle"
 	"github.com/4rchr4y/bpm/cli/require"
-	"github.com/4rchr4y/bpm/constant"
-	"github.com/4rchr4y/godevkit/must"
+	"github.com/4rchr4y/bpm/internal/encode"
+	"github.com/4rchr4y/bpm/manager"
 	"github.com/4rchr4y/godevkit/syswrap"
-	"github.com/pelletier/go-toml/v2"
 	"github.com/spf13/cobra"
 )
 
@@ -58,30 +56,42 @@ func newInitCmd(args []string) *cobra.Command {
 
 func runInitCmd(cmd *cobra.Command, args []string) error {
 	osWrap := new(syswrap.OsWrapper)
-	files := map[string][]byte{
-		".gitignore":            gitignoreFileContent(),
-		constant.BundleFileName: bundleFileContent(args[0], buildAuthorInfo()),
-		constant.IgnoreFile:     bpmignoreFileContent(),
+	tomlEncoder := encode.NewTomlEncoder()
+
+	bpmManager := manager.NewBpm()
+	initCmd := manager.NewInitCommand(&manager.InitCmdResources{
+		OsWrap:      osWrap,
+		TomlEncoder: tomlEncoder,
+	})
+
+	if err := bpmManager.RegisterCommand(
+		initCmd,
+	); err != nil {
+		return err
 	}
 
-	for fileName, content := range files {
-		if err := osWrap.WriteFile(fileName, []byte(content), 0644); err != nil {
-			return fmt.Errorf("failed to write file '%s': %v", fileName, err)
-		}
+	if _, err := manager.ExecuteInitCmd(initCmd, &manager.InitCmdInput{
+		Name:   args[0],
+		Author: buildAuthorInfo(),
+	}); err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func buildAuthorInfo() string {
+func buildAuthorInfo() *bundle.AuthorExpr {
 	username, _ := getGitUserInfo("username")
 	email, _ := getGitUserInfo("email")
 
 	if username == "" || email == "" {
-		return ""
+		return nil
 	}
 
-	return fmt.Sprintf("%s %s", username, email)
+	return &bundle.AuthorExpr{
+		Username: username,
+		Email:    email,
+	}
 }
 
 func getGitUserInfo(target string) (string, error) {
@@ -91,25 +101,4 @@ func getGitUserInfo(target string) (string, error) {
 		return "", err
 	}
 	return strings.TrimSpace(string(output)), nil
-}
-
-func bundleFileContent(repo string, author string) []byte {
-	bundlefile := &bundle.BundleFile{
-		Package: &bundle.PackageDef{
-			Name:       path.Base(repo),
-			Author:     []string{author},
-			Repository: repo,
-		},
-		Require: make(map[string]string),
-	}
-
-	return must.Must(toml.Marshal(bundlefile))
-}
-
-func gitignoreFileContent() []byte {
-	return []byte(`bundle.lock`)
-}
-
-func bpmignoreFileContent() []byte {
-	return []byte(`.git`)
 }

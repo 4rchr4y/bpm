@@ -35,6 +35,15 @@ func (v *VersionExpr) String() string {
 	return fmt.Sprintf("%s+%s-%s", v.Version, v.Timestamp, v.Hash)
 }
 
+type AuthorExpr struct {
+	Username string // value of git 'config --get user.username'
+	Email    string // value of git 'config --get user.email'
+}
+
+func (author *AuthorExpr) String() string {
+	return fmt.Sprintf("%s %s", author.Username, author.Email)
+}
+
 type Bundle struct {
 	Version        *VersionExpr
 	BundleFile     *BundleFile

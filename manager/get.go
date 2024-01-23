@@ -100,16 +100,9 @@ func runGetCmd(cmd *getCommand, input *GetCmdInput) (*GetCmdResult, error) {
 		b.BundleFile.Require = make(map[string]string)
 	}
 
-	fmt.Println(b.BundleFile.Require == nil)
-
 	b.BundleFile.Require[result.Bundle.BundleFile.Package.Repository] = getVersionStr(result.Bundle.Version)
 
 	bundlefilePath := filepath.Join(input.Dir, constant.BundleFileName)
-	// bundlefile, err := os.OpenFile(bundlefilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
 	bytes, err := cmd.Resources.TomlEncoder.Encode(b.BundleFile)
 	if err != nil {
 		return nil, err

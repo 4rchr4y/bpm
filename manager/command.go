@@ -5,7 +5,8 @@ import (
 )
 
 const (
-	CheckCmdName   = "validate"
+	InitCmdName    = "init"
+	CheckCmdName   = "check"
 	GetCmdName     = "get"
 	InstallCmdName = "install"
 )
@@ -67,4 +68,8 @@ func ExecuteGetCmd(cmd Commander, input *GetCmdInput) (*GetCmdResult, error) {
 
 func ExecuteCheckCmd(cmd Commander, input *CheckCmdInput) (*CheckCmdResult, error) {
 	return Execute[*CheckCmdResources, *CheckCmdInput, *CheckCmdResult](cmd, input)
+}
+
+func ExecuteInitCmd(cmd Commander, input *InitCmdInput) (*InitCmdResult, error) {
+	return Execute[*InitCmdResources, *InitCmdInput, *InitCmdResult](cmd, input)
 }

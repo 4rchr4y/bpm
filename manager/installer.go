@@ -55,15 +55,6 @@ func (cmd *BundleInstaller) Install(input *BundleInstallInput) error {
 }
 
 func (cmd *BundleInstaller) processBundleLockFile(bundleLockFile *bundle.BundleLockFile, bundleVersionDir string) error {
-	// file, err := cmd.osWrap.Create(fmt.Sprintf("%s/%s", bundleVersionDir, constant.LockFileName))
-	// if err != nil {
-	// 	return err
-	// }
-
-	// if err := cmd.encoder.Encode(file, bundleLockFile); err != nil {
-	// 	return err
-	// }
-
 	bytes, err := cmd.encoder.Encode(bundleLockFile)
 	if err != nil {
 		return err
@@ -78,15 +69,6 @@ func (cmd *BundleInstaller) processBundleLockFile(bundleLockFile *bundle.BundleL
 }
 
 func (cmd *BundleInstaller) processBundleFile(bundleFile *bundle.BundleFile, bundleVersionDir string) error {
-	// file, err := cmd.osWrap.Create(fmt.Sprintf("%s/%s", bundleVersionDir, constant.BundleFileName))
-	// if err != nil {
-	// 	return err
-	// }
-
-	// if err := cmd.encoder.Encode(file, bundleFile); err != nil {
-	// 	return err
-	// }
-
 	bytes, err := cmd.encoder.Encode(bundleFile)
 	if err != nil {
 		return err
