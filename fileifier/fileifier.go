@@ -8,17 +8,15 @@ import (
 	"strings"
 
 	"github.com/4rchr4y/bpm/bundle"
+	"github.com/4rchr4y/bpm/bundle/bundlefile"
+	"github.com/4rchr4y/bpm/bundle/lockfile"
 	"github.com/4rchr4y/bpm/constant"
 
 	"github.com/open-policy-agent/opa/ast"
 )
 
-// type bpTOMLDecoder interface {
-// 	Decode(data string, v interface{}) error
-// }
-
 type bfEncoder interface {
-	DecodeBundleFile(content []byte) (*bundle.BundleFile, error)
+	DecodeBundleFile(content []byte) (*bundlefile.File, error)
 }
 
 type Fileifier struct {
@@ -48,7 +46,6 @@ func (bp *Fileifier) Fileify(files map[string][]byte) (*bundle.Bundle, error) {
 	}
 
 	for filePath, content := range files {
-
 		switch {
 		case shouldIgnore(b.IgnoreFiles, filePath):
 			continue
@@ -65,10 +62,9 @@ func (bp *Fileifier) Fileify(files map[string][]byte) (*bundle.Bundle, error) {
 			}
 
 		case isBPMFile(filePath):
-
-			bundlefile, err := bp.parseBPMFile(content)
+			bundlefile, err := bp.encoder.DecodeBundleFile(content)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("error occurred while decoding %s content: %v", constant.BundleFileName, err)
 			}
 
 			b.BundleFile = bundlefile
@@ -102,26 +98,13 @@ func (bp *Fileifier) parseRegoFile(fileContent []byte, filePath string) (*ast.Mo
 	return parsed, nil
 }
 
-func (bp *Fileifier) parseBPMLockFile(fileContent []byte) (*bundle.BundleLockFile, error) {
-	var bundlelock bundle.BundleLockFile
+func (bp *Fileifier) parseBPMLockFile(fileContent []byte) (*lockfile.File, error) {
+	var bundlelock lockfile.File
 	// if err := bp.encoder.Decode(string(fileContent), &bundlelock); err != nil {
 	// 	return nil, fmt.Errorf("error parsing bundle.lock content: %v", err)
 	// }
 
 	return &bundlelock, nil
-}
-
-func (bp *Fileifier) parseBPMFile(fileContent []byte) (*bundle.BundleFile, error) {
-	// var bundlefile bundle.BundleFile
-	// if err := bp.encoder.Decode(string(fileContent), &bundlefile); err != nil {
-	// 	return nil, fmt.Errorf("error parsing bundle.toml content: %v", err)
-	// }
-
-	// if err := bp.encoder.Decode(string(fileContent), &bundlefile); err != nil {
-	// 	return nil, fmt.Errorf("error parsing bundle.toml content: %v", err)
-	// }
-
-	return bp.encoder.DecodeBundleFile(fileContent)
 }
 
 func (bp *Fileifier) parseIgnoreFile(fileContent []byte) (map[string]struct{}, error) {

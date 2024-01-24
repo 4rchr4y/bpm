@@ -6,6 +6,7 @@ import (
 	"path"
 
 	"github.com/4rchr4y/bpm/bundle"
+	"github.com/4rchr4y/bpm/bundle/bundlefile"
 	"github.com/4rchr4y/bpm/constant"
 )
 
@@ -18,7 +19,7 @@ type initCmdTOMLEncoder interface {
 }
 
 type initCmdBfEncoder interface {
-	EncodeBundleFile(bundlefile *bundle.BundleFile) []byte
+	EncodeBundleFile(bundlefile *bundlefile.File) []byte
 }
 
 type (
@@ -63,8 +64,8 @@ func runInitCmd(cmd *initCommand, input *InitCmdInput) (*InitCmdResult, error) {
 
 func bundleFileContent(resources *InitCmdResources, repo string, author *bundle.AuthorExpr) []byte {
 	repoName := path.Base(repo)
-	bundlefile := &bundle.BundleFile{
-		Package: &bundle.BundleFilePackage{
+	bundlefile := &bundlefile.File{
+		Package: &bundlefile.PackageDecl{
 			Name:        repoName,
 			Author:      []string{author.String()},
 			Repository:  repo,

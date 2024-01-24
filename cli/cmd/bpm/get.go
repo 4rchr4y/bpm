@@ -31,7 +31,6 @@ func runGetCmd(cmd *cobra.Command, args []string) {
 	bpmClient := manager.NewBpm()
 	osWrap := new(syswrap.OsWrapper)
 	ioWrap := new(syswrap.IoWrapper)
-	// tomlEncoder := encode.NewTomlEncoder()
 
 	bfEncoder := bfencoder.NewEncoder()
 

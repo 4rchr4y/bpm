@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/4rchr4y/bpm/bundle"
+	"github.com/4rchr4y/bpm/bundle/bundlefile"
 )
 
 type installCmdOSWrapper interface {
@@ -29,7 +30,7 @@ type installCmdBundleInstaller interface {
 }
 
 type installCmdBfEncoder interface {
-	EncodeBundleFile(bundlefile *bundle.BundleFile) []byte
+	EncodeBundleFile(bundlefile *bundlefile.File) []byte
 }
 
 type (

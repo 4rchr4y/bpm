@@ -1,7 +1,12 @@
 package main
 
 import (
+	"github.com/4rchr4y/bpm/bfencoder"
 	"github.com/4rchr4y/bpm/cli/require"
+	"github.com/4rchr4y/bpm/fileifier"
+	"github.com/4rchr4y/bpm/loader"
+	"github.com/4rchr4y/bpm/manager"
+	"github.com/4rchr4y/godevkit/syswrap"
 	"github.com/spf13/cobra"
 )
 
@@ -28,30 +33,30 @@ func newCheckCmd(args []string) *cobra.Command {
 }
 
 func runCheckCmd(cmd *cobra.Command, args []string) error {
-	// pathToBundle := args[0]
-	// bpmManager := manager.NewBpm()
-	// osWrap := new(syswrap.OsWrapper)
-	// ioWrap := new(syswrap.IoWrapper)
-	// tomlEncoder := encode.NewTomlEncoder()
+	pathToBundle := args[0]
+	bpmManager := manager.NewBpm()
+	osWrap := new(syswrap.OsWrapper)
+	ioWrap := new(syswrap.IoWrapper)
+	bfEncoder := bfencoder.NewEncoder()
 
-	// fileifier := fileifier.NewFileifier(tomlEncoder)
-	// fileLoader := loader.NewFsLoader(osWrap, ioWrap, fileifier)
+	fileifier := fileifier.NewFileifier(bfEncoder)
+	fileLoader := loader.NewFsLoader(osWrap, ioWrap, fileifier)
 
-	// checkCmd := manager.NewCheckCommand(&manager.CheckCmdResources{
-	// 	FileLoader: fileLoader,
-	// })
+	checkCmd := manager.NewCheckCommand(&manager.CheckCmdResources{
+		FileLoader: fileLoader,
+	})
 
-	// if err := bpmManager.RegisterCommand(
-	// 	checkCmd,
-	// ); err != nil {
-	// 	return err
-	// }
+	if err := bpmManager.RegisterCommand(
+		checkCmd,
+	); err != nil {
+		return err
+	}
 
-	// if _, err := manager.ExecuteCheckCmd(checkCmd, &manager.CheckCmdInput{
-	// 	Path: pathToBundle,
-	// }); err != nil {
-	// 	return err
-	// }
+	if _, err := manager.ExecuteCheckCmd(checkCmd, &manager.CheckCmdInput{
+		Path: pathToBundle,
+	}); err != nil {
+		return err
+	}
 
 	return nil
 }

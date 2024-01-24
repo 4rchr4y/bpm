@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/4rchr4y/bpm/bundle"
+	"github.com/4rchr4y/bpm/bundle/bundlefile"
 	"github.com/4rchr4y/bpm/constant"
 )
 
@@ -21,7 +22,7 @@ type getCmdOSWrapper interface {
 }
 
 type getCmdBfEncoder interface {
-	EncodeBundleFile(bundlefile *bundle.BundleFile) []byte
+	EncodeBundleFile(bundlefile *bundlefile.File) []byte
 }
 
 type getCmdGitLoader interface {
@@ -96,7 +97,7 @@ func runGetCmd(cmd *getCommand, input *GetCmdInput) (*GetCmdResult, error) {
 		return nil, err
 	}
 
-	if err := workingBundle.SetRequirement(result.Bundle); err != nil {
+	if err := workingBundle.Require(result.Bundle); err != nil {
 		return nil, err
 	}
 

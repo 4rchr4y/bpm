@@ -1,5 +1,7 @@
 package bundle
 
+import "github.com/4rchr4y/bpm/bundle/lockfile"
+
 func ValidateBundle(b *Bundle) error {
 	return nil
 }
@@ -11,23 +13,23 @@ func UpdateLockFile(b *Bundle) bool {
 	}
 
 	if b.BundleLockFile == nil {
-		b.BundleLockFile = &BundleLockFile{
+		b.BundleLockFile = &lockfile.File{
 			Version: 1,
-			Modules: make([]*ModuleDef, len(b.RegoFiles)),
+			Modules: make([]*lockfile.ModuleDef, len(b.RegoFiles)),
 		}
 	}
 
 	var i uint
 	for path, file := range b.RegoFiles {
-		b.BundleLockFile.Modules[i] = &ModuleDef{
+		b.BundleLockFile.Modules[i] = &lockfile.ModuleDef{
 			Name:     file.Package(),
 			Source:   path,
 			Checksum: file.Sum(),
-			Require: func() []*Requirement {
-				result := make([]*Requirement, len(file.Parsed.Imports))
+			Require: func() []*lockfile.Requirement {
+				result := make([]*lockfile.Requirement, len(file.Parsed.Imports))
 
 				for i, _import := range file.Parsed.Imports {
-					result[i] = &Requirement{
+					result[i] = &lockfile.Requirement{
 						Package: _import.Path.String(),
 					}
 				}

@@ -3,7 +3,8 @@ package bfencoder
 import (
 	"bytes"
 
-	"github.com/4rchr4y/bpm/bundle"
+	"github.com/4rchr4y/bpm/bundle/bundlefile"
+	"github.com/4rchr4y/bpm/bundle/lockfile"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsimple"
 	"github.com/hashicorp/hcl/v2/hclwrite"
@@ -16,8 +17,8 @@ func NewEncoder() *Encoder {
 	return &Encoder{}
 }
 
-func (e *Encoder) DecodeBundleFile(content []byte) (*bundle.BundleFile, error) {
-	bundlefile := new(bundle.BundleFile)
+func (e *Encoder) DecodeBundleFile(content []byte) (*bundlefile.File, error) {
+	bundlefile := new(bundlefile.File)
 
 	if err := hclsimple.Decode("bundle.hcl", content, nil, bundlefile); err != nil {
 		return nil, err
@@ -26,14 +27,14 @@ func (e *Encoder) DecodeBundleFile(content []byte) (*bundle.BundleFile, error) {
 	return bundlefile, nil
 }
 
-func (e *Encoder) EncodeBundleFile(bundlefile *bundle.BundleFile) []byte {
+func (e *Encoder) EncodeBundleFile(bundlefile *bundlefile.File) []byte {
 	f := hclwrite.NewEmptyFile()
 	gohcl.EncodeIntoBody(bundlefile, f.Body())
 
 	return bytes.TrimSpace(f.Bytes())
 }
 
-func (e *Encoder) EncodeLockFile(lockfile *bundle.BundleLockFile) []byte {
+func (e *Encoder) EncodeLockFile(lockfile *lockfile.File) []byte {
 	f := hclwrite.NewEmptyFile()
 
 	return f.Bytes()

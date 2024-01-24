@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/4rchr4y/bpm/bundle/bundlefile"
+	"github.com/4rchr4y/bpm/bundle/lockfile"
 	"github.com/4rchr4y/bpm/constant"
 	"github.com/go-git/go-git/v5/plumbing/object"
 )
@@ -50,8 +52,8 @@ func (author *AuthorExpr) String() string {
 
 type Bundle struct {
 	Version        *VersionExpr
-	BundleFile     *BundleFile
-	BundleLockFile *BundleLockFile
+	BundleFile     *bundlefile.File
+	BundleLockFile *lockfile.File
 	IgnoreFiles    map[string]struct{}
 	RegoFiles      map[string]*RawRegoFile
 	OtherFiles     map[string][]byte
@@ -60,14 +62,14 @@ type Bundle struct {
 func (b *Bundle) Name() string       { return b.BundleFile.Package.Name }
 func (b *Bundle) Repository() string { return b.BundleFile.Package.Repository }
 
-func (b *Bundle) SetRequirement(requirement *Bundle) error {
+func (b *Bundle) Require(requirement *Bundle) error {
 	if b.BundleFile.Require == nil {
-		b.BundleFile.Require = &RequireDecl{
-			List: make([]*BundleRequirement, 0),
+		b.BundleFile.Require = &bundlefile.RequireDecl{
+			List: make([]*bundlefile.BundleRequirement, 0),
 		}
 	}
 
-	b.BundleFile.Require.List = append(b.BundleFile.Require.List, &BundleRequirement{
+	b.BundleFile.Require.List = append(b.BundleFile.Require.List, &bundlefile.BundleRequirement{
 		Repository: requirement.Repository(),
 		Name:       requirement.Name(),
 		Version:    requirement.Version.String(),

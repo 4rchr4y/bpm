@@ -23,7 +23,7 @@ setup similar to the following:
 foo/
 ├── .bpmignore		# Ignore files for bpm.
 ├── .gitignore		# Ignore for git system.
-└── bundle.toml		# File with bundle information.
+└── bundle.hcl		# File with bundle information.
 
 'bpm init' takes a path for an argument. If directories in the given path
 do not exist, bpm will attempt to create them as it goes. If the given

@@ -31,7 +31,6 @@ func runInstallCmd(cmd *cobra.Command, args []string) {
 	pathToBundle := args[0]
 	bpmManager := manager.NewBpm()
 	osWrap := new(syswrap.OsWrapper)
-	// tomlEncoder := encode.NewTomlEncoder()
 	bfEncoder := bfencoder.NewEncoder()
 
 	fileifier := fileifier.NewFileifier(bfEncoder)

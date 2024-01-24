@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 
 	"github.com/4rchr4y/bpm/bundle"
+	"github.com/4rchr4y/bpm/bundle/bundlefile"
+	"github.com/4rchr4y/bpm/bundle/lockfile"
 	"github.com/4rchr4y/bpm/constant"
 )
 
@@ -16,9 +18,8 @@ type installerOSWrapper interface {
 }
 
 type installerTOMLEncoder interface {
-	// Encode(value interface{}) ([]byte, error)
-	EncodeBundleFile(bundlefile *bundle.BundleFile) []byte
-	EncodeLockFile(lockfile *bundle.BundleLockFile) []byte
+	EncodeBundleFile(bundlefile *bundlefile.File) []byte
+	EncodeLockFile(lockfile *lockfile.File) []byte
 }
 
 type BundleInstaller struct {
@@ -56,7 +57,7 @@ func (cmd *BundleInstaller) Install(input *BundleInstallInput) error {
 	return nil
 }
 
-func (cmd *BundleInstaller) processBundleLockFile(bundleLockFile *bundle.BundleLockFile, bundleVersionDir string) error {
+func (cmd *BundleInstaller) processBundleLockFile(bundleLockFile *lockfile.File, bundleVersionDir string) error {
 	bytes := cmd.encoder.EncodeLockFile(bundleLockFile)
 
 	path := filepath.Join(bundleVersionDir, constant.LockFileName)
@@ -67,7 +68,7 @@ func (cmd *BundleInstaller) processBundleLockFile(bundleLockFile *bundle.BundleL
 	return nil
 }
 
-func (cmd *BundleInstaller) processBundleFile(bundleFile *bundle.BundleFile, bundleVersionDir string) error {
+func (cmd *BundleInstaller) processBundleFile(bundleFile *bundlefile.File, bundleVersionDir string) error {
 	bytes := cmd.encoder.EncodeBundleFile(bundleFile)
 	// if err != nil {
 	// 	return err
