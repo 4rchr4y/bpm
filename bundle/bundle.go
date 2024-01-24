@@ -57,19 +57,21 @@ type Bundle struct {
 	OtherFiles     map[string][]byte
 }
 
-func (b *Bundle) Name() string                               { return b.BundleFile.Package.Name }
-func (b *Bundle) Repository() string                         { return b.BundleFile.Package.Repository }
-func (b *Bundle) Require() map[string]*BundleFileRequirement { return b.BundleFile.Require }
+func (b *Bundle) Name() string       { return b.BundleFile.Package.Name }
+func (b *Bundle) Repository() string { return b.BundleFile.Package.Repository }
 
 func (b *Bundle) SetRequirement(requirement *Bundle) error {
 	if b.BundleFile.Require == nil {
-		b.BundleFile.Require = make(map[string]*BundleFileRequirement)
+		b.BundleFile.Require = &RequireDecl{
+			List: make([]*BundleRequirement, 0),
+		}
 	}
 
-	b.BundleFile.Require[requirement.Name()] = &BundleFileRequirement{
-		Name:    requirement.Name(),
-		Version: requirement.Version.String(),
-	}
+	b.BundleFile.Require.List = append(b.BundleFile.Require.List, &BundleRequirement{
+		Repository: requirement.Repository(),
+		Name:       requirement.Name(),
+		Version:    requirement.Version.String(),
+	})
 
 	return nil
 }

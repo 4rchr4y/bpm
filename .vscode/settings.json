@@ -11,6 +11,8 @@
         "Fileify",
         "gitcli",
         "godevkit",
+        "gohcl",
+        "hclsimple",
         "hclwrite",
         "rchr",
         "rego",

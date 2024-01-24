@@ -3,7 +3,6 @@ package manager
 import (
 	"fmt"
 	"io/fs"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -21,8 +20,8 @@ type getCmdOSWrapper interface {
 	WriteFile(name string, data []byte, perm fs.FileMode) error
 }
 
-type getCmdTOMLEncoder interface {
-	Encode(value interface{}) ([]byte, error)
+type getCmdBfEncoder interface {
+	EncodeBundleFile(bundlefile *bundle.BundleFile) []byte
 }
 
 type getCmdGitLoader interface {
@@ -35,10 +34,10 @@ type getCmdFsLoader interface {
 
 type (
 	GetCmdResources struct {
-		OsWrap      getCmdOSWrapper
-		TomlEncoder getCmdTOMLEncoder
-		GitLoader   getCmdGitLoader
-		FsLoader    getCmdFsLoader
+		OsWrap    getCmdOSWrapper
+		Encoder   getCmdBfEncoder
+		GitLoader getCmdGitLoader
+		FsLoader  getCmdFsLoader
 	}
 
 	GetCmdInput struct {
@@ -71,15 +70,16 @@ func NewGetCommand(resources *GetCmdResources) Commander {
 }
 
 func runGetCmd(cmd *getCommand, input *GetCmdInput) (*GetCmdResult, error) {
+
 	workingBundle, err := cmd.Resources.FsLoader.LoadBundle(input.Dir)
 	if err != nil {
 		return nil, err
 	}
 
-	if _, exist := workingBundle.BundleFile.Require[input.URL]; exist {
-		log.Println("Already installed")
-		return nil, nil
-	}
+	// if _, exist := workingBundle.BundleFile.Require[input.URL]; exist {
+	// 	log.Println("Already installed")
+	// 	return nil, nil
+	// }
 
 	installCmd, err := cmd.Registry.get(InstallCmdName)
 	if err != nil {
@@ -101,10 +101,7 @@ func runGetCmd(cmd *getCommand, input *GetCmdInput) (*GetCmdResult, error) {
 	}
 
 	bundlefilePath := filepath.Join(input.Dir, constant.BundleFileName)
-	bytes, err := cmd.Resources.TomlEncoder.Encode(workingBundle.BundleFile)
-	if err != nil {
-		return nil, err
-	}
+	bytes := cmd.Resources.Encoder.EncodeBundleFile(workingBundle.BundleFile)
 
 	if err := cmd.Resources.OsWrap.WriteFile(bundlefilePath, bytes, 0644); err != nil {
 		return nil, err

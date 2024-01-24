@@ -1,7 +1,11 @@
 package bfencoder
 
 import (
+	"bytes"
+
 	"github.com/4rchr4y/bpm/bundle"
+	"github.com/hashicorp/hcl/v2/gohcl"
+	"github.com/hashicorp/hcl/v2/hclsimple"
 	"github.com/hashicorp/hcl/v2/hclwrite"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -12,25 +16,25 @@ func NewEncoder() *Encoder {
 	return &Encoder{}
 }
 
+func (e *Encoder) DecodeBundleFile(content []byte) (*bundle.BundleFile, error) {
+	bundlefile := new(bundle.BundleFile)
+
+	if err := hclsimple.Decode("bundle.hcl", content, nil, bundlefile); err != nil {
+		return nil, err
+	}
+
+	return bundlefile, nil
+}
+
 func (e *Encoder) EncodeBundleFile(bundlefile *bundle.BundleFile) []byte {
 	f := hclwrite.NewEmptyFile()
-	rootBody := f.Body()
+	gohcl.EncodeIntoBody(bundlefile, f.Body())
 
-	if bundlefile.Package != nil {
-		packageBlock := rootBody.AppendNewBlock("package", nil)
-		packageBody := packageBlock.Body()
-		packageBody.SetAttributeValue("name", cty.StringVal(bundlefile.Package.Name))
-		packageBody.SetAttributeValue("author", cty.ListVal(transformStringList(bundlefile.Package.Author)))
-		packageBody.SetAttributeValue("repository", cty.StringVal(bundlefile.Package.Repository))
-		packageBody.SetAttributeValue("description", cty.StringVal(bundlefile.Package.Description))
-	}
+	return bytes.TrimSpace(f.Bytes())
+}
 
-	for reqKey, reqVal := range bundlefile.Require {
-		requireBlock := rootBody.AppendNewBlock("require", []string{reqKey})
-		requireBody := requireBlock.Body()
-		requireBody.SetAttributeValue("name", cty.StringVal(reqVal.Name))
-		requireBody.SetAttributeValue("version", cty.StringVal(reqVal.Version))
-	}
+func (e *Encoder) EncodeLockFile(lockfile *bundle.BundleLockFile) []byte {
+	f := hclwrite.NewEmptyFile()
 
 	return f.Bytes()
 }

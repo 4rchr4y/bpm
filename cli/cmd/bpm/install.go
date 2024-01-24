@@ -3,9 +3,9 @@ package main
 import (
 	"log"
 
+	"github.com/4rchr4y/bpm/bfencoder"
 	"github.com/4rchr4y/bpm/cli/require"
 	"github.com/4rchr4y/bpm/fileifier"
-	"github.com/4rchr4y/bpm/internal/encode"
 	"github.com/4rchr4y/bpm/loader"
 	"github.com/4rchr4y/bpm/manager"
 	"github.com/4rchr4y/godevkit/syswrap"
@@ -31,16 +31,17 @@ func runInstallCmd(cmd *cobra.Command, args []string) {
 	pathToBundle := args[0]
 	bpmManager := manager.NewBpm()
 	osWrap := new(syswrap.OsWrapper)
-	tomlEncoder := encode.NewTomlEncoder()
+	// tomlEncoder := encode.NewTomlEncoder()
+	bfEncoder := bfencoder.NewEncoder()
 
-	fileifier := fileifier.NewFileifier(tomlEncoder)
+	fileifier := fileifier.NewFileifier(bfEncoder)
 	gitClient := gitcli.NewClient()
 	gitLoader := loader.NewGitLoader(gitClient, fileifier)
 
 	bpmManager.RegisterCommand(
 		manager.NewInstallCommand(&manager.InstallCmdResources{
 			OsWrap:          osWrap,
-			BundleInstaller: manager.NewBundleInstaller(osWrap, tomlEncoder),
+			BundleInstaller: manager.NewBundleInstaller(osWrap, bfEncoder),
 			FileLoader:      gitLoader,
 		}),
 	)

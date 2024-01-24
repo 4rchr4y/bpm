@@ -6,7 +6,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/4rchr4y/godevkit/syswrap"
 	"github.com/pelletier/go-toml/v2"
 )
 
@@ -26,11 +25,11 @@ type TomlEncoder struct {
 	osWrap tomlEncoderOSWrapper
 }
 
-func NewTomlEncoder() *TomlEncoder {
-	return &TomlEncoder{
-		osWrap: new(syswrap.OsWrapper),
-	}
-}
+// func NewTomlEncoder() *TomlEncoder {
+// 	return &TomlEncoder{
+// 		osWrap: new(syswrap.OsWrapper),
+// 	}
+// }
 
 func (ts *TomlEncoder) Encode(value interface{}) ([]byte, error) {
 	return toml.Marshal(value)

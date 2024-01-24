@@ -16,9 +16,9 @@ type installCmdOSWrapper interface {
 	WriteFile(name string, data []byte, perm fs.FileMode) error
 }
 
-type installCmdTOMLEncoder interface {
-	Encode(value interface{}) ([]byte, error)
-}
+// type installCmdTOMLEncoder interface {
+// 	Encode(value interface{}) ([]byte, error)
+// }
 
 type installCmdLoader interface {
 	DownloadBundle(url string, tag string) (*bundle.Bundle, error)
@@ -28,11 +28,16 @@ type installCmdBundleInstaller interface {
 	Install(input *BundleInstallInput) error
 }
 
+type installCmdBfEncoder interface {
+	EncodeBundleFile(bundlefile *bundle.BundleFile) []byte
+}
+
 type (
 	InstallCmdResources struct {
-		OsWrap          installCmdOSWrapper
-		FileLoader      installCmdLoader
-		BundleInstaller installCmdBundleInstaller
+		OsWrap            installCmdOSWrapper
+		FileLoader        installCmdLoader
+		BundleInstaller   installCmdBundleInstaller
+		BundleFileEncoder initCmdBfEncoder
 	}
 
 	InstallCmdInput struct {

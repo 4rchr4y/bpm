@@ -70,7 +70,6 @@ func bundleFileContent(resources *InitCmdResources, repo string, author *bundle.
 			Repository:  repo,
 			Description: fmt.Sprintf("Some description about '%s' bundle.", repoName),
 		},
-		Require: make(map[string]*bundle.BundleFileRequirement),
 	}
 
 	return resources.BundleFileEncoder.EncodeBundleFile(bundlefile)

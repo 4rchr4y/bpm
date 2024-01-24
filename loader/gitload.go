@@ -67,6 +67,10 @@ func (loader *GitLoader) DownloadBundle(url string, tag string) (*bundle.Bundle,
 	}
 
 	b, err := loader.fileifier.Fileify(files)
+	if err != nil {
+		return nil, err
+	}
+
 	b.Version = bundle.NewVersionExpr(commit, tag)
 	b.BundleFile.Package.Repository = url
 

@@ -4,9 +4,9 @@ import (
 	"log"
 	"os"
 
+	"github.com/4rchr4y/bpm/bfencoder"
 	"github.com/4rchr4y/bpm/cli/require"
 	"github.com/4rchr4y/bpm/fileifier"
-	"github.com/4rchr4y/bpm/internal/encode"
 	gitcli "github.com/4rchr4y/bpm/internal/git"
 	"github.com/4rchr4y/bpm/loader"
 	"github.com/4rchr4y/bpm/manager"
@@ -31,24 +31,26 @@ func runGetCmd(cmd *cobra.Command, args []string) {
 	bpmClient := manager.NewBpm()
 	osWrap := new(syswrap.OsWrapper)
 	ioWrap := new(syswrap.IoWrapper)
-	tomlEncoder := encode.NewTomlEncoder()
+	// tomlEncoder := encode.NewTomlEncoder()
 
-	filef := fileifier.NewFileifier(tomlEncoder)
+	bfEncoder := bfencoder.NewEncoder()
+
+	filef := fileifier.NewFileifier(bfEncoder)
 	gitLoader := loader.NewGitLoader(gitcli.NewClient(), filef)
 	fsLoader := loader.NewFsLoader(osWrap, ioWrap, filef)
 
 	bpmClient.RegisterCommand(
 		manager.NewInstallCommand(&manager.InstallCmdResources{
 			OsWrap:          osWrap,
-			BundleInstaller: manager.NewBundleInstaller(osWrap, tomlEncoder),
+			BundleInstaller: manager.NewBundleInstaller(osWrap, bfEncoder),
 			FileLoader:      gitLoader,
 		}),
 
 		manager.NewGetCommand(&manager.GetCmdResources{
-			OsWrap:      osWrap,
-			TomlEncoder: tomlEncoder,
-			GitLoader:   gitLoader,
-			FsLoader:    fsLoader,
+			OsWrap:    osWrap,
+			Encoder:   bfEncoder,
+			GitLoader: gitLoader,
+			FsLoader:  fsLoader,
 		}),
 	)
 

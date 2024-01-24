@@ -16,7 +16,9 @@ type installerOSWrapper interface {
 }
 
 type installerTOMLEncoder interface {
-	Encode(value interface{}) ([]byte, error)
+	// Encode(value interface{}) ([]byte, error)
+	EncodeBundleFile(bundlefile *bundle.BundleFile) []byte
+	EncodeLockFile(lockfile *bundle.BundleLockFile) []byte
 }
 
 type BundleInstaller struct {
@@ -55,10 +57,7 @@ func (cmd *BundleInstaller) Install(input *BundleInstallInput) error {
 }
 
 func (cmd *BundleInstaller) processBundleLockFile(bundleLockFile *bundle.BundleLockFile, bundleVersionDir string) error {
-	bytes, err := cmd.encoder.Encode(bundleLockFile)
-	if err != nil {
-		return err
-	}
+	bytes := cmd.encoder.EncodeLockFile(bundleLockFile)
 
 	path := filepath.Join(bundleVersionDir, constant.LockFileName)
 	if err := cmd.osWrap.WriteFile(path, bytes, 0644); err != nil {
@@ -69,10 +68,10 @@ func (cmd *BundleInstaller) processBundleLockFile(bundleLockFile *bundle.BundleL
 }
 
 func (cmd *BundleInstaller) processBundleFile(bundleFile *bundle.BundleFile, bundleVersionDir string) error {
-	bytes, err := cmd.encoder.Encode(bundleFile)
-	if err != nil {
-		return err
-	}
+	bytes := cmd.encoder.EncodeBundleFile(bundleFile)
+	// if err != nil {
+	// 	return err
+	// }
 
 	path := filepath.Join(bundleVersionDir, constant.BundleFileName)
 	if err := cmd.osWrap.WriteFile(path, bytes, 0644); err != nil {
