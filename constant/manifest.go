@@ -1,5 +1,5 @@
 package constant
 
-const BundleFileName = "bundle.toml"
+const BundleFileName = "bundle.hcl"
 const LockFileName = "bundle.lock"
 const IgnoreFile = ".bpmignore"

@@ -2,12 +2,6 @@ package bundle
 
 import "github.com/4rchr4y/bpm/constant"
 
-// type DependencyDef struct {
-// 	Version string   `toml:"version"`
-// 	Source  string   `toml:"source"`
-// 	Include []string `toml:"include"`
-// }
-
 type Requirement struct {
 	Package    string       `toml:"version" validate:"required"`
 	Version    *VersionExpr `toml:"version" validate:"required"`

@@ -5,9 +5,9 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/4rchr4y/bpm/bfencoder"
 	"github.com/4rchr4y/bpm/bundle"
 	"github.com/4rchr4y/bpm/cli/require"
-	"github.com/4rchr4y/bpm/internal/encode"
 	"github.com/4rchr4y/bpm/manager"
 	"github.com/4rchr4y/godevkit/syswrap"
 	"github.com/spf13/cobra"
@@ -56,12 +56,11 @@ func newInitCmd(args []string) *cobra.Command {
 
 func runInitCmd(cmd *cobra.Command, args []string) error {
 	osWrap := new(syswrap.OsWrapper)
-	tomlEncoder := encode.NewTomlEncoder()
 
 	bpmManager := manager.NewBpm()
 	initCmd := manager.NewInitCommand(&manager.InitCmdResources{
-		OsWrap:      osWrap,
-		TomlEncoder: tomlEncoder,
+		OsWrap:            osWrap,
+		BundleFileEncoder: bfencoder.NewEncoder(),
 	})
 
 	if err := bpmManager.RegisterCommand(

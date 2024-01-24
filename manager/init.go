@@ -17,10 +17,14 @@ type initCmdTOMLEncoder interface {
 	Encode(value interface{}) ([]byte, error)
 }
 
+type initCmdBfEncoder interface {
+	EncodeBundleFile(bundlefile *bundle.BundleFile) []byte
+}
+
 type (
 	InitCmdResources struct {
-		OsWrap      initCmdOSWrapper
-		TomlEncoder initCmdTOMLEncoder
+		OsWrap            initCmdOSWrapper
+		BundleFileEncoder initCmdBfEncoder
 	}
 
 	InitCmdInput struct {
@@ -42,15 +46,9 @@ func NewInitCommand(resources *InitCmdResources) Commander {
 }
 
 func runInitCmd(cmd *initCommand, input *InitCmdInput) (*InitCmdResult, error) {
-	bundlefileContent, err := bundleFileContent(cmd.Resources, input.Name, input.Author)
-	if err != nil {
-		// TODO: write more descriptive error
-		return nil, err
-	}
-
 	files := map[string][]byte{
 		".gitignore":            gitignoreFileContent(),
-		constant.BundleFileName: bundlefileContent,
+		constant.BundleFileName: bundleFileContent(cmd.Resources, input.Name, input.Author),
 		constant.IgnoreFile:     bpmignoreFileContent(),
 	}
 
@@ -63,7 +61,7 @@ func runInitCmd(cmd *initCommand, input *InitCmdInput) (*InitCmdResult, error) {
 	return nil, nil
 }
 
-func bundleFileContent(resources *InitCmdResources, repo string, author *bundle.AuthorExpr) ([]byte, error) {
+func bundleFileContent(resources *InitCmdResources, repo string, author *bundle.AuthorExpr) []byte {
 	repoName := path.Base(repo)
 	bundlefile := &bundle.BundleFile{
 		Package: &bundle.BundleFilePackage{
@@ -75,12 +73,7 @@ func bundleFileContent(resources *InitCmdResources, repo string, author *bundle.
 		Require: make(map[string]*bundle.BundleFileRequirement),
 	}
 
-	bytes, err := resources.TomlEncoder.Encode(bundlefile)
-	if err != nil {
-		return nil, err
-	}
-
-	return bytes, nil
+	return resources.BundleFileEncoder.EncodeBundleFile(bundlefile)
 }
 
 func gitignoreFileContent() []byte {
