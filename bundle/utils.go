@@ -2,10 +2,6 @@ package bundle
 
 import "github.com/4rchr4y/bpm/bundle/lockfile"
 
-func ValidateBundle(b *Bundle) error {
-	return nil
-}
-
 func UpdateLockFile(b *Bundle) bool {
 	if len(b.RegoFiles) < 1 {
 		// no rego files, then nothing to update

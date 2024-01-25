@@ -42,10 +42,6 @@ func runCheckCmd(cmd *checkCommand, input *CheckCmdInput) (*CheckCmdResult, erro
 		return nil, err
 	}
 
-	if err := bundle.ValidateBundle(b); err != nil {
-		return nil, err
-	}
-
 	return &CheckCmdResult{
 		Bundle: b,
 	}, nil
