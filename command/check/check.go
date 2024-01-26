@@ -1,8 +1,9 @@
-package main
+package check
 
 import (
 	"github.com/4rchr4y/bpm/bfencoder"
 	"github.com/4rchr4y/bpm/cli/require"
+	"github.com/4rchr4y/bpm/command/factory"
 	"github.com/4rchr4y/bpm/fileifier"
 	"github.com/4rchr4y/bpm/loader"
 	"github.com/4rchr4y/bpm/manager"
@@ -10,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newCheckCmd(args []string) *cobra.Command {
+func NewCmdCheck(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "check PATH",
 		Aliases: []string{"validate"},

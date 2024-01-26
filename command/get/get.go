@@ -1,4 +1,4 @@
-package main
+package get
 
 import (
 	"log"
@@ -6,15 +6,17 @@ import (
 
 	"github.com/4rchr4y/bpm/bfencoder"
 	"github.com/4rchr4y/bpm/cli/require"
+	"github.com/4rchr4y/bpm/command/factory"
 	"github.com/4rchr4y/bpm/fileifier"
-	gitcli "github.com/4rchr4y/bpm/internal/git"
 	"github.com/4rchr4y/bpm/loader"
 	"github.com/4rchr4y/bpm/manager"
 	"github.com/4rchr4y/godevkit/syswrap"
 	"github.com/spf13/cobra"
+
+	gitcli "github.com/4rchr4y/bpm/internal/git"
 )
 
-func newGetCmd(args []string) *cobra.Command {
+func NewCmdGet(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "get",
 		Short: "Get a new dependency",

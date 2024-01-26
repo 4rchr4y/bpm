@@ -1,10 +1,11 @@
-package main
+package install
 
 import (
 	"log"
 
 	"github.com/4rchr4y/bpm/bfencoder"
 	"github.com/4rchr4y/bpm/cli/require"
+	"github.com/4rchr4y/bpm/command/factory"
 	"github.com/4rchr4y/bpm/fileifier"
 	"github.com/4rchr4y/bpm/loader"
 	"github.com/4rchr4y/bpm/manager"
@@ -14,9 +15,9 @@ import (
 	gitcli "github.com/4rchr4y/bpm/internal/git"
 )
 
-func newInstallCmd(args []string) *cobra.Command {
+func NewCmdInstall(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "install [REPOSITORY]",
+		Use:     "install REPOSITORY",
 		Aliases: []string{"i"},
 		Args:    require.ExactArgs(1),
 		Short:   "Install a package from the specified repository",

@@ -1,4 +1,4 @@
-package main
+package init
 
 import (
 	"fmt"
@@ -8,12 +8,13 @@ import (
 	"github.com/4rchr4y/bpm/bfencoder"
 	"github.com/4rchr4y/bpm/bundle"
 	"github.com/4rchr4y/bpm/cli/require"
+	"github.com/4rchr4y/bpm/command/factory"
 	"github.com/4rchr4y/bpm/manager"
 	"github.com/4rchr4y/godevkit/syswrap"
 	"github.com/spf13/cobra"
 )
 
-const initCmdDesc = `
+const cmdInitDesc = `
 The 'bpm init' command is designed to generate a new bundle directory 
 structure, complete with standard files typical for a bundle.
 
@@ -31,7 +32,7 @@ destination exists and there are files in that directory, conflicting files
 will be overwritten, but other files will be left alone.
 `
 
-func newInitCmd(args []string) *cobra.Command {
+func NewCmdInit(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "init NAME",
 		Aliases: []string{"new", "create"},
@@ -46,8 +47,8 @@ func newInitCmd(args []string) *cobra.Command {
 			// No more completions, so disable file completion
 			return nil, cobra.ShellCompDirectiveNoFileComp
 		},
-		Short: "Init a new bundle with.",
-		Long:  initCmdDesc,
+		Short: "Init a new bundle.",
+		Long:  cmdInitDesc,
 		RunE:  runInitCmd,
 	}
 
