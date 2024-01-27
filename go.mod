@@ -7,7 +7,6 @@ require (
 	github.com/go-git/go-git/v5 v5.11.0
 	github.com/hashicorp/hcl/v2 v2.19.1
 	github.com/open-policy-agent/opa v0.60.0
-	github.com/pelletier/go-toml/v2 v2.1.1
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.8.4
 	github.com/zclconf/go-cty v1.14.2
