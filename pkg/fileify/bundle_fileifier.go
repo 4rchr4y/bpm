@@ -11,11 +11,13 @@ import (
 	"github.com/4rchr4y/bpm/pkg/bundle"
 	"github.com/4rchr4y/bpm/pkg/bundle/bundlefile"
 	"github.com/4rchr4y/bpm/pkg/bundle/lockfile"
+	"github.com/4rchr4y/bpm/pkg/bundle/regofile"
 	"github.com/open-policy-agent/opa/ast"
 )
 
 type bfEncoder interface {
 	DecodeBundleFile(content []byte) (*bundlefile.File, error)
+	DecodeLockFile(content []byte) (*lockfile.File, error)
 }
 
 type Fileifier struct {
@@ -30,7 +32,7 @@ func NewFileifier(decoder bfEncoder) *Fileifier {
 
 func (bp *Fileifier) Fileify(files map[string][]byte) (*bundle.Bundle, error) {
 	b := &bundle.Bundle{
-		RegoFiles:  make(map[string]*bundle.RegoFile),
+		RegoFiles:  make(map[string]*regofile.File),
 		OtherFiles: make(map[string][]byte),
 	}
 
@@ -55,7 +57,7 @@ func (bp *Fileifier) Fileify(files map[string][]byte) (*bundle.Bundle, error) {
 				return nil, err
 			}
 
-			b.RegoFiles[filePath] = &bundle.RegoFile{
+			b.RegoFiles[filePath] = &regofile.File{
 				Path:   filePath,
 				Parsed: parsed,
 			}
@@ -69,12 +71,12 @@ func (bp *Fileifier) Fileify(files map[string][]byte) (*bundle.Bundle, error) {
 			b.BundleFile = bundlefile
 
 		case isBPMLockFile(filePath):
-			bundlelock, err := bp.parseBPMLockFile(content)
+			lockfile, err := bp.encoder.DecodeLockFile(content)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("error occurred while decoding %s content: %v", constant.BundleFileName, err)
 			}
 
-			b.BundleLockFile = bundlelock
+			b.BundleLockFile = lockfile
 
 		default:
 			if isEmpty(ignoreFileContent) {

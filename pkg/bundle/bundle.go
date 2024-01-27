@@ -7,6 +7,7 @@ import (
 	"github.com/4rchr4y/bpm/constant"
 	"github.com/4rchr4y/bpm/pkg/bundle/bundlefile"
 	"github.com/4rchr4y/bpm/pkg/bundle/lockfile"
+	"github.com/4rchr4y/bpm/pkg/bundle/regofile"
 	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
@@ -55,7 +56,7 @@ type Bundle struct {
 	BundleFile     *bundlefile.File
 	BundleLockFile *lockfile.File
 	IgnoreFiles    map[string]struct{}
-	RegoFiles      map[string]*RegoFile
+	RegoFiles      map[string]*regofile.File
 	OtherFiles     map[string][]byte
 }
 

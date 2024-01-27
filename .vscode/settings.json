@@ -21,6 +21,7 @@
         "osload",
         "rchr",
         "rego",
+        "regofile",
         "subregistry",
         "syswrap"
     ]

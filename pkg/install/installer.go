@@ -10,6 +10,7 @@ import (
 	"github.com/4rchr4y/bpm/pkg/bundle"
 	"github.com/4rchr4y/bpm/pkg/bundle/bundlefile"
 	"github.com/4rchr4y/bpm/pkg/bundle/lockfile"
+	"github.com/4rchr4y/bpm/pkg/bundle/regofile"
 )
 
 type osWrapper interface {
@@ -80,7 +81,7 @@ func (cmd *BundleInstaller) processBundleFile(bundleFile *bundlefile.File, bundl
 	return nil
 }
 
-func (cmd *BundleInstaller) processRegoFiles(files map[string]*bundle.RegoFile, bundleVersionDir string) error {
+func (cmd *BundleInstaller) processRegoFiles(files map[string]*regofile.File, bundleVersionDir string) error {
 	for filePath, file := range files {
 		pathToSave := filepath.Join(bundleVersionDir, filePath)
 		dirToSave := filepath.Dir(pathToSave)

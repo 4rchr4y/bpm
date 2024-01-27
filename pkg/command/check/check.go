@@ -2,8 +2,11 @@ package check
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/4rchr4y/bpm/cli/require"
+	"github.com/4rchr4y/bpm/constant"
 	"github.com/4rchr4y/bpm/pkg/command/factory"
 	"github.com/4rchr4y/bpm/pkg/encode"
 	"github.com/4rchr4y/bpm/pkg/fileify"
@@ -53,8 +56,16 @@ func checkRun(opts *checkOptions) error {
 		return fmt.Errorf("failed to load '%s' bundle: %v", opts.Path, err)
 	}
 
-	for n := range b.RegoFiles {
-		fmt.Println(n)
+	fmt.Println(b.BundleLockFile.Sum)
+
+	for _, file := range b.RegoFiles {
+		b.BundleLockFile.SetModule(file)
+	}
+
+	content := opts.Encoder.EncodeLockFile(b.BundleLockFile)
+
+	if err := os.WriteFile(filepath.Join(opts.Path, constant.LockFileName), []byte(content), 0644); err != nil {
+		return fmt.Errorf("failed to write file '%s': %v", "fileName", err)
 	}
 
 	fmt.Println(b.Name(), "OK")
