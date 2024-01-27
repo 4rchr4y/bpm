@@ -5,10 +5,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/4rchr4y/bpm/bfencoder"
 	"github.com/4rchr4y/bpm/cli/require"
 	"github.com/4rchr4y/bpm/command/factory"
 	"github.com/4rchr4y/bpm/constant"
+	"github.com/4rchr4y/bpm/pkg/encode"
 	"github.com/4rchr4y/bpm/pkg/install"
 	"github.com/4rchr4y/bpm/pkg/load/gitload"
 	"github.com/4rchr4y/bpm/pkg/load/osload"
@@ -55,7 +55,7 @@ type getOptions struct {
 	GitLoader *gitload.GitLoader                                     // bundle file loader from the git repo
 	OsLoader  *osload.OsLoader                                       // bundle file loader from file system
 	Installer *install.BundleInstaller                               // bundle installer into the file system
-	Encoder   *bfencoder.Encoder                                     // decoder of bundle component files
+	Encoder   *encode.BundleEncoder                                  // decoder of bundle component files
 	WriteFile func(name string, data []byte, perm fs.FileMode) error // func of saving a file to disk
 }
 

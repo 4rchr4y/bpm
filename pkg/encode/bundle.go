@@ -1,4 +1,4 @@
-package bfencoder
+package encode
 
 import (
 	"bytes"
@@ -11,13 +11,13 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-type Encoder struct{}
+type BundleEncoder struct{}
 
-func NewEncoder() *Encoder {
-	return &Encoder{}
+func NewBundleEncoder() *BundleEncoder {
+	return &BundleEncoder{}
 }
 
-func (e *Encoder) DecodeBundleFile(content []byte) (*bundlefile.File, error) {
+func (e *BundleEncoder) DecodeBundleFile(content []byte) (*bundlefile.File, error) {
 	bundlefile := new(bundlefile.File)
 
 	if err := hclsimple.Decode("bundle.hcl", content, nil, bundlefile); err != nil {
@@ -27,14 +27,14 @@ func (e *Encoder) DecodeBundleFile(content []byte) (*bundlefile.File, error) {
 	return bundlefile, nil
 }
 
-func (e *Encoder) EncodeBundleFile(bundlefile *bundlefile.File) []byte {
+func (e *BundleEncoder) EncodeBundleFile(bundlefile *bundlefile.File) []byte {
 	f := hclwrite.NewEmptyFile()
 	gohcl.EncodeIntoBody(bundlefile, f.Body())
 
 	return bytes.TrimSpace(f.Bytes())
 }
 
-func (e *Encoder) EncodeLockFile(lockfile *lockfile.File) []byte {
+func (e *BundleEncoder) EncodeLockFile(lockfile *lockfile.File) []byte {
 	f := hclwrite.NewEmptyFile()
 
 	return f.Bytes()

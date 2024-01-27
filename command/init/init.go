@@ -7,12 +7,12 @@ import (
 	"path"
 	"strings"
 
-	"github.com/4rchr4y/bpm/bfencoder"
 	"github.com/4rchr4y/bpm/bundle"
 	"github.com/4rchr4y/bpm/bundle/bundlefile"
 	"github.com/4rchr4y/bpm/cli/require"
 	"github.com/4rchr4y/bpm/command/factory"
 	"github.com/4rchr4y/bpm/constant"
+	"github.com/4rchr4y/bpm/pkg/encode"
 	"github.com/spf13/cobra"
 )
 
@@ -79,7 +79,7 @@ func NewCmdInit(f *factory.Factory) *cobra.Command {
 type initOptions struct {
 	Repository string                                                 // repo to which the bundle will belong
 	Author     *bundle.AuthorExpr                                     // git information about the author
-	Encoder    *bfencoder.Encoder                                     // decoder of bundle component files
+	Encoder    *encode.BundleEncoder                                  // decoder of bundle component files
 	WriteFile  func(name string, data []byte, perm fs.FileMode) error // func of saving a file to disk
 }
 
@@ -108,7 +108,7 @@ func getGitUserInfo(target string) (string, error) {
 	return strings.TrimSpace(string(output)), nil
 }
 
-func bundleFileContent(encoder *bfencoder.Encoder, repo string, author *bundle.AuthorExpr) []byte {
+func bundleFileContent(encoder *encode.BundleEncoder, repo string, author *bundle.AuthorExpr) []byte {
 	repoName := path.Base(repo)
 	bundlefile := &bundlefile.File{
 		Package: &bundlefile.PackageDecl{

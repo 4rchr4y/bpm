@@ -1,8 +1,8 @@
 package factory
 
 import (
-	"github.com/4rchr4y/bpm/bfencoder"
 	"github.com/4rchr4y/bpm/fileifier"
+	"github.com/4rchr4y/bpm/pkg/encode"
 	"github.com/4rchr4y/bpm/pkg/install"
 	"github.com/4rchr4y/bpm/pkg/load/gitload"
 	"github.com/4rchr4y/bpm/pkg/load/osload"
@@ -13,7 +13,7 @@ type Factory struct {
 	Name    string // executable name
 	Version string // app version
 
-	Encoder   *bfencoder.Encoder       // decoder of bundle component files
+	Encoder   *encode.BundleEncoder    // decoder of bundle component files
 	Fileifier *fileifier.Fileifier     // transformer of file contents into structures
 	OsLoader  *osload.OsLoader         // bundle file loader from file system
 	GitLoader *gitload.GitLoader       // bundle file loader from the git repo
