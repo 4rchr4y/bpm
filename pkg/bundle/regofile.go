@@ -7,17 +7,17 @@ import (
 	"github.com/open-policy-agent/opa/ast"
 )
 
-type RawRegoFile struct {
+type RegoFile struct {
 	Path   string
 	Raw    []byte
 	Parsed *ast.Module
 }
 
-func (rrf *RawRegoFile) Package() string {
-	return rrf.Parsed.Package.Path.String()
+func (rf *RegoFile) Package() string {
+	return rf.Parsed.Package.Path.String()
 }
 
-func (rrf *RawRegoFile) Sum() string {
-	hash := md5.Sum([]byte(rrf.Parsed.String()))
+func (rf *RegoFile) Sum() string {
+	hash := md5.Sum([]byte(rf.Parsed.String()))
 	return hex.EncodeToString(hash[:])
 }

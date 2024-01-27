@@ -53,6 +53,10 @@ func checkRun(opts *checkOptions) error {
 		return fmt.Errorf("failed to load '%s' bundle: %v", opts.Path, err)
 	}
 
+	for n := range b.RegoFiles {
+		fmt.Println(n)
+	}
+
 	fmt.Println(b.Name(), "OK")
 	return nil
 }

@@ -1,16 +1,17 @@
 package init
 
 import (
+	"bytes"
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"io/fs"
 	"os/exec"
-	"path"
 	"strings"
 
 	"github.com/4rchr4y/bpm/cli/require"
 	"github.com/4rchr4y/bpm/constant"
 	"github.com/4rchr4y/bpm/pkg/bundle"
-	"github.com/4rchr4y/bpm/pkg/bundle/bundlefile"
 	"github.com/4rchr4y/bpm/pkg/command/factory"
 	"github.com/4rchr4y/bpm/pkg/encode"
 	"github.com/spf13/cobra"
@@ -84,10 +85,15 @@ type initOptions struct {
 }
 
 func initRun(opts *initOptions) error {
+	bundlefileContent := bundleFileContent(opts.Encoder, opts.Repository, opts.Author)
+	bundlefileHash := md5.Sum(bytes.TrimSpace(bundlefileContent))
+	lockfileContent := lockfileContent(opts.Encoder, hex.EncodeToString(bundlefileHash[:]), "2024")
+
 	files := map[string][]byte{
 		".gitignore":            gitignoreFileContent(),
-		constant.BundleFileName: bundleFileContent(opts.Encoder, opts.Repository, opts.Author),
-		constant.IgnoreFile:     bpmignoreFileContent(),
+		constant.BundleFileName: bundlefileContent,
+		constant.LockFileName:   lockfileContent,
+		constant.IgnoreFileName: bpmignoreFileContent(),
 	}
 
 	for fileName, content := range files {
@@ -106,26 +112,4 @@ func getGitUserInfo(target string) (string, error) {
 		return "", err
 	}
 	return strings.TrimSpace(string(output)), nil
-}
-
-func bundleFileContent(encoder *encode.BundleEncoder, repo string, author *bundle.AuthorExpr) []byte {
-	repoName := path.Base(repo)
-	bundlefile := &bundlefile.File{
-		Package: &bundlefile.PackageDecl{
-			Name:        repoName,
-			Author:      []string{author.String()},
-			Repository:  repo,
-			Description: fmt.Sprintf("Some description about '%s' bundle.", repoName),
-		},
-	}
-
-	return encoder.EncodeBundleFile(bundlefile)
-}
-
-func gitignoreFileContent() []byte {
-	return []byte(`bundle.lock`)
-}
-
-func bpmignoreFileContent() []byte {
-	return []byte(`.git`)
 }

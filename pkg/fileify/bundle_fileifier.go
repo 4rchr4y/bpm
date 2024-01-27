@@ -30,11 +30,11 @@ func NewFileifier(decoder bfEncoder) *Fileifier {
 
 func (bp *Fileifier) Fileify(files map[string][]byte) (*bundle.Bundle, error) {
 	b := &bundle.Bundle{
-		RegoFiles:  make(map[string]*bundle.RawRegoFile),
+		RegoFiles:  make(map[string]*bundle.RegoFile),
 		OtherFiles: make(map[string][]byte),
 	}
 
-	ignoreFileContent, exist := files[constant.IgnoreFile]
+	ignoreFileContent, exist := files[constant.IgnoreFileName]
 	if exist && !isEmpty(ignoreFileContent) {
 		ignoreList, err := bp.parseIgnoreFile(ignoreFileContent)
 		if err != nil {
@@ -55,7 +55,7 @@ func (bp *Fileifier) Fileify(files map[string][]byte) (*bundle.Bundle, error) {
 				return nil, err
 			}
 
-			b.RegoFiles[filePath] = &bundle.RawRegoFile{
+			b.RegoFiles[filePath] = &bundle.RegoFile{
 				Path:   filePath,
 				Parsed: parsed,
 			}
@@ -113,7 +113,7 @@ func (bp *Fileifier) parseIgnoreFile(fileContent []byte) (map[string]struct{}, e
 	}
 
 	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("error reading '%s' input: %v", constant.IgnoreFile, err)
+		return nil, fmt.Errorf("error reading '%s' input: %v", constant.IgnoreFileName, err)
 	}
 
 	return result, nil

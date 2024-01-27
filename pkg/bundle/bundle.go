@@ -55,21 +55,21 @@ type Bundle struct {
 	BundleFile     *bundlefile.File
 	BundleLockFile *lockfile.File
 	IgnoreFiles    map[string]struct{}
-	RegoFiles      map[string]*RawRegoFile
+	RegoFiles      map[string]*RegoFile
 	OtherFiles     map[string][]byte
 }
 
 func (b *Bundle) Name() string       { return b.BundleFile.Package.Name }
 func (b *Bundle) Repository() string { return b.BundleFile.Package.Repository }
 
-func (b *Bundle) Require(requirement *Bundle) error {
+func (b *Bundle) SetRequire(requirement *Bundle) error {
 	if b.BundleFile.Require == nil {
 		b.BundleFile.Require = &bundlefile.RequireDecl{
-			List: make([]*bundlefile.BundleRequirement, 0),
+			List: make([]*bundlefile.RequirementDecl, 0),
 		}
 	}
 
-	b.BundleFile.Require.List = append(b.BundleFile.Require.List, &bundlefile.BundleRequirement{
+	b.BundleFile.Require.List = append(b.BundleFile.Require.List, &bundlefile.RequirementDecl{
 		Repository: requirement.Repository(),
 		Name:       requirement.Name(),
 		Version:    requirement.Version.String(),

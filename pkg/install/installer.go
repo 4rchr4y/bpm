@@ -80,7 +80,7 @@ func (cmd *BundleInstaller) processBundleFile(bundleFile *bundlefile.File, bundl
 	return nil
 }
 
-func (cmd *BundleInstaller) processRegoFiles(files map[string]*bundle.RawRegoFile, bundleVersionDir string) error {
+func (cmd *BundleInstaller) processRegoFiles(files map[string]*bundle.RegoFile, bundleVersionDir string) error {
 	for filePath, file := range files {
 		pathToSave := filepath.Join(bundleVersionDir, filePath)
 		dirToSave := filepath.Dir(pathToSave)

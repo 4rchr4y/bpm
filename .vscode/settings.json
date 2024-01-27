@@ -15,6 +15,7 @@
         "godevkit",
         "gohcl",
         "hclsimple",
+        "hclsyntax",
         "hclwrite",
         "iostream",
         "osload",

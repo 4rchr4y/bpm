@@ -74,7 +74,7 @@ func getRun(opts *getOptions) error {
 		return err
 	}
 
-	if err := workingBundle.Require(b); err != nil {
+	if err := workingBundle.SetRequire(b); err != nil {
 		return err
 	}
 
