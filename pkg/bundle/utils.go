@@ -1,6 +1,6 @@
 package bundle
 
-import "github.com/4rchr4y/bpm/bundle/lockfile"
+import "github.com/4rchr4y/bpm/pkg/bundle/lockfile"
 
 func UpdateLockFile(b *Bundle) bool {
 	if len(b.RegoFiles) < 1 {

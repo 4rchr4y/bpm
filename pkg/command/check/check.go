@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/4rchr4y/bpm/cli/require"
-	"github.com/4rchr4y/bpm/command/factory"
-	"github.com/4rchr4y/bpm/fileifier"
+	"github.com/4rchr4y/bpm/pkg/command/factory"
 	"github.com/4rchr4y/bpm/pkg/encode"
+	"github.com/4rchr4y/bpm/pkg/fileify"
 	"github.com/4rchr4y/bpm/pkg/load/osload"
 	"github.com/spf13/cobra"
 )
@@ -43,7 +43,7 @@ func NewCmdCheck(f *factory.Factory) *cobra.Command {
 type checkOptions struct {
 	Path      string                // path to the bundle that needs to be checked
 	Encoder   *encode.BundleEncoder // decoder of bundle component files
-	Fileifier *fileifier.Fileifier  // transformer of file contents into structures
+	Fileifier *fileify.Fileifier    // transformer of file contents into structures
 	OsLoader  *osload.OsLoader      // bundle file loader from file system
 }
 

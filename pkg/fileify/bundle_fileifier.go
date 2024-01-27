@@ -1,4 +1,4 @@
-package fileifier
+package fileify
 
 import (
 	"bufio"
@@ -7,11 +7,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/4rchr4y/bpm/bundle"
-	"github.com/4rchr4y/bpm/bundle/bundlefile"
-	"github.com/4rchr4y/bpm/bundle/lockfile"
 	"github.com/4rchr4y/bpm/constant"
-
+	"github.com/4rchr4y/bpm/pkg/bundle"
+	"github.com/4rchr4y/bpm/pkg/bundle/bundlefile"
+	"github.com/4rchr4y/bpm/pkg/bundle/lockfile"
 	"github.com/open-policy-agent/opa/ast"
 )
 
@@ -100,9 +99,6 @@ func (bp *Fileifier) parseRegoFile(fileContent []byte, filePath string) (*ast.Mo
 
 func (bp *Fileifier) parseBPMLockFile(fileContent []byte) (*lockfile.File, error) {
 	var bundlelock lockfile.File
-	// if err := bp.encoder.Decode(string(fileContent), &bundlelock); err != nil {
-	// 	return nil, fmt.Errorf("error parsing bundle.lock content: %v", err)
-	// }
 
 	return &bundlelock, nil
 }

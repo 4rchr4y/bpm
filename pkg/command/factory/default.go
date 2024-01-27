@@ -1,8 +1,8 @@
 package factory
 
 import (
-	"github.com/4rchr4y/bpm/fileifier"
 	"github.com/4rchr4y/bpm/pkg/encode"
+	"github.com/4rchr4y/bpm/pkg/fileify"
 	"github.com/4rchr4y/bpm/pkg/install"
 	"github.com/4rchr4y/bpm/pkg/load/gitload"
 	"github.com/4rchr4y/bpm/pkg/load/osload"
@@ -15,7 +15,7 @@ func New(version string) *Factory {
 	osWrap := new(syswrap.OsWrapper)
 	ioWrap := new(syswrap.IoWrapper)
 	encoder := encode.NewBundleEncoder()
-	fileifier := fileifier.NewFileifier(encoder)
+	fileifier := fileify.NewFileifier(encoder)
 
 	f := &Factory{
 		Name:      "bpm",

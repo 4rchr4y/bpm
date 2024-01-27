@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/4rchr4y/bpm/bundle/bundlefile"
-	"github.com/4rchr4y/bpm/bundle/lockfile"
 	"github.com/4rchr4y/bpm/constant"
+	"github.com/4rchr4y/bpm/pkg/bundle/bundlefile"
+	"github.com/4rchr4y/bpm/pkg/bundle/lockfile"
 	"github.com/go-git/go-git/v5/plumbing/object"
 )
 

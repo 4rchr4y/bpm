@@ -1,8 +1,8 @@
 package factory
 
 import (
-	"github.com/4rchr4y/bpm/fileifier"
 	"github.com/4rchr4y/bpm/pkg/encode"
+	"github.com/4rchr4y/bpm/pkg/fileify"
 	"github.com/4rchr4y/bpm/pkg/install"
 	"github.com/4rchr4y/bpm/pkg/load/gitload"
 	"github.com/4rchr4y/bpm/pkg/load/osload"
@@ -14,7 +14,7 @@ type Factory struct {
 	Version string // app version
 
 	Encoder   *encode.BundleEncoder    // decoder of bundle component files
-	Fileifier *fileifier.Fileifier     // transformer of file contents into structures
+	Fileifier *fileify.Fileifier       // transformer of file contents into structures
 	OsLoader  *osload.OsLoader         // bundle file loader from file system
 	GitLoader *gitload.GitLoader       // bundle file loader from the git repo
 	Installer *install.BundleInstaller // bundle installer into the file system

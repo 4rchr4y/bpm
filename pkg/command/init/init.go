@@ -7,11 +7,11 @@ import (
 	"path"
 	"strings"
 
-	"github.com/4rchr4y/bpm/bundle"
-	"github.com/4rchr4y/bpm/bundle/bundlefile"
 	"github.com/4rchr4y/bpm/cli/require"
-	"github.com/4rchr4y/bpm/command/factory"
 	"github.com/4rchr4y/bpm/constant"
+	"github.com/4rchr4y/bpm/pkg/bundle"
+	"github.com/4rchr4y/bpm/pkg/bundle/bundlefile"
+	"github.com/4rchr4y/bpm/pkg/command/factory"
 	"github.com/4rchr4y/bpm/pkg/encode"
 	"github.com/spf13/cobra"
 )

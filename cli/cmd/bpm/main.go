@@ -5,9 +5,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/4rchr4y/bpm/command/factory"
-	"github.com/4rchr4y/bpm/command/root"
 	"github.com/4rchr4y/bpm/internal/build"
+	"github.com/4rchr4y/bpm/pkg/command/factory"
+	"github.com/4rchr4y/bpm/pkg/command/root"
 )
 
 type exitCode = int

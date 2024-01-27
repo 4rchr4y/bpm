@@ -1,14 +1,14 @@
 package root
 
 import (
-	"github.com/4rchr4y/bpm/command/factory"
+	"github.com/4rchr4y/bpm/pkg/command/factory"
 	"github.com/spf13/cobra"
 
-	cmdCheck "github.com/4rchr4y/bpm/command/check"
-	cmdGet "github.com/4rchr4y/bpm/command/get"
-	cmdInit "github.com/4rchr4y/bpm/command/init"
-	cmdInstall "github.com/4rchr4y/bpm/command/install"
-	cmdVersion "github.com/4rchr4y/bpm/command/version"
+	cmdCheck "github.com/4rchr4y/bpm/pkg/command/check"
+	cmdGet "github.com/4rchr4y/bpm/pkg/command/get"
+	cmdInit "github.com/4rchr4y/bpm/pkg/command/init"
+	cmdInstall "github.com/4rchr4y/bpm/pkg/command/install"
+	cmdVersion "github.com/4rchr4y/bpm/pkg/command/version"
 )
 
 func NewCmdRoot(f *factory.Factory, version string) (*cobra.Command, error) {

@@ -2,7 +2,7 @@ package install
 
 import (
 	"github.com/4rchr4y/bpm/cli/require"
-	"github.com/4rchr4y/bpm/command/factory"
+	"github.com/4rchr4y/bpm/pkg/command/factory"
 	"github.com/4rchr4y/bpm/pkg/install"
 	"github.com/4rchr4y/bpm/pkg/load/gitload"
 	"github.com/spf13/cobra"

@@ -8,8 +8,8 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/storage/memory"
 
-	"github.com/4rchr4y/bpm/bundle"
 	gitcli "github.com/4rchr4y/bpm/internal/git"
+	"github.com/4rchr4y/bpm/pkg/bundle"
 )
 
 type bundleFileifier interface {

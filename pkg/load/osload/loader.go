@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/4rchr4y/bpm/bundle"
 	"github.com/4rchr4y/bpm/constant"
+	"github.com/4rchr4y/bpm/pkg/bundle"
 )
 
 type osWrapper interface {
