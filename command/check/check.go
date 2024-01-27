@@ -1,13 +1,13 @@
 package check
 
 import (
+	"fmt"
+
 	"github.com/4rchr4y/bpm/bfencoder"
 	"github.com/4rchr4y/bpm/cli/require"
 	"github.com/4rchr4y/bpm/command/factory"
 	"github.com/4rchr4y/bpm/fileifier"
-	"github.com/4rchr4y/bpm/loader"
-	"github.com/4rchr4y/bpm/manager"
-	"github.com/4rchr4y/godevkit/syswrap"
+	"github.com/4rchr4y/bpm/pkg/load/osload"
 	"github.com/spf13/cobra"
 )
 
@@ -27,37 +27,32 @@ func NewCmdCheck(f *factory.Factory) *cobra.Command {
 			return nil, cobra.ShellCompDirectiveNoFileComp
 		},
 		Short: "Check the validity of the bundle using the specified path",
-		RunE:  runCheckCmd,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return checkRun(&checkOptions{
+				Path:      args[0],
+				Encoder:   f.Encoder,
+				Fileifier: f.Fileifier,
+				OsLoader:  f.OsLoader,
+			})
+		},
 	}
 
 	return cmd
 }
 
-func runCheckCmd(cmd *cobra.Command, args []string) error {
-	pathToBundle := args[0]
-	bpmManager := manager.NewBpm()
-	osWrap := new(syswrap.OsWrapper)
-	ioWrap := new(syswrap.IoWrapper)
-	bfEncoder := bfencoder.NewEncoder()
+type checkOptions struct {
+	Path      string               // path to the bundle that needs to be checked
+	Encoder   *bfencoder.Encoder   // decoder of bundle component files
+	Fileifier *fileifier.Fileifier // transformer of file contents into structures
+	OsLoader  *osload.OsLoader     // bundle file loader from file system
+}
 
-	fileifier := fileifier.NewFileifier(bfEncoder)
-	fileLoader := loader.NewFsLoader(osWrap, ioWrap, fileifier)
-
-	checkCmd := manager.NewCheckCommand(&manager.CheckCmdResources{
-		FileLoader: fileLoader,
-	})
-
-	if err := bpmManager.RegisterCommand(
-		checkCmd,
-	); err != nil {
-		return err
+func checkRun(opts *checkOptions) error {
+	b, err := opts.OsLoader.LoadBundle(opts.Path)
+	if err != nil {
+		return fmt.Errorf("failed to load '%s' bundle: %v", opts.Path, err)
 	}
 
-	if _, err := manager.ExecuteCheckCmd(checkCmd, &manager.CheckCmdInput{
-		Path: pathToBundle,
-	}); err != nil {
-		return err
-	}
-
+	fmt.Println(b.Name(), "OK")
 	return nil
 }

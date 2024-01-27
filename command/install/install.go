@@ -1,18 +1,11 @@
 package install
 
 import (
-	"log"
-
-	"github.com/4rchr4y/bpm/bfencoder"
 	"github.com/4rchr4y/bpm/cli/require"
 	"github.com/4rchr4y/bpm/command/factory"
-	"github.com/4rchr4y/bpm/fileifier"
-	"github.com/4rchr4y/bpm/loader"
-	"github.com/4rchr4y/bpm/manager"
-	"github.com/4rchr4y/godevkit/syswrap"
+	"github.com/4rchr4y/bpm/pkg/install"
+	"github.com/4rchr4y/bpm/pkg/load/gitload"
 	"github.com/spf13/cobra"
-
-	gitcli "github.com/4rchr4y/bpm/internal/git"
 )
 
 func NewCmdInstall(f *factory.Factory) *cobra.Command {
@@ -21,48 +14,41 @@ func NewCmdInstall(f *factory.Factory) *cobra.Command {
 		Aliases: []string{"i"},
 		Args:    require.ExactArgs(1),
 		Short:   "Install a package from the specified repository",
-		Run:     runInstallCmd,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			version, err := cmd.Flags().GetString("version")
+			if err != nil {
+				return err
+			}
+
+			return installRun(&installOptions{
+				URL:       args[0],
+				Version:   version,
+				GitLoader: f.GitLoader,
+				Installer: f.Installer,
+			})
+		},
 	}
 
 	cmd.Flags().StringP("version", "v", "", "Bundle version")
 	return cmd
 }
 
-func runInstallCmd(cmd *cobra.Command, args []string) {
-	pathToBundle := args[0]
-	bpmManager := manager.NewBpm()
-	osWrap := new(syswrap.OsWrapper)
-	bfEncoder := bfencoder.NewEncoder()
+type installOptions struct {
+	URL       string                   // bundle repository that needs to be installed
+	Version   string                   // specified bundle version
+	GitLoader *gitload.GitLoader       // bundle file loader from the git repo
+	Installer *install.BundleInstaller // bundle installer into the file system
+}
 
-	fileifier := fileifier.NewFileifier(bfEncoder)
-	gitClient := gitcli.NewClient()
-	gitLoader := loader.NewGitLoader(gitClient, fileifier)
-
-	bpmManager.RegisterCommand(
-		manager.NewInstallCommand(&manager.InstallCmdResources{
-			OsWrap:          osWrap,
-			BundleInstaller: manager.NewBundleInstaller(osWrap, bfEncoder),
-			FileLoader:      gitLoader,
-		}),
-	)
-
-	installCmd, err := bpmManager.Command(manager.InstallCmdName)
+func installRun(opts *installOptions) error {
+	b, err := opts.GitLoader.DownloadBundle(opts.URL, opts.Version)
 	if err != nil {
-		log.Fatal(err)
-		return
+		return err
 	}
 
-	version, err := cmd.Flags().GetString("version")
-	if err != nil {
-		log.Fatal(err)
-		return
+	if err := opts.Installer.Install(b); err != nil {
+		return err
 	}
 
-	if _, err := manager.ExecuteInstallCmd(installCmd, &manager.InstallCmdInput{
-		URL:     pathToBundle,
-		Version: version,
-	}); err != nil {
-		log.Fatal(err)
-		return
-	}
+	return nil
 }

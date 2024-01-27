@@ -7,6 +7,7 @@ import (
 	cmdCheck "github.com/4rchr4y/bpm/command/check"
 	cmdGet "github.com/4rchr4y/bpm/command/get"
 	cmdInit "github.com/4rchr4y/bpm/command/init"
+	cmdInstall "github.com/4rchr4y/bpm/command/install"
 	cmdVersion "github.com/4rchr4y/bpm/command/version"
 )
 
@@ -24,6 +25,7 @@ func NewCmdRoot(f *factory.Factory, version string) (*cobra.Command, error) {
 
 	cmd.AddCommand(cmdVersion.NewCmdVersion(f))
 	cmd.AddCommand(cmdInit.NewCmdInit(f))
+	cmd.AddCommand(cmdInstall.NewCmdInstall(f))
 	cmd.AddCommand(cmdCheck.NewCmdCheck(f))
 	cmd.AddCommand(cmdGet.NewCmdGet(f))
 

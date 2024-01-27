@@ -17,10 +17,6 @@ type installCmdOSWrapper interface {
 	WriteFile(name string, data []byte, perm fs.FileMode) error
 }
 
-// type installCmdTOMLEncoder interface {
-// 	Encode(value interface{}) ([]byte, error)
-// }
-
 type installCmdLoader interface {
 	DownloadBundle(url string, tag string) (*bundle.Bundle, error)
 }

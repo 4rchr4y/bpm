@@ -1,19 +1,18 @@
 package get
 
 import (
-	"log"
+	"io/fs"
 	"os"
+	"path/filepath"
 
 	"github.com/4rchr4y/bpm/bfencoder"
 	"github.com/4rchr4y/bpm/cli/require"
 	"github.com/4rchr4y/bpm/command/factory"
-	"github.com/4rchr4y/bpm/fileifier"
-	"github.com/4rchr4y/bpm/loader"
-	"github.com/4rchr4y/bpm/manager"
-	"github.com/4rchr4y/godevkit/syswrap"
+	"github.com/4rchr4y/bpm/constant"
+	"github.com/4rchr4y/bpm/pkg/install"
+	"github.com/4rchr4y/bpm/pkg/load/gitload"
+	"github.com/4rchr4y/bpm/pkg/load/osload"
 	"github.com/spf13/cobra"
-
-	gitcli "github.com/4rchr4y/bpm/internal/git"
 )
 
 func NewCmdGet(f *factory.Factory) *cobra.Command {
@@ -21,64 +20,70 @@ func NewCmdGet(f *factory.Factory) *cobra.Command {
 		Use:   "get",
 		Short: "Get a new dependency",
 		Args:  require.ExactArgs(1),
-		Run:   runGetCmd,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			version, err := cmd.Flags().GetString("version")
+			if err != nil {
+				return err
+			}
+
+			wd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			return getRun(&getOptions{
+				WorkDir:   wd,
+				URL:       args[0],
+				Version:   version,
+				GitLoader: f.GitLoader,
+				OsLoader:  f.OsLoader,
+				Installer: f.Installer,
+				Encoder:   f.Encoder,
+				WriteFile: f.OS.WriteFile,
+			})
+		},
 	}
 
 	cmd.Flags().StringP("version", "v", "", "Bundle version")
 	return cmd
 }
 
-func runGetCmd(cmd *cobra.Command, args []string) {
-	pathToBundle := args[0]
-	bpmClient := manager.NewBpm()
-	osWrap := new(syswrap.OsWrapper)
-	ioWrap := new(syswrap.IoWrapper)
+type getOptions struct {
+	WorkDir   string                                                 // bundle working directory
+	URL       string                                                 // bundle repository that needs to be installed
+	Version   string                                                 // specified bundle version
+	GitLoader *gitload.GitLoader                                     // bundle file loader from the git repo
+	OsLoader  *osload.OsLoader                                       // bundle file loader from file system
+	Installer *install.BundleInstaller                               // bundle installer into the file system
+	Encoder   *bfencoder.Encoder                                     // decoder of bundle component files
+	WriteFile func(name string, data []byte, perm fs.FileMode) error // func of saving a file to disk
+}
 
-	bfEncoder := bfencoder.NewEncoder()
-
-	filef := fileifier.NewFileifier(bfEncoder)
-	gitLoader := loader.NewGitLoader(gitcli.NewClient(), filef)
-	fsLoader := loader.NewFsLoader(osWrap, ioWrap, filef)
-
-	bpmClient.RegisterCommand(
-		manager.NewInstallCommand(&manager.InstallCmdResources{
-			OsWrap:          osWrap,
-			BundleInstaller: manager.NewBundleInstaller(osWrap, bfEncoder),
-			FileLoader:      gitLoader,
-		}),
-
-		manager.NewGetCommand(&manager.GetCmdResources{
-			OsWrap:    osWrap,
-			Encoder:   bfEncoder,
-			GitLoader: gitLoader,
-			FsLoader:  fsLoader,
-		}),
-	)
-
-	getCmd, err := bpmClient.Command(manager.GetCmdName)
+func getRun(opts *getOptions) error {
+	workingBundle, err := opts.OsLoader.LoadBundle(opts.WorkDir)
 	if err != nil {
-		log.Fatal(err)
-		return
+		return err
 	}
 
-	version, err := cmd.Flags().GetString("version")
+	b, err := opts.GitLoader.DownloadBundle(opts.URL, opts.Version)
 	if err != nil {
-		log.Fatal(err)
-		return
+		return err
 	}
 
-	wd, err := os.Getwd()
-	if err != nil {
-		log.Fatal(err)
-		return
+	if err := opts.Installer.Install(b); err != nil {
+		return err
 	}
 
-	if _, err := manager.ExecuteGetCmd(getCmd, &manager.GetCmdInput{
-		URL:     pathToBundle,
-		Version: version,
-		Dir:     wd,
-	}); err != nil {
-		log.Fatal(err)
-		return
+	if err := workingBundle.Require(b); err != nil {
+		return err
 	}
+
+	bundlefilePath := filepath.Join(opts.WorkDir, constant.BundleFileName)
+	bytes := opts.Encoder.EncodeBundleFile(workingBundle.BundleFile)
+
+	if err := opts.WriteFile(bundlefilePath, bytes, 0644); err != nil {
+		return err
+	}
+
+	return nil
 }

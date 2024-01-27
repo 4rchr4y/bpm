@@ -2,15 +2,17 @@ package init
 
 import (
 	"fmt"
+	"io/fs"
 	"os/exec"
+	"path"
 	"strings"
 
 	"github.com/4rchr4y/bpm/bfencoder"
 	"github.com/4rchr4y/bpm/bundle"
+	"github.com/4rchr4y/bpm/bundle/bundlefile"
 	"github.com/4rchr4y/bpm/cli/require"
 	"github.com/4rchr4y/bpm/command/factory"
-	"github.com/4rchr4y/bpm/manager"
-	"github.com/4rchr4y/godevkit/syswrap"
+	"github.com/4rchr4y/bpm/constant"
 	"github.com/spf13/cobra"
 )
 
@@ -49,49 +51,52 @@ func NewCmdInit(f *factory.Factory) *cobra.Command {
 		},
 		Short: "Init a new bundle.",
 		Long:  cmdInitDesc,
-		RunE:  runInitCmd,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return initRun(&initOptions{
+				Repository: args[0],
+				Author: func() *bundle.AuthorExpr {
+					username, _ := getGitUserInfo("username")
+					email, _ := getGitUserInfo("email")
+
+					if username == "" || email == "" {
+						return nil
+					}
+
+					return &bundle.AuthorExpr{
+						Username: username,
+						Email:    email,
+					}
+				}(),
+				Encoder:   f.Encoder,
+				WriteFile: f.OS.WriteFile,
+			})
+		},
 	}
 
 	return cmd
 }
 
-func runInitCmd(cmd *cobra.Command, args []string) error {
-	osWrap := new(syswrap.OsWrapper)
+type initOptions struct {
+	Repository string                                                 // repo to which the bundle will belong
+	Author     *bundle.AuthorExpr                                     // git information about the author
+	Encoder    *bfencoder.Encoder                                     // decoder of bundle component files
+	WriteFile  func(name string, data []byte, perm fs.FileMode) error // func of saving a file to disk
+}
 
-	bpmManager := manager.NewBpm()
-	initCmd := manager.NewInitCommand(&manager.InitCmdResources{
-		OsWrap:            osWrap,
-		BundleFileEncoder: bfencoder.NewEncoder(),
-	})
-
-	if err := bpmManager.RegisterCommand(
-		initCmd,
-	); err != nil {
-		return err
+func initRun(opts *initOptions) error {
+	files := map[string][]byte{
+		".gitignore":            gitignoreFileContent(),
+		constant.BundleFileName: bundleFileContent(opts.Encoder, opts.Repository, opts.Author),
+		constant.IgnoreFile:     bpmignoreFileContent(),
 	}
 
-	if _, err := manager.ExecuteInitCmd(initCmd, &manager.InitCmdInput{
-		Name:   args[0],
-		Author: buildAuthorInfo(),
-	}); err != nil {
-		return err
+	for fileName, content := range files {
+		if err := opts.WriteFile(fileName, []byte(content), 0644); err != nil {
+			return fmt.Errorf("failed to write file '%s': %v", fileName, err)
+		}
 	}
 
 	return nil
-}
-
-func buildAuthorInfo() *bundle.AuthorExpr {
-	username, _ := getGitUserInfo("username")
-	email, _ := getGitUserInfo("email")
-
-	if username == "" || email == "" {
-		return nil
-	}
-
-	return &bundle.AuthorExpr{
-		Username: username,
-		Email:    email,
-	}
 }
 
 func getGitUserInfo(target string) (string, error) {
@@ -101,4 +106,26 @@ func getGitUserInfo(target string) (string, error) {
 		return "", err
 	}
 	return strings.TrimSpace(string(output)), nil
+}
+
+func bundleFileContent(encoder *bfencoder.Encoder, repo string, author *bundle.AuthorExpr) []byte {
+	repoName := path.Base(repo)
+	bundlefile := &bundlefile.File{
+		Package: &bundlefile.PackageDecl{
+			Name:        repoName,
+			Author:      []string{author.String()},
+			Repository:  repo,
+			Description: fmt.Sprintf("Some description about '%s' bundle.", repoName),
+		},
+	}
+
+	return encoder.EncodeBundleFile(bundlefile)
+}
+
+func gitignoreFileContent() []byte {
+	return []byte(`bundle.lock`)
+}
+
+func bpmignoreFileContent() []byte {
+	return []byte(`.git`)
 }
