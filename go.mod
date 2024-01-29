@@ -4,12 +4,12 @@ go 1.21.3
 
 require (
 	github.com/4rchr4y/godevkit v0.0.1
+	github.com/emirpasic/gods/v2 v2.0.0-alpha
 	github.com/go-git/go-git/v5 v5.11.0
 	github.com/hashicorp/hcl/v2 v2.19.1
 	github.com/open-policy-agent/opa v0.60.0
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.8.4
-	github.com/zclconf/go-cty v1.14.2
 )
 
 require (
@@ -40,6 +40,7 @@ require (
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
+	github.com/zclconf/go-cty v1.14.2 // indirect
 	golang.org/x/crypto v0.16.0 // indirect
 	golang.org/x/mod v0.12.0 // indirect
 	golang.org/x/net v0.19.0 // indirect
