@@ -1,12 +1,15 @@
 package get
 
 import (
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 
 	"github.com/4rchr4y/bpm/cli/require"
 	"github.com/4rchr4y/bpm/constant"
+	"github.com/4rchr4y/bpm/pkg/bundle"
+	"github.com/4rchr4y/bpm/pkg/bundle/lockfile"
 	"github.com/4rchr4y/bpm/pkg/command/factory"
 	"github.com/4rchr4y/bpm/pkg/encode"
 	"github.com/4rchr4y/bpm/pkg/install"
@@ -70,19 +73,44 @@ func getRun(opts *getOptions) error {
 		return err
 	}
 
+	// TODO: need to check the bundle here
+
 	if err := opts.Installer.Install(b); err != nil {
 		return err
 	}
 
-	if err := workingBundle.SetRequire(b); err != nil {
+	if err := workingBundle.SetRequire(b, lockfile.Direct); err != nil {
 		return err
 	}
 
+	if err := updateBundleFile(opts, workingBundle); err != nil {
+		return err
+	}
+
+	if err := updateLockFile(opts, workingBundle); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func updateBundleFile(opts *getOptions, workingBundle *bundle.Bundle) error {
 	bundlefilePath := filepath.Join(opts.WorkDir, constant.BundleFileName)
 	bytes := opts.Encoder.EncodeBundleFile(workingBundle.BundleFile)
 
 	if err := opts.WriteFile(bundlefilePath, bytes, 0644); err != nil {
-		return err
+		return fmt.Errorf("error occurred while '%s' file updating: %v", constant.BundleFileName, err)
+	}
+
+	return nil
+}
+
+func updateLockFile(opts *getOptions, workingBundle *bundle.Bundle) error {
+	bundlefilePath := filepath.Join(opts.WorkDir, constant.LockFileName)
+	bytes := opts.Encoder.EncodeLockFile(workingBundle.LockFile)
+
+	if err := opts.WriteFile(bundlefilePath, bytes, 0644); err != nil {
+		return fmt.Errorf("error occurred while '%s' file updating: %v", constant.LockFileName, err)
 	}
 
 	return nil

@@ -1,11 +1,10 @@
 package bundlefile
 
 import (
-	"bytes"
-	"crypto/md5"
-	"encoding/hex"
+	"crypto/sha256"
 
 	"github.com/4rchr4y/bpm/constant"
+	"github.com/4rchr4y/bpm/pkg/util"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclwrite"
 )
@@ -37,6 +36,5 @@ func (*File) FileName() string { return constant.BundleFileName }
 func (bf *File) Sum() string {
 	f := hclwrite.NewEmptyFile()
 	gohcl.EncodeIntoBody(bf, f.Body())
-	hash := md5.Sum(bytes.TrimSpace(f.Bytes()))
-	return hex.EncodeToString(hash[:])
+	return util.ChecksumSHA256(sha256.New(), f.Bytes())
 }

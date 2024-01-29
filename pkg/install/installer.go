@@ -50,8 +50,8 @@ func (cmd *BundleInstaller) Install(b *bundle.Bundle) error {
 		return fmt.Errorf("error occurred rego files processing: %v", err)
 	}
 
-	if err := cmd.processBundleLockFile(b.BundleLockFile, dirPath); err != nil {
-		return fmt.Errorf("failed to encode %s file: %v", b.BundleLockFile.FileName(), err)
+	if err := cmd.processBundleLockFile(b.LockFile, dirPath); err != nil {
+		return fmt.Errorf("failed to encode %s file: %v", b.LockFile.FileName(), err)
 	}
 
 	if err := cmd.processBundleFile(b.BundleFile, dirPath); err != nil {

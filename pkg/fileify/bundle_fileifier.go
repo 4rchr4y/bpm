@@ -15,16 +15,16 @@ import (
 	"github.com/open-policy-agent/opa/ast"
 )
 
-type bfEncoder interface {
+type Encoder interface {
 	DecodeBundleFile(content []byte) (*bundlefile.File, error)
 	DecodeLockFile(content []byte) (*lockfile.File, error)
 }
 
 type Fileifier struct {
-	encoder bfEncoder
+	encoder Encoder
 }
 
-func NewFileifier(decoder bfEncoder) *Fileifier {
+func NewFileifier(decoder Encoder) *Fileifier {
 	return &Fileifier{
 		encoder: decoder,
 	}
@@ -46,21 +46,29 @@ func (bp *Fileifier) Fileify(files map[string][]byte) (*bundle.Bundle, error) {
 		b.IgnoreFiles = ignoreList
 	}
 
+	modules := &lockfile.ModulesDecl{
+		List: make([]*lockfile.ModDecl, len(files)),
+	}
+
+	var fidx int
 	for filePath, content := range files {
 		switch {
-		case shouldIgnore(b.IgnoreFiles, filePath):
-			continue
-
 		case isRegoFile(filePath):
 			parsed, err := bp.parseRegoFile(content, filePath)
 			if err != nil {
 				return nil, err
 			}
 
-			b.RegoFiles[filePath] = &regofile.File{
-				Path:   filePath,
-				Parsed: parsed,
+			file := &regofile.File{Path: filePath, Parsed: parsed}
+			b.RegoFiles[filePath] = file
+
+			modules.List[fidx] = &lockfile.ModDecl{
+				Package: file.Package(),
+				Source:  filePath,
+				Sum:     file.Sum(),
 			}
+
+			fidx++
 
 		case isBPMFile(filePath):
 			bundlefile, err := bp.encoder.DecodeBundleFile(content)
@@ -76,18 +84,15 @@ func (bp *Fileifier) Fileify(files map[string][]byte) (*bundle.Bundle, error) {
 				return nil, fmt.Errorf("error occurred while decoding %s content: %v", constant.BundleFileName, err)
 			}
 
-			b.BundleLockFile = lockfile
+			b.LockFile = lockfile
 
 		default:
-			if isEmpty(ignoreFileContent) {
-				continue
-			}
-
 			b.OtherFiles[filePath] = content
 		}
 	}
 
-	return b, nil
+	b.LockFile.Modules = modules
+	return b.Configure(), nil
 }
 
 func (bp *Fileifier) parseRegoFile(fileContent []byte, filePath string) (*ast.Module, error) {
@@ -97,12 +102,6 @@ func (bp *Fileifier) parseRegoFile(fileContent []byte, filePath string) (*ast.Mo
 	}
 
 	return parsed, nil
-}
-
-func (bp *Fileifier) parseBPMLockFile(fileContent []byte) (*lockfile.File, error) {
-	var bundlelock lockfile.File
-
-	return &bundlelock, nil
 }
 
 func (bp *Fileifier) parseIgnoreFile(fileContent []byte) (map[string]struct{}, error) {

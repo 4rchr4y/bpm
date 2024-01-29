@@ -56,18 +56,21 @@ func checkRun(opts *checkOptions) error {
 		return fmt.Errorf("failed to load '%s' bundle: %v", opts.Path, err)
 	}
 
-	fmt.Println(b.BundleLockFile.Sum)
+	// for _, file := range b.RegoFiles {
+	// 	b.LockFile.SetModule(&lockfile.ModDecl{
+	// 		Package: file.Package(),
+	// 		Source:  file.Path,
+	// 		Sum:     file.Sum(),
+	// 	})
+	// }
 
-	for _, file := range b.RegoFiles {
-		b.BundleLockFile.SetModule(file)
-	}
-
-	content := opts.Encoder.EncodeLockFile(b.BundleLockFile)
-
-	if err := os.WriteFile(filepath.Join(opts.Path, constant.LockFileName), []byte(content), 0644); err != nil {
+	if err := os.WriteFile(
+		filepath.Join(opts.Path, constant.LockFileName),
+		opts.Encoder.EncodeLockFile(b.LockFile),
+		0644,
+	); err != nil {
 		return fmt.Errorf("failed to write file '%s': %v", "fileName", err)
 	}
 
-	fmt.Println(b.Name(), "OK")
 	return nil
 }
