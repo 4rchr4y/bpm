@@ -6,6 +6,7 @@ require (
 	github.com/4rchr4y/godevkit v0.0.1
 	github.com/emirpasic/gods/v2 v2.0.0-alpha
 	github.com/go-git/go-git/v5 v5.11.0
+	github.com/hashicorp/go-version v1.6.0
 	github.com/hashicorp/hcl/v2 v2.19.1
 	github.com/open-policy-agent/opa v0.60.0
 	github.com/spf13/cobra v1.8.0
