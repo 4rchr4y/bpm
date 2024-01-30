@@ -75,6 +75,16 @@ func getRun(opts *getOptions) error {
 
 	// TODO: need to check the bundle here
 
+	require := make([]*bundle.Bundle, len(b.BundleFile.Require.List))
+	for i, r := range b.BundleFile.Require.List {
+		requireBundle, err := opts.GitLoader.DownloadBundle(r.Repository, r.Version)
+		if err != nil {
+			return err
+		}
+
+		require[i] = requireBundle
+	}
+
 	if err := opts.Installer.Install(b); err != nil {
 		return err
 	}

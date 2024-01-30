@@ -6,46 +6,12 @@ import (
 	"fmt"
 	"hash"
 	"sort"
-	"strings"
 
-	"github.com/4rchr4y/bpm/constant"
 	"github.com/4rchr4y/bpm/pkg/bundle/bundlefile"
 	"github.com/4rchr4y/bpm/pkg/bundle/lockfile"
 	"github.com/4rchr4y/bpm/pkg/bundle/regofile"
 	"github.com/emirpasic/gods/v2/maps/hashbidimap"
-	"github.com/go-git/go-git/v5/plumbing/object"
 )
-
-const (
-	dateFormat      = "20060102150405"
-	shortHashLength = 12
-)
-
-type VersionExpr struct {
-	Version   string // semantic version if available, or pseudo version
-	Timestamp string // commit timestamp
-	Hash      string // commit hash
-}
-
-func NewVersionExpr(commit *object.Commit, tag string) *VersionExpr {
-	if strings.TrimSpace(tag) == "" {
-		tag = constant.BundlePseudoVersion
-	}
-
-	return &VersionExpr{
-		Version:   tag,
-		Timestamp: commit.Committer.When.UTC().Format(dateFormat),
-		Hash:      commit.Hash.String()[:shortHashLength],
-	}
-}
-
-func (v *VersionExpr) String() string {
-	if v.Version != constant.BundlePseudoVersion {
-		return v.Version
-	}
-
-	return fmt.Sprintf("%s+%s-%s", v.Version, v.Timestamp, v.Hash)
-}
 
 type AuthorExpr struct {
 	Username string // value of git 'config --get user.username'
