@@ -5,6 +5,7 @@ import (
 
 	"github.com/4rchr4y/bpm/constant"
 	"github.com/4rchr4y/bpm/pkg/util"
+	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclwrite"
 )
@@ -37,4 +38,11 @@ func (bf *File) Sum() string {
 	f := hclwrite.NewEmptyFile()
 	gohcl.EncodeIntoBody(bf, f.Body())
 	return util.ChecksumSHA256(sha256.New(), f.Bytes())
+}
+
+func (bf *File) Validate() error {
+	return validation.ValidateStruct(bf,
+		validation.Field(&bf.Package.Name, validation.Required, validation.Length(5, 50)),
+		validation.Field(&bf.Package.Repository, validation.Required, validation.Length(5, 50)),
+	)
 }

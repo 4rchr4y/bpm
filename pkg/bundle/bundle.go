@@ -72,7 +72,7 @@ func (b *Bundle) SetRequire(requirement *Bundle, direction lockfile.DirectionTyp
 	b.requireCache.Put(requirement.Repository(), requirement.Name())
 	b.LockFile.Require.List = append(b.LockFile.Require.List, &lockfile.RequirementDecl{
 		Repository: requirement.Repository(),
-		Direction:  direction,
+		Direction:  direction.String(),
 		Name:       requirement.Name(),
 		Version:    requirement.Version.String(),
 		H1:         requirement.BundleFile.Sum(),

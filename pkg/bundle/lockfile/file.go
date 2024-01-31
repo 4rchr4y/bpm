@@ -4,12 +4,16 @@ import (
 	"github.com/4rchr4y/bpm/constant"
 )
 
-type DirectionType = string
+type DirectionType string
 
 const (
 	Direct   = "direct"
 	Indirect = "indirect"
 )
+
+func (dt DirectionType) String() string {
+	return string(dt)
+}
 
 type (
 	ModDecl struct {
