@@ -24,6 +24,7 @@
         "hclwrite",
         "iostream",
         "osload",
+        "ozzo",
         "rchr",
         "rego",
         "regofile",

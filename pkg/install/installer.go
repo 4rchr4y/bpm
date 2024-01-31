@@ -44,7 +44,7 @@ func (cmd *BundleInstaller) Install(b *bundle.Bundle) error {
 		return err
 	}
 
-	dirPath := filepath.Join(homeDir, constant.BPMDirName, b.BundleFile.Package.Name, b.Version.String())
+	dirPath := filepath.Join(homeDir, constant.BPMDirName, b.Repository(), b.Version.String())
 
 	if err := cmd.processRegoFiles(b.RegoFiles, dirPath); err != nil {
 		return fmt.Errorf("error occurred rego files processing: %v", err)
