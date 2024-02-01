@@ -1,6 +1,8 @@
 package install
 
 import (
+	"context"
+
 	"github.com/4rchr4y/bpm/cli/require"
 	"github.com/4rchr4y/bpm/pkg/bundleutil"
 	"github.com/4rchr4y/bpm/pkg/command/factory"
@@ -9,6 +11,7 @@ import (
 )
 
 func NewCmdInstall(f *factory.Factory) *cobra.Command {
+	ctx := context.Background()
 	cmd := &cobra.Command{
 		Use:     "install REPOSITORY",
 		Aliases: []string{"i"},
@@ -20,7 +23,7 @@ func NewCmdInstall(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			return installRun(&installOptions{
+			return installRun(ctx, &installOptions{
 				URL:       args[0],
 				Version:   version,
 				GitLoader: f.GitLoader,
@@ -40,8 +43,8 @@ type installOptions struct {
 	Saver     *bundleutil.Saver  // bundle saver files into the file system
 }
 
-func installRun(opts *installOptions) error {
-	b, err := opts.GitLoader.DownloadBundle(opts.URL, opts.Version)
+func installRun(ctx context.Context, opts *installOptions) error {
+	b, err := opts.GitLoader.DownloadBundle(ctx, opts.URL, opts.Version)
 	if err != nil {
 		return err
 	}

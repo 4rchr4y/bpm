@@ -1,6 +1,7 @@
 package get
 
 import (
+	"context"
 	"os"
 
 	"github.com/4rchr4y/bpm/cli/require"
@@ -12,6 +13,7 @@ import (
 )
 
 func NewCmdGet(f *factory.Factory) *cobra.Command {
+	ctx := context.Background()
 	cmd := &cobra.Command{
 		Use:   "get",
 		Short: "Get a new dependency",
@@ -27,7 +29,7 @@ func NewCmdGet(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			return getRun(&getOptions{
+			return getRun(ctx, &getOptions{
 				WorkDir:    wd,
 				URL:        args[0],
 				Version:    version,
@@ -55,13 +57,13 @@ type getOptions struct {
 	Manifester *bundleutil.Manifester // bundle manifest file control operator
 }
 
-func getRun(opts *getOptions) error {
+func getRun(ctx context.Context, opts *getOptions) error {
 	target, err := opts.OsLoader.LoadBundle(opts.WorkDir)
 	if err != nil {
 		return err
 	}
 
-	result, err := opts.Downloader.Download(opts.URL, opts.Version)
+	result, err := opts.Downloader.Download(ctx, opts.URL, opts.Version)
 	if err != nil {
 		return err
 	}

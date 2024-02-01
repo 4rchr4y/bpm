@@ -1,13 +1,14 @@
 package bundleutil
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/4rchr4y/bpm/pkg/bundle"
 )
 
 type downloaderGitLoader interface {
-	DownloadBundle(url string, tag string) (*bundle.Bundle, error)
+	DownloadBundle(ctx context.Context, url string, tag string) (*bundle.Bundle, error)
 }
 
 type Downloader struct {
@@ -26,9 +27,9 @@ type DownloadResult struct {
 	Rindirect []*bundle.Bundle // indirectly required bundles
 }
 
-func (d *Downloader) Download(url string, version string) (*DownloadResult, error) {
+func (d *Downloader) Download(ctx context.Context, url string, version string) (*DownloadResult, error) {
 	fmt.Println(url)
-	target, err := d.git.DownloadBundle(url, version)
+	target, err := d.git.DownloadBundle(ctx, url, version)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +37,7 @@ func (d *Downloader) Download(url string, version string) (*DownloadResult, erro
 	rindirect := make([]*bundle.Bundle, 0)
 	rdirect := make([]*bundle.Bundle, len(target.BundleFile.Require.List))
 	for i, r := range target.BundleFile.Require.List {
-		result, err := d.Download(r.Repository, r.Version)
+		result, err := d.Download(ctx, r.Repository, r.Version)
 		if err != nil {
 			return nil, err
 		}

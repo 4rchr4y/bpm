@@ -1,16 +1,15 @@
 package gitload
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
-	"github.com/go-git/go-git/v5/storage/memory"
 	"github.com/hashicorp/go-version"
 
-	gitcli "github.com/4rchr4y/bpm/internal/git"
 	"github.com/4rchr4y/bpm/pkg/bundle"
 )
 
@@ -19,7 +18,7 @@ type bundleFileifier interface {
 }
 
 type gitClient interface {
-	PlainClone(input *gitcli.PlainCloneInput) (*git.Repository, error)
+	CloneWithContext(ctx context.Context, opts *git.CloneOptions) (*git.Repository, error)
 }
 
 type GitLoader struct {
@@ -34,9 +33,12 @@ func NewGitLoader(gitClient gitClient, bparser bundleFileifier) *GitLoader {
 	}
 }
 
-func (loader *GitLoader) DownloadBundle(url string, tag string) (*bundle.Bundle, error) {
-	repoURL := fmt.Sprintf("https://%s.git", url)
-	repo, err := git.Clone(memory.NewStorage(), nil, &git.CloneOptions{URL: repoURL})
+func (loader *GitLoader) DownloadBundle(ctx context.Context, url string, tag string) (*bundle.Bundle, error) {
+	cloneInput := &git.CloneOptions{
+		URL: fmt.Sprintf("https://%s.git", url),
+	}
+
+	repo, err := loader.gitCli.CloneWithContext(ctx, cloneInput)
 	if err != nil {
 		return nil, err
 	}
@@ -178,20 +180,15 @@ func collectTagList(repo *git.Repository) (map[*version.Version]*plumbing.Refere
 	return tags, nil
 }
 
-func findLatestVersion(tags map[*version.Version]*plumbing.Reference) (*version.Version, *plumbing.Reference) {
-	var (
-		latestVersion   *version.Version
-		latestReference *plumbing.Reference
-	)
-
-	for v, ref := range tags {
-		if latestVersion == nil || v.GreaterThan(latestVersion) {
-			latestVersion = v
-			latestReference = ref
+func findLatestVersion(tags map[*version.Version]*plumbing.Reference) (v *version.Version, ref *plumbing.Reference) {
+	for version, reference := range tags {
+		if v == nil || version.GreaterThan(v) {
+			v = version
+			ref = reference
 		}
 	}
 
-	return latestVersion, latestReference
+	return v, ref
 }
 
 func getLatestCommit(repo *git.Repository) (*object.Commit, error) {
