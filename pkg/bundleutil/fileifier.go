@@ -1,4 +1,4 @@
-package fileify
+package bundleutil
 
 import (
 	"bufio"
@@ -15,18 +15,18 @@ import (
 	"github.com/open-policy-agent/opa/ast"
 )
 
-type Encoder interface {
+type fileifierEncoder interface {
 	DecodeBundleFile(content []byte) (*bundlefile.File, error)
 	DecodeLockFile(content []byte) (*lockfile.File, error)
 }
 
 type Fileifier struct {
-	encoder Encoder
+	encoder fileifierEncoder
 }
 
-func NewFileifier(decoder Encoder) *Fileifier {
+func NewFileifier(encoder fileifierEncoder) *Fileifier {
 	return &Fileifier{
-		encoder: decoder,
+		encoder: encoder,
 	}
 }
 

@@ -2,7 +2,6 @@ package factory
 
 import (
 	"github.com/4rchr4y/bpm/pkg/bundleutil"
-	"github.com/4rchr4y/bpm/pkg/fileify"
 	"github.com/4rchr4y/bpm/pkg/load/gitload"
 	"github.com/4rchr4y/bpm/pkg/load/osload"
 	"github.com/4rchr4y/godevkit/syswrap"
@@ -14,7 +13,7 @@ func New(version string) *Factory {
 	osWrap := new(syswrap.OsWrapper)
 	ioWrap := new(syswrap.IoWrapper)
 	encoder := bundleutil.NewEncoder()
-	fileifier := fileify.NewFileifier(encoder)
+	fileifier := bundleutil.NewFileifier(encoder)
 
 	gitLoader := gitload.NewGitLoader(gitcli.NewClient(), fileifier)
 	osLoader := osload.NewOsLoader(osWrap, ioWrap, fileifier)
