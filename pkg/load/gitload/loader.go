@@ -17,18 +17,18 @@ type bundleFileifier interface {
 	Fileify(files map[string][]byte) (*bundle.Bundle, error)
 }
 
-type gitClient interface {
+type gitFacade interface {
 	CloneWithContext(ctx context.Context, opts *git.CloneOptions) (*git.Repository, error)
 }
 
 type GitLoader struct {
 	fileifier bundleFileifier
-	gitCli    gitClient
+	gitFacade gitFacade
 }
 
-func NewGitLoader(gitClient gitClient, bparser bundleFileifier) *GitLoader {
+func NewGitLoader(gitClient gitFacade, bparser bundleFileifier) *GitLoader {
 	return &GitLoader{
-		gitCli:    gitClient,
+		gitFacade: gitClient,
 		fileifier: bparser,
 	}
 }
@@ -38,7 +38,7 @@ func (loader *GitLoader) DownloadBundle(ctx context.Context, url string, tag str
 		URL: fmt.Sprintf("https://%s.git", url),
 	}
 
-	repo, err := loader.gitCli.CloneWithContext(ctx, cloneInput)
+	repo, err := loader.gitFacade.CloneWithContext(ctx, cloneInput)
 	if err != nil {
 		return nil, err
 	}

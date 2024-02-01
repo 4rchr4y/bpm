@@ -6,7 +6,7 @@ import (
 	"github.com/4rchr4y/bpm/pkg/load/osload"
 	"github.com/4rchr4y/godevkit/syswrap"
 
-	gitcli "github.com/4rchr4y/bpm/internal/git"
+	"github.com/4rchr4y/bpm/internal/gitfacade"
 )
 
 func New(version string) *Factory {
@@ -15,7 +15,7 @@ func New(version string) *Factory {
 	encoder := bundleutil.NewEncoder()
 	fileifier := bundleutil.NewFileifier(encoder)
 
-	gitLoader := gitload.NewGitLoader(gitcli.NewClient(), fileifier)
+	gitLoader := gitload.NewGitLoader(gitfacade.NewGitFacade(), fileifier)
 	osLoader := osload.NewOsLoader(osWrap, ioWrap, fileifier)
 
 	f := &Factory{
