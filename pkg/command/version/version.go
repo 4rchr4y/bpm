@@ -3,7 +3,7 @@ package version
 import (
 	"fmt"
 
-	"github.com/4rchr4y/bpm/pkg/command/factory"
+	"github.com/4rchr4y/bpm/pkg/cmdutil/factory"
 	"github.com/spf13/cobra"
 )
 

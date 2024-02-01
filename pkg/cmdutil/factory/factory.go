@@ -1,6 +1,7 @@
 package factory
 
 import (
+	"github.com/4rchr4y/bpm/internal/gitfacade"
 	"github.com/4rchr4y/bpm/pkg/bundleutil"
 	"github.com/4rchr4y/bpm/pkg/load/gitload"
 	"github.com/4rchr4y/bpm/pkg/load/osload"
@@ -14,6 +15,7 @@ type Factory struct {
 	Encoder    *bundleutil.Encoder    // decoder of bundle component files
 	Fileifier  *bundleutil.Fileifier  // transformer of file contents into structures
 	OsLoader   *osload.OsLoader       // bundle file loader from file system
+	GitFacade  *gitfacade.GitFacade   // facade for interaction with both the CLI and the API
 	GitLoader  *gitload.GitLoader     // bundle file loader from the git repo
 	Saver      *bundleutil.Saver      // bundle saver files into the file system
 	Downloader *bundleutil.Downloader // downloader of a bundle and its dependencies

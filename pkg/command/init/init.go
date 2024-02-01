@@ -13,7 +13,7 @@ import (
 	"github.com/4rchr4y/bpm/constant"
 	"github.com/4rchr4y/bpm/pkg/bundle"
 	"github.com/4rchr4y/bpm/pkg/bundleutil"
-	"github.com/4rchr4y/bpm/pkg/command/factory"
+	"github.com/4rchr4y/bpm/pkg/cmdutil/factory"
 	"github.com/spf13/cobra"
 )
 
@@ -56,16 +56,14 @@ func NewCmdInit(f *factory.Factory) *cobra.Command {
 			return initRun(&initOptions{
 				Repository: args[0],
 				Author: func() *bundle.AuthorExpr {
-					username, _ := getGitUserInfo("username")
-					email, _ := getGitUserInfo("email")
-
-					if username == "" || email == "" {
+					user, err := f.GitFacade.User()
+					if err != nil {
 						return nil
 					}
 
 					return &bundle.AuthorExpr{
-						Username: username,
-						Email:    email,
+						Username: user.Username,
+						Email:    user.Email,
 					}
 				}(),
 				Encoder:   f.Encoder,

@@ -15,7 +15,8 @@ func New(version string) *Factory {
 	encoder := bundleutil.NewEncoder()
 	fileifier := bundleutil.NewFileifier(encoder)
 
-	gitLoader := gitload.NewGitLoader(gitfacade.NewGitFacade(), fileifier)
+	gitFacade := gitfacade.NewGitFacade()
+	gitLoader := gitload.NewGitLoader(gitFacade, fileifier)
 	osLoader := osload.NewOsLoader(osWrap, ioWrap, fileifier)
 
 	f := &Factory{
@@ -24,6 +25,7 @@ func New(version string) *Factory {
 		Encoder:    encoder,
 		Fileifier:  fileifier,
 		OsLoader:   osLoader,
+		GitFacade:  gitFacade,
 		GitLoader:  gitLoader,
 		Saver:      bundleutil.NewSaver(osWrap, encoder),
 		Downloader: bundleutil.NewDownloader(gitLoader),

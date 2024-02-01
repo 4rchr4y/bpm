@@ -30,7 +30,7 @@ type User struct {
 	Email    string
 }
 
-func (gf *GitFacade) GetUser() (user User, err error) {
+func (gf *GitFacade) User() (user User, err error) {
 	user.Username, err = gf.getGitUserInfo("username")
 	if err != nil {
 		return user, err

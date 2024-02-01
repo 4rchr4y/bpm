@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/4rchr4y/bpm/internal/build"
-	"github.com/4rchr4y/bpm/pkg/command/factory"
+	"github.com/4rchr4y/bpm/pkg/cmdutil/factory"
 	"github.com/4rchr4y/bpm/pkg/command/root"
 )
 
