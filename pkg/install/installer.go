@@ -1,16 +1,12 @@
 package install
 
 import (
-	"fmt"
 	"io/fs"
 	"os"
-	"path/filepath"
 
-	"github.com/4rchr4y/bpm/constant"
 	"github.com/4rchr4y/bpm/pkg/bundle"
 	"github.com/4rchr4y/bpm/pkg/bundle/bundlefile"
 	"github.com/4rchr4y/bpm/pkg/bundle/lockfile"
-	"github.com/4rchr4y/bpm/pkg/bundle/regofile"
 )
 
 type osWrapper interface {
@@ -26,78 +22,83 @@ type hclEncoder interface {
 	EncodeLockFile(lockfile *lockfile.File) []byte
 }
 
-type BundleInstaller struct {
-	osWrap osWrapper
-	encode hclEncoder
+type gitLoader interface {
+	DownloadBundle(url string, tag string) (*bundle.Bundle, error)
 }
 
-func NewBundleInstaller(osWrap osWrapper, encoder hclEncoder) *BundleInstaller {
-	return &BundleInstaller{
-		osWrap: osWrap,
-		encode: encoder,
-	}
-}
+// type BundleInstaller struct {
+// 	git    gitLoader
+// 	osWrap osWrapper
+// 	encode hclEncoder
+// }
 
-func (cmd *BundleInstaller) Install(b *bundle.Bundle) error {
-	homeDir, err := cmd.osWrap.UserHomeDir()
-	if err != nil {
-		return err
-	}
+// func NewBundleInstaller(osWrap osWrapper, encoder hclEncoder) *BundleInstaller {
+// 	return &BundleInstaller{
+// 		osWrap: osWrap,
+// 		encode: encoder,
+// 	}
+// }
 
-	dirPath := filepath.Join(homeDir, constant.BPMDirName, b.Repository(), b.Version.String())
+// func (bi *BundleInstaller) SaveToDisk(b *bundle.Bundle) error {
+// 	homeDir, err := bi.osWrap.UserHomeDir()
+// 	if err != nil {
+// 		return err
+// 	}
 
-	if err := cmd.processRegoFiles(b.RegoFiles, dirPath); err != nil {
-		return fmt.Errorf("error occurred rego files processing: %v", err)
-	}
+// 	dirPath := filepath.Join(homeDir, constant.BPMDirName, b.Repository(), b.Version.String())
 
-	if err := cmd.processBundleLockFile(b.LockFile, dirPath); err != nil {
-		return fmt.Errorf("failed to encode %s file: %v", b.LockFile.FileName(), err)
-	}
+// 	if err := bi.processRegoFiles(b.RegoFiles, dirPath); err != nil {
+// 		return fmt.Errorf("error occurred rego files processing: %v", err)
+// 	}
 
-	if err := cmd.processBundleFile(b.BundleFile, dirPath); err != nil {
-		return fmt.Errorf("failed to encode %s file: %v", b.BundleFile.FileName(), err)
-	}
+// 	if err := bi.processBundleLockFile(b.LockFile, dirPath); err != nil {
+// 		return fmt.Errorf("failed to encode %s file: %v", b.LockFile.Filename(), err)
+// 	}
 
-	return nil
-}
+// 	if err := bi.processBundleFile(b.BundleFile, dirPath); err != nil {
+// 		return fmt.Errorf("failed to encode %s file: %v", b.BundleFile.Filename(), err)
+// 	}
 
-func (cmd *BundleInstaller) processBundleLockFile(bundleLockFile *lockfile.File, bundleVersionDir string) error {
-	bytes := cmd.encode.EncodeLockFile(bundleLockFile)
-	path := filepath.Join(bundleVersionDir, constant.LockFileName)
-	if err := cmd.osWrap.WriteFile(path, bytes, 0644); err != nil {
-		return err
-	}
+// 	return nil
+// }
 
-	return nil
-}
+// func (bi *BundleInstaller) processBundleLockFile(lockFile *lockfile.File, bundleVersionDir string) error {
+// 	bytes := bi.encode.EncodeLockFile(lockFile)
+// 	path := filepath.Join(bundleVersionDir, lockFile.Filename())
+// 	if err := bi.osWrap.WriteFile(path, bytes, 0644); err != nil {
+// 		return err
+// 	}
 
-func (cmd *BundleInstaller) processBundleFile(bundleFile *bundlefile.File, bundleVersionDir string) error {
-	bytes := cmd.encode.EncodeBundleFile(bundleFile)
-	path := filepath.Join(bundleVersionDir, constant.BundleFileName)
-	if err := cmd.osWrap.WriteFile(path, bytes, 0644); err != nil {
-		return err
-	}
+// 	return nil
+// }
 
-	return nil
-}
+// func (bi *BundleInstaller) processBundleFile(bundleFile *bundlefile.File, bundleVersionDir string) error {
+// 	bytes := bi.encode.EncodeBundleFile(bundleFile)
+// 	path := filepath.Join(bundleVersionDir, bundleFile.Filename())
+// 	if err := bi.osWrap.WriteFile(path, bytes, 0644); err != nil {
+// 		return err
+// 	}
 
-func (cmd *BundleInstaller) processRegoFiles(files map[string]*regofile.File, bundleVersionDir string) error {
-	for filePath, file := range files {
-		pathToSave := filepath.Join(bundleVersionDir, filePath)
-		dirToSave := filepath.Dir(pathToSave)
+// 	return nil
+// }
 
-		if _, err := os.Stat(dirToSave); os.IsNotExist(err) {
-			if err := os.MkdirAll(dirToSave, 0755); err != nil {
-				return fmt.Errorf("failed to create directory '%s': %v", dirToSave, err)
-			}
-		} else if err != nil {
-			return fmt.Errorf("error checking directory '%s': %v", dirToSave, err)
-		}
+// func (bi *BundleInstaller) processRegoFiles(files map[string]*regofile.File, bundleVersionDir string) error {
+// 	for filePath, file := range files {
+// 		pathToSave := filepath.Join(bundleVersionDir, filePath)
+// 		dirToSave := filepath.Dir(pathToSave)
 
-		if err := cmd.osWrap.WriteFile(pathToSave, file.Raw, 0644); err != nil {
-			return fmt.Errorf("failed to write file '%s': %v", pathToSave, err)
-		}
-	}
+// 		if _, err := os.Stat(dirToSave); os.IsNotExist(err) {
+// 			if err := os.MkdirAll(dirToSave, 0755); err != nil {
+// 				return fmt.Errorf("failed to create directory '%s': %v", dirToSave, err)
+// 			}
+// 		} else if err != nil {
+// 			return fmt.Errorf("error checking directory '%s': %v", dirToSave, err)
+// 		}
 
-	return nil
-}
+// 		if err := bi.osWrap.WriteFile(pathToSave, file.Raw, 0644); err != nil {
+// 			return fmt.Errorf("failed to write file '%s': %v", pathToSave, err)
+// 		}
+// 	}
+
+// 	return nil
+// }

@@ -32,7 +32,7 @@ type File struct {
 	Require *RequireDecl `hcl:"require,block"`
 }
 
-func (*File) FileName() string { return constant.BundleFileName }
+func (*File) Filename() string { return constant.BundleFileName }
 
 func (bf *File) Sum() string {
 	f := hclwrite.NewEmptyFile()

@@ -2,8 +2,8 @@ package install
 
 import (
 	"github.com/4rchr4y/bpm/cli/require"
+	"github.com/4rchr4y/bpm/pkg/bundleutil"
 	"github.com/4rchr4y/bpm/pkg/command/factory"
-	"github.com/4rchr4y/bpm/pkg/install"
 	"github.com/4rchr4y/bpm/pkg/load/gitload"
 	"github.com/spf13/cobra"
 )
@@ -24,7 +24,7 @@ func NewCmdInstall(f *factory.Factory) *cobra.Command {
 				URL:       args[0],
 				Version:   version,
 				GitLoader: f.GitLoader,
-				Installer: f.Installer,
+				Saver:     f.Saver,
 			})
 		},
 	}
@@ -34,10 +34,10 @@ func NewCmdInstall(f *factory.Factory) *cobra.Command {
 }
 
 type installOptions struct {
-	URL       string                   // bundle repository that needs to be installed
-	Version   string                   // specified bundle version
-	GitLoader *gitload.GitLoader       // bundle file loader from the git repo
-	Installer *install.BundleInstaller // bundle installer into the file system
+	URL       string             // bundle repository that needs to be installed
+	Version   string             // specified bundle version
+	GitLoader *gitload.GitLoader // bundle file loader from the git repo
+	Saver     *bundleutil.Saver  // bundle saver files into the file system
 }
 
 func installRun(opts *installOptions) error {
@@ -46,7 +46,7 @@ func installRun(opts *installOptions) error {
 		return err
 	}
 
-	if err := opts.Installer.Install(b); err != nil {
+	if err := opts.Saver.SaveToDisk(b); err != nil {
 		return err
 	}
 

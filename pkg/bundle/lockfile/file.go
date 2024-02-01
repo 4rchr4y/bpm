@@ -50,4 +50,4 @@ type File struct {
 	Require *RequireDecl `hcl:"require,block"` // list of declared dependencies
 }
 
-func (*File) FileName() string { return constant.LockFileName }
+func (*File) Filename() string { return constant.LockFileName }

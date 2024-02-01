@@ -23,11 +23,14 @@
         "hclsyntax",
         "hclwrite",
         "iostream",
+        "Manifester",
         "osload",
         "ozzo",
         "rchr",
+        "Rdirect",
         "rego",
         "regofile",
+        "Rindirect",
         "subregistry",
         "syswrap"
     ]

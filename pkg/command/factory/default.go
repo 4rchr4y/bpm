@@ -1,9 +1,8 @@
 package factory
 
 import (
-	"github.com/4rchr4y/bpm/pkg/encode"
+	"github.com/4rchr4y/bpm/pkg/bundleutil"
 	"github.com/4rchr4y/bpm/pkg/fileify"
-	"github.com/4rchr4y/bpm/pkg/install"
 	"github.com/4rchr4y/bpm/pkg/load/gitload"
 	"github.com/4rchr4y/bpm/pkg/load/osload"
 	"github.com/4rchr4y/godevkit/syswrap"
@@ -14,20 +13,24 @@ import (
 func New(version string) *Factory {
 	osWrap := new(syswrap.OsWrapper)
 	ioWrap := new(syswrap.IoWrapper)
-	encoder := encode.NewBundleEncoder()
+	encoder := bundleutil.NewEncoder()
 	fileifier := fileify.NewFileifier(encoder)
 
-	f := &Factory{
-		Name:      "bpm",
-		Version:   version,
-		Encoder:   encoder,
-		Fileifier: fileifier,
-		OsLoader:  osload.NewOsLoader(osWrap, ioWrap, fileifier),
-		GitLoader: gitload.NewGitLoader(gitcli.NewClient(), fileifier),
-		Installer: install.NewBundleInstaller(osWrap, encoder),
+	gitLoader := gitload.NewGitLoader(gitcli.NewClient(), fileifier)
+	osLoader := osload.NewOsLoader(osWrap, ioWrap, fileifier)
 
-		IO: ioWrap,
-		OS: osWrap,
+	f := &Factory{
+		Name:       "bpm",
+		Version:    version,
+		Encoder:    encoder,
+		Fileifier:  fileifier,
+		OsLoader:   osLoader,
+		GitLoader:  gitLoader,
+		Saver:      bundleutil.NewSaver(osWrap, encoder),
+		Downloader: bundleutil.NewDownloader(gitLoader),
+		Manifester: bundleutil.NewManifester(osWrap, encoder),
+		IO:         ioWrap,
+		OS:         osWrap,
 	}
 
 	return f

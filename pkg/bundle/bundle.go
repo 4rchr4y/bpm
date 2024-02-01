@@ -10,7 +10,6 @@ import (
 	"github.com/4rchr4y/bpm/pkg/bundle/bundlefile"
 	"github.com/4rchr4y/bpm/pkg/bundle/lockfile"
 	"github.com/4rchr4y/bpm/pkg/bundle/regofile"
-	"github.com/emirpasic/gods/v2/maps/hashbidimap"
 )
 
 type AuthorExpr struct {
@@ -30,7 +29,7 @@ type Bundle struct {
 	RegoFiles   map[string]*regofile.File
 	OtherFiles  map[string][]byte
 
-	requireCache *hashbidimap.Map[string, string]
+	// requireCache *hashbidimap.Map[string, string]
 }
 
 func (b *Bundle) Name() string       { return b.BundleFile.Package.Name }
@@ -69,7 +68,7 @@ func sortedMap[V any](m map[string]V) []string {
 }
 
 func (b *Bundle) SetRequire(requirement *Bundle, direction lockfile.DirectionType) error {
-	b.requireCache.Put(requirement.Repository(), requirement.Name())
+	// b.requireCache.Put(requirement.Repository(), requirement.Name())
 	b.LockFile.Require.List = append(b.LockFile.Require.List, &lockfile.RequirementDecl{
 		Repository: requirement.Repository(),
 		Direction:  direction.String(),
@@ -91,7 +90,7 @@ func (b *Bundle) SetRequire(requirement *Bundle, direction lockfile.DirectionTyp
 
 // TODO: get rid
 func (b *Bundle) Configure() *Bundle {
-	b.requireCache = hashbidimap.New[string, string]()
+	// b.requireCache = hashbidimap.New[string, string]()
 
 	if b.BundleFile.Require == nil {
 		b.BundleFile.Require = &bundlefile.RequireDecl{

@@ -12,8 +12,8 @@ import (
 	"github.com/4rchr4y/bpm/cli/require"
 	"github.com/4rchr4y/bpm/constant"
 	"github.com/4rchr4y/bpm/pkg/bundle"
+	"github.com/4rchr4y/bpm/pkg/bundleutil"
 	"github.com/4rchr4y/bpm/pkg/command/factory"
-	"github.com/4rchr4y/bpm/pkg/encode"
 	"github.com/spf13/cobra"
 )
 
@@ -80,7 +80,7 @@ func NewCmdInit(f *factory.Factory) *cobra.Command {
 type initOptions struct {
 	Repository string                                                 // repo to which the bundle will belong
 	Author     *bundle.AuthorExpr                                     // git information about the author
-	Encoder    *encode.BundleEncoder                                  // decoder of bundle component files
+	Encoder    *bundleutil.Encoder                                    // decoder of bundle component files
 	WriteFile  func(name string, data []byte, perm fs.FileMode) error // func of saving a file to disk
 }
 
