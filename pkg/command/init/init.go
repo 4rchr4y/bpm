@@ -88,7 +88,6 @@ func initRun(opts *initOptions) error {
 	lockfileContent := lockfileContent(opts.Encoder, hex.EncodeToString(bundlefileHash[:]), "2024")
 
 	files := map[string][]byte{
-		".gitignore":            gitignoreFileContent(),
 		constant.BundleFileName: bundlefileContent,
 		constant.LockFileName:   lockfileContent,
 		constant.IgnoreFileName: bpmignoreFileContent(),

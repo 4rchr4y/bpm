@@ -20,11 +20,11 @@ type (
 		Package string   `hcl:"package,label"` // rego file package name, 		e.g. 'data.example'
 		Source  string   `hcl:"source"`        // file source path, 			e.g. 'example/file.rego'
 		Sum     string   `hcl:"sum"`           // calculated file checksum		e.g. 'd973b71fd6dd925...'
-		Require []string `hcl:"require"`       // direct module dependencies 	e.g. '[...]'
+		Require []string `hcl:"require"`       // direct module dependencies 	e.g. '{...}'
 	}
 
 	ModulesDecl struct {
-		List []*ModDecl `hcl:"mod,block"`
+		List []*ModDecl `hcl:"mod,block"` // e.g. '{...}'
 	}
 )
 
@@ -46,8 +46,8 @@ type (
 type File struct {
 	Sum     string       `hcl:"sum"`           // bundle file checksum				e.g. 'd973b71fd6dd925...'
 	Edition string       `hcl:"edition"`       // lock file edition 				e.g. '2024'
-	Modules *ModulesDecl `hcl:"modules,block"` // list of nested modules
-	Require *RequireDecl `hcl:"require,block"` // list of declared dependencies
+	Modules *ModulesDecl `hcl:"modules,block"` // list of nested modules			e.g. '{...}'
+	Require *RequireDecl `hcl:"require,block"` // list of declared dependencies		e.g. '{...}'
 }
 
 func (*File) Filename() string { return constant.LockFileName }

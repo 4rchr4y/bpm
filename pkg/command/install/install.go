@@ -11,7 +11,6 @@ import (
 )
 
 func NewCmdInstall(f *factory.Factory) *cobra.Command {
-	ctx := context.Background()
 	cmd := &cobra.Command{
 		Use:     "install REPOSITORY",
 		Aliases: []string{"i"},
@@ -23,7 +22,7 @@ func NewCmdInstall(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			return installRun(ctx, &installOptions{
+			return installRun(cmd.Context(), &installOptions{
 				URL:       args[0],
 				Version:   version,
 				GitLoader: f.GitLoader,

@@ -20,13 +20,19 @@ type fileifierEncoder interface {
 	DecodeLockFile(content []byte) (*lockfile.File, error)
 }
 
-type Fileifier struct {
-	encoder fileifierEncoder
+type fileifierManifester interface {
+	InitLockFile(b *bundle.Bundle) error
 }
 
-func NewFileifier(encoder fileifierEncoder) *Fileifier {
+type Fileifier struct {
+	manifester fileifierManifester
+	encoder    fileifierEncoder
+}
+
+func NewFileifier(encoder fileifierEncoder, manifester fileifierManifester) *Fileifier {
 	return &Fileifier{
-		encoder: encoder,
+		manifester: manifester,
+		encoder:    encoder,
 	}
 }
 
@@ -36,6 +42,7 @@ func (bp *Fileifier) Fileify(files map[string][]byte) (*bundle.Bundle, error) {
 		OtherFiles: make(map[string][]byte),
 	}
 
+	// TODO: get rid of this. Should do this filtration before the file processing
 	ignoreFileContent, exist := files[constant.IgnoreFileName]
 	if exist && !isEmpty(ignoreFileContent) {
 		ignoreList, err := bp.parseIgnoreFile(ignoreFileContent)
@@ -47,10 +54,9 @@ func (bp *Fileifier) Fileify(files map[string][]byte) (*bundle.Bundle, error) {
 	}
 
 	modules := &lockfile.ModulesDecl{
-		List: make([]*lockfile.ModDecl, len(files)),
+		List: make([]*lockfile.ModDecl, 0),
 	}
 
-	var fidx int
 	for filePath, content := range files {
 		switch {
 		case isRegoFile(filePath):
@@ -62,13 +68,11 @@ func (bp *Fileifier) Fileify(files map[string][]byte) (*bundle.Bundle, error) {
 			file := &regofile.File{Path: filePath, Parsed: parsed}
 			b.RegoFiles[filePath] = file
 
-			modules.List[fidx] = &lockfile.ModDecl{
+			modules.List = append(modules.List, &lockfile.ModDecl{
 				Package: file.Package(),
 				Source:  filePath,
 				Sum:     file.Sum(),
-			}
-
-			fidx++
+			})
 
 		case isBPMFile(filePath):
 			bundlefile, err := bp.encoder.DecodeBundleFile(content)
@@ -91,8 +95,18 @@ func (bp *Fileifier) Fileify(files map[string][]byte) (*bundle.Bundle, error) {
 		}
 	}
 
-	b.LockFile.Modules = modules
-	return b.Configure(), nil
+	if b.LockFile == nil {
+		fmt.Println("WARRING: was no lockfile")
+		if err := bp.manifester.InitLockFile(b); err != nil {
+			return nil, err
+		}
+	}
+
+	if len(modules.List) > 0 {
+		b.LockFile.Modules = modules
+	}
+
+	return b, nil
 }
 
 func (bp *Fileifier) parseRegoFile(fileContent []byte, filePath string) (*ast.Module, error) {

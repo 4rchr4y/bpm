@@ -33,10 +33,6 @@ func lockfileContent(encoder *bundleutil.Encoder, sum string, edition string) []
 	return encoder.EncodeLockFile(lockfile)
 }
 
-func gitignoreFileContent() []byte {
-	return []byte(`bundle.lock`)
-}
-
 func bpmignoreFileContent() []byte {
 	return []byte(`.git`)
 }

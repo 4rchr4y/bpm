@@ -23,7 +23,6 @@ func main() {
 
 func run() exitCode {
 	cmdFactory := factory.New(build.Version)
-
 	rootCmd, err := root.NewCmdRoot(cmdFactory, build.Version)
 	if err != nil {
 		log.Fatalf("failed to create root command: %v\n", err)
@@ -31,7 +30,6 @@ func run() exitCode {
 	}
 
 	ctx := context.Background()
-
 	if _, err := rootCmd.ExecuteContextC(ctx); err != nil {
 		log.Fatal(err)
 

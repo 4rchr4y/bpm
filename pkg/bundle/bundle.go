@@ -28,8 +28,6 @@ type Bundle struct {
 	IgnoreFiles map[string]struct{}
 	RegoFiles   map[string]*regofile.File
 	OtherFiles  map[string][]byte
-
-	// requireCache *hashbidimap.Map[string, string]
 }
 
 func (b *Bundle) Name() string       { return b.BundleFile.Package.Name }
@@ -65,44 +63,4 @@ func sortedMap[V any](m map[string]V) []string {
 
 	sort.Strings(keys)
 	return keys
-}
-
-func (b *Bundle) SetRequire(requirement *Bundle, direction lockfile.DirectionType) error {
-	// b.requireCache.Put(requirement.Repository(), requirement.Name())
-	b.LockFile.Require.List = append(b.LockFile.Require.List, &lockfile.RequirementDecl{
-		Repository: requirement.Repository(),
-		Direction:  direction.String(),
-		Name:       requirement.Name(),
-		Version:    requirement.Version.String(),
-		H1:         requirement.BundleFile.Sum(),
-		H2:         requirement.Sum(),
-	})
-
-	b.BundleFile.Require.List = append(b.BundleFile.Require.List, &bundlefile.RequirementDecl{
-		Repository: requirement.Repository(),
-		Name:       requirement.Name(),
-		Version:    requirement.Version.String(),
-	})
-
-	b.LockFile.Sum = b.BundleFile.Sum()
-	return nil
-}
-
-// TODO: get rid
-func (b *Bundle) Configure() *Bundle {
-	// b.requireCache = hashbidimap.New[string, string]()
-
-	if b.BundleFile.Require == nil {
-		b.BundleFile.Require = &bundlefile.RequireDecl{
-			List: make([]*bundlefile.RequirementDecl, 0),
-		}
-	}
-
-	if b.LockFile.Require == nil {
-		b.LockFile.Require = &lockfile.RequireDecl{
-			List: make([]*lockfile.RequirementDecl, 0),
-		}
-	}
-
-	return b
 }

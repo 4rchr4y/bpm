@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/4rchr4y/bpm/constant"
 	"github.com/4rchr4y/bpm/pkg/bundle"
@@ -44,8 +43,12 @@ func (loader *OsLoader) LoadBundle(dirPath string) (*bundle.Bundle, error) {
 		return nil, err
 	}
 
-	if _, exist := files[constant.BundleFileName]; !exist {
-		return nil, fmt.Errorf("'%s' is invalid bundle directory, can't find %s file", dirPath, constant.BundleFileName)
+	// TODO: Maybe incorrect place to check for a bundle.hcl file
+	// Could be checked during bundle verifying.
+	{
+		if _, exist := files[constant.BundleFileName]; !exist {
+			return nil, fmt.Errorf("'%s' is invalid bundle directory, can't find %s file", dirPath, constant.BundleFileName)
+		}
 	}
 
 	bundle, err := loader.fileifier.Fileify(files)
@@ -57,8 +60,12 @@ func (loader *OsLoader) LoadBundle(dirPath string) (*bundle.Bundle, error) {
 }
 
 func (loader *OsLoader) readBundleDir(dirPath string) (map[string][]byte, error) {
+	absDirPath, err := filepath.Abs(dirPath)
+	if err != nil {
+		return nil, fmt.Errorf("error getting absolute path for %s: %v", dirPath, err)
+	}
+
 	files := make(map[string][]byte)
-	// TODO: do file filtering
 	walkFunc := func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return fmt.Errorf("error occurred while accessing a path %s: %v", path, err)
@@ -67,25 +74,30 @@ func (loader *OsLoader) readBundleDir(dirPath string) (map[string][]byte, error)
 		if !info.IsDir() {
 			file, err := loader.osWrap.Open(path)
 			if err != nil {
+				file.Close()
 				return err
 			}
+			defer file.Close()
 
 			content, err := loader.ioWrap.ReadAll(file)
 			if err != nil {
 				return err
 			}
 
-			relativePath := strings.TrimPrefix(path, filepath.Clean(dirPath)+"/")
-			files[relativePath] = content
+			relativePath, err := filepath.Rel(absDirPath, path)
+			if err != nil {
+				return fmt.Errorf("error getting relative path for %s from %s: %v", path, absDirPath, err)
+			}
 
+			files[relativePath] = content
 		}
 
 		return nil
 	}
 
-	err := loader.osWrap.Walk(dirPath, walkFunc)
+	err = loader.osWrap.Walk(absDirPath, walkFunc)
 	if err != nil {
-		return nil, fmt.Errorf("error walking the path %s: %v", dirPath, err)
+		return nil, fmt.Errorf("error walking the path %s: %v", absDirPath, err)
 	}
 
 	return files, nil

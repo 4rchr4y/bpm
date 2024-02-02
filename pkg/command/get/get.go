@@ -13,7 +13,6 @@ import (
 )
 
 func NewCmdGet(f *factory.Factory) *cobra.Command {
-	ctx := context.Background()
 	cmd := &cobra.Command{
 		Use:   "get",
 		Short: "Get a new dependency",
@@ -29,7 +28,7 @@ func NewCmdGet(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			return getRun(ctx, &getOptions{
+			return getRun(cmd.Context(), &getOptions{
 				WorkDir:    wd,
 				URL:        args[0],
 				Version:    version,
@@ -65,6 +64,10 @@ func getRun(ctx context.Context, opts *getOptions) error {
 
 	result, err := opts.Downloader.Download(ctx, opts.URL, opts.Version)
 	if err != nil {
+		return err
+	}
+
+	if err := opts.Saver.SaveToDisk(result.Merge()...); err != nil {
 		return err
 	}
 

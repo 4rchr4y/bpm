@@ -12,6 +12,7 @@ type Factory struct {
 	Name    string // executable name
 	Version string // app version
 
+	Verifier   *bundleutil.Verifier
 	Encoder    *bundleutil.Encoder    // decoder of bundle component files
 	Fileifier  *bundleutil.Fileifier  // transformer of file contents into structures
 	OsLoader   *osload.OsLoader       // bundle file loader from file system

@@ -32,6 +32,20 @@ func NewManifester(osWrap manifesterOsWrapper, encoder manifesterEncoder) *Manif
 	}
 }
 
+func (m *Manifester) InitLockFile(b *bundle.Bundle) error {
+	if b.BundleFile == nil {
+		return fmt.Errorf("can't find '%s' file", constant.BundleFileName)
+	}
+
+	b.LockFile = &lockfile.File{
+		// TODO: set 'edition' from global app context
+		Edition: "2024",
+		Sum:     b.BundleFile.Sum(),
+	}
+
+	return nil
+}
+
 type UpdateInput struct {
 	Target    *bundle.Bundle   // target bundle that needed to be updated
 	Rdirect   []*bundle.Bundle // directly incoming required bundles
@@ -39,6 +53,18 @@ type UpdateInput struct {
 }
 
 func (m *Manifester) Update(input *UpdateInput) error {
+	if input.Target.BundleFile.Require == nil {
+		input.Target.BundleFile.Require = &bundlefile.RequireDecl{
+			List: make([]*bundlefile.RequirementDecl, len(input.Rdirect)),
+		}
+	}
+
+	if input.Target.LockFile.Require == nil {
+		input.Target.LockFile.Require = &lockfile.RequireDecl{
+			List: make([]*lockfile.RequirementDecl, len(input.Rindirect)),
+		}
+	}
+
 	for _, requirement := range input.Rdirect {
 		input.Target.BundleFile.Require.List = append(input.Target.BundleFile.Require.List, &bundlefile.RequirementDecl{
 			Repository: requirement.Repository(),

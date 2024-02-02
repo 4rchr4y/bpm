@@ -13,7 +13,10 @@ func New(version string) *Factory {
 	osWrap := new(syswrap.OsWrapper)
 	ioWrap := new(syswrap.IoWrapper)
 	encoder := bundleutil.NewEncoder()
-	fileifier := bundleutil.NewFileifier(encoder)
+
+	manifester := bundleutil.NewManifester(osWrap, encoder)
+	fileifier := bundleutil.NewFileifier(encoder, manifester)
+	verifier := bundleutil.NewVerifier()
 
 	gitFacade := gitfacade.NewGitFacade()
 	gitLoader := gitload.NewGitLoader(gitFacade, fileifier)
@@ -28,8 +31,9 @@ func New(version string) *Factory {
 		GitFacade:  gitFacade,
 		GitLoader:  gitLoader,
 		Saver:      bundleutil.NewSaver(osWrap, encoder),
-		Downloader: bundleutil.NewDownloader(gitLoader),
-		Manifester: bundleutil.NewManifester(osWrap, encoder),
+		Downloader: bundleutil.NewDownloader(gitLoader, verifier),
+		Manifester: manifester,
+		Verifier:   verifier,
 		IO:         ioWrap,
 		OS:         osWrap,
 	}

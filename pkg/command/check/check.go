@@ -8,7 +8,7 @@ import (
 	"github.com/4rchr4y/bpm/cli/require"
 	"github.com/4rchr4y/bpm/constant"
 	"github.com/4rchr4y/bpm/pkg/bundleutil"
-	"github.com/4rchr4y/bpm/pkg/command/factory"
+	"github.com/4rchr4y/bpm/pkg/cmdutil/factory"
 	"github.com/4rchr4y/bpm/pkg/load/osload"
 	"github.com/spf13/cobra"
 )

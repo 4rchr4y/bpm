@@ -42,11 +42,11 @@ func (v *VersionExpr) IsPseudo() bool {
 }
 
 func (v *VersionExpr) String() string {
-	if v.Tag.Original() != constant.BundlePseudoVersion {
+	if v.Tag != nil {
 		return v.Tag.Original()
 	}
 
-	return fmt.Sprintf("%s+%s-%s", v.Tag, v.Timestamp, v.Hash)
+	return fmt.Sprintf("%s+%s-%s", constant.BundlePseudoVersion, v.Timestamp, v.Hash)
 }
 
 type (

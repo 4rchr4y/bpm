@@ -27,6 +27,7 @@ type saverHclEncoder interface {
 }
 
 type Saver struct {
+	Dir    string // folder where all packages will be saved
 	osWrap saverOsWrapper
 	encode saverHclEncoder
 }
@@ -38,12 +39,22 @@ func NewSaver(osWrap saverOsWrapper, encoder saverHclEncoder) *Saver {
 	}
 }
 
-func (bs *Saver) SaveToDisk(b *bundle.Bundle) error {
+func (bs *Saver) SaveToDisk(bundles ...*bundle.Bundle) error {
 	homeDir, err := bs.osWrap.UserHomeDir()
 	if err != nil {
 		return err
 	}
 
+	for _, b := range bundles {
+		if err := bs.save(homeDir, b); err != nil {
+			return fmt.Errorf("can't save bundle '%s': %v", b.Name(), err)
+		}
+	}
+
+	return nil
+}
+
+func (bs *Saver) save(homeDir string, b *bundle.Bundle) error {
 	dirPath := filepath.Join(homeDir, constant.BPMDirName, b.Repository(), b.Version.String())
 
 	if err := bs.processRegoFiles(b.RegoFiles, dirPath); err != nil {
