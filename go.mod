@@ -5,8 +5,6 @@ go 1.21.3
 require (
 	github.com/4rchr4y/godevkit v0.0.1
 	github.com/go-git/go-git/v5 v5.11.0
-	github.com/go-ozzo/ozzo-validation v3.6.0+incompatible
-	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/hashicorp/go-version v1.6.0
 	github.com/hashicorp/hcl/v2 v2.19.1
 	github.com/open-policy-agent/opa v0.60.0
