@@ -14,7 +14,7 @@ type downloaderGitLoader interface {
 }
 
 type downloaderVerifier interface {
-	Verify(b *bundle.Bundle) (*VerifyReport, error)
+	Verify(b *bundle.Bundle) error
 }
 
 type Downloader struct {

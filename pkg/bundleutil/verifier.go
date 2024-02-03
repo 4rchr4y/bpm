@@ -19,38 +19,29 @@ package bundleutil
 import (
 	"fmt"
 
+	"github.com/4rchr4y/bpm/core"
 	"github.com/4rchr4y/bpm/pkg/bundle"
 	"github.com/4rchr4y/bpm/pkg/bundle/lockfile"
 )
 
-type Verifier struct{}
-
-func NewVerifier() *Verifier {
-	return &Verifier{}
+type Verifier struct {
+	io core.IO
 }
 
-type VerifyReport struct {
-	Expected string // expected bundle checksum
-	Actual   string // actual bundle checksum
-}
-
-func (vr *VerifyReport) IsValid() bool { return vr.Expected == vr.Actual }
-
-func (vr *VerifyReport) String() string {
-	return fmt.Sprintf("Expected:\t%s\nActual:\t\t%s", vr.Expected, vr.Actual)
-}
-
-func (v *Verifier) Verify(b *bundle.Bundle) (*VerifyReport, error) {
-	result := &VerifyReport{
-		Expected: b.LockFile.Sum,
-		Actual:   b.Sum(),
+func NewVerifier(io core.IO) *Verifier {
+	return &Verifier{
+		io: io,
 	}
+}
+
+func (v *Verifier) Verify(b *bundle.Bundle) error {
+	v.io.Printf("Expected:\t%s\nActual:\t\t%s\n", b.LockFile.Sum, b.Sum())
 
 	if b.LockFile.Sum != b.Sum() {
-		return nil, fmt.Errorf("bundle '%s' checksum does not match the expected one", b.Repository())
+		return fmt.Errorf("bundle '%s' checksum does not match the expected one", b.Repository())
 	}
 
-	return result, nil
+	return nil
 }
 
 func verifyRegoFiles(b *bundle.Bundle) error {
@@ -73,17 +64,6 @@ func verifyRegoFiles(b *bundle.Bundle) error {
 		if file.Sum() != m.Sum {
 			return fmt.Errorf("file '%s' checksum does not match the expected one", filePath)
 		}
-	}
-
-	return nil
-}
-
-func verifyBundleCheckSum(b *bundle.Bundle) error {
-	fmt.Println("expected\t", b.LockFile.Sum)
-	fmt.Println("actual\t\t", b.Sum())
-
-	if b.LockFile.Sum != b.Sum() {
-		return fmt.Errorf("bundle '%s' checksum does not match the expected one", b.Repository())
 	}
 
 	return nil

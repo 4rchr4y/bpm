@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/4rchr4y/bpm/constant"
+	"github.com/4rchr4y/bpm/core"
 	"github.com/4rchr4y/bpm/pkg/bundle"
 	"github.com/4rchr4y/bpm/pkg/bundle/bundlefile"
 	"github.com/4rchr4y/bpm/pkg/bundle/lockfile"
@@ -22,12 +23,14 @@ type fileifierManifester interface {
 }
 
 type Fileifier struct {
+	io         core.IO
 	manifester fileifierManifester
 	encoder    fileifierEncoder
 }
 
-func NewFileifier(encoder fileifierEncoder, manifester fileifierManifester) *Fileifier {
+func NewFileifier(io core.IO, encoder fileifierEncoder, manifester fileifierManifester) *Fileifier {
 	return &Fileifier{
+		io:         io,
 		manifester: manifester,
 		encoder:    encoder,
 	}
@@ -86,7 +89,8 @@ func (bp *Fileifier) Fileify(files map[string][]byte, options ...BundleOptFn) (*
 	}
 
 	if b.LockFile == nil {
-		fmt.Println("WARRING: was no lockfile")
+		bp.io.PrintfWarn("file '%s' in bundle '%s' was not found", constant.LockFileName, b.Name())
+
 		if err := bp.manifester.InitLockFile(b); err != nil {
 			return nil, err
 		}

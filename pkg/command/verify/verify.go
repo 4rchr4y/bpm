@@ -2,7 +2,6 @@ package verify
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/4rchr4y/bpm/cli/require"
 	"github.com/4rchr4y/bpm/pkg/bundleutil"
@@ -40,8 +39,5 @@ func verifyRun(ctx context.Context, opts *verifyOptions) error {
 		return err
 	}
 
-	result, err := opts.Verifier.Verify(b)
-	fmt.Println(result)
-
-	return err
+	return opts.Verifier.Verify(b)
 }

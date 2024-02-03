@@ -1,6 +1,7 @@
 package factory
 
 import (
+	"github.com/4rchr4y/bpm/core"
 	"github.com/4rchr4y/bpm/internal/gitfacade"
 	"github.com/4rchr4y/bpm/pkg/bundleutil"
 	"github.com/4rchr4y/bpm/pkg/load/gitload"
@@ -12,6 +13,7 @@ type Factory struct {
 	Name    string // executable name
 	Version string // app version
 
+	IOStream   core.IO
 	Verifier   *bundleutil.Verifier
 	Encoder    *bundleutil.Encoder    // decoder of bundle component files
 	Fileifier  *bundleutil.Fileifier  // transformer of file contents into structures
