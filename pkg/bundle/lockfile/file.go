@@ -1,6 +1,8 @@
 package lockfile
 
 import (
+	"sort"
+
 	"github.com/4rchr4y/bpm/constant"
 )
 
@@ -27,6 +29,14 @@ type (
 		List []*ModDecl `hcl:"mod,block"` // e.g. '{...}'
 	}
 )
+
+func (md *ModulesDecl) Sort() *ModulesDecl {
+	sort.Slice(md.List, func(i, j int) bool {
+		return md.List[i].Package < md.List[j].Package
+	})
+
+	return md
+}
 
 type (
 	RequirementDecl struct {

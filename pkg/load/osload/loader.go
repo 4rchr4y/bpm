@@ -1,13 +1,17 @@
 package osload
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/4rchr4y/bpm/constant"
 	"github.com/4rchr4y/bpm/pkg/bundle"
+	"github.com/4rchr4y/bpm/pkg/bundleutil"
 )
 
 type osWrapper interface {
@@ -20,7 +24,7 @@ type ioWrapper interface {
 }
 
 type bundleFileifier interface {
-	Fileify(files map[string][]byte) (*bundle.Bundle, error)
+	Fileify(files map[string][]byte, options ...bundleutil.BundleOptFn) (*bundle.Bundle, error)
 }
 
 type OsLoader struct {
@@ -38,20 +42,22 @@ func NewOsLoader(os osWrapper, io ioWrapper, fileifier bundleFileifier) *OsLoade
 }
 
 func (loader *OsLoader) LoadBundle(dirPath string) (*bundle.Bundle, error) {
-	files, err := loader.readBundleDir(dirPath)
+	absDirPath, err := filepath.Abs(dirPath)
+	if err != nil {
+		return nil, fmt.Errorf("error getting absolute path for %s: %v", dirPath, err)
+	}
+
+	ignoreList, err := loader.fetchIgnoreList(absDirPath)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: Maybe incorrect place to check for a bundle.hcl file
-	// Could be checked during bundle verifying.
-	{
-		if _, exist := files[constant.BundleFileName]; !exist {
-			return nil, fmt.Errorf("'%s' is invalid bundle directory, can't find %s file", dirPath, constant.BundleFileName)
-		}
+	files, err := loader.readBundleDir(absDirPath, ignoreList)
+	if err != nil {
+		return nil, err
 	}
 
-	bundle, err := loader.fileifier.Fileify(files)
+	bundle, err := loader.fileifier.Fileify(files, bundleutil.WithIgnoreList(ignoreList))
 	if err != nil {
 		return nil, err
 	}
@@ -59,46 +65,96 @@ func (loader *OsLoader) LoadBundle(dirPath string) (*bundle.Bundle, error) {
 	return bundle, nil
 }
 
-func (loader *OsLoader) readBundleDir(dirPath string) (map[string][]byte, error) {
-	absDirPath, err := filepath.Abs(dirPath)
-	if err != nil {
-		return nil, fmt.Errorf("error getting absolute path for %s: %v", dirPath, err)
-	}
-
+func (loader *OsLoader) readBundleDir(abs string, ignoreList map[string]struct{}) (map[string][]byte, error) {
 	files := make(map[string][]byte)
-	walkFunc := func(path string, info os.FileInfo, err error) error {
+	err := loader.osWrap.Walk(abs, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return fmt.Errorf("error occurred while accessing a path %s: %v", path, err)
 		}
 
+		relativePath, err := filepath.Rel(abs, path)
+		if err != nil {
+			return fmt.Errorf("error getting relative path for %s from %s: %v", path, abs, err)
+		}
+
+		if shouldIgnore(ignoreList, relativePath) {
+			if info.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
 		if !info.IsDir() {
-			file, err := loader.osWrap.Open(path)
-			if err != nil {
-				file.Close()
-				return err
-			}
-			defer file.Close()
-
-			content, err := loader.ioWrap.ReadAll(file)
+			content, err := loader.readFileContent(path)
 			if err != nil {
 				return err
 			}
-
-			relativePath, err := filepath.Rel(absDirPath, path)
-			if err != nil {
-				return fmt.Errorf("error getting relative path for %s from %s: %v", path, absDirPath, err)
-			}
-
 			files[relativePath] = content
 		}
 
 		return nil
-	}
-
-	err = loader.osWrap.Walk(absDirPath, walkFunc)
+	})
 	if err != nil {
-		return nil, fmt.Errorf("error walking the path %s: %v", absDirPath, err)
+		return nil, fmt.Errorf("error walking the path %s: %v", abs, err)
 	}
 
 	return files, nil
+}
+
+func shouldIgnore(ignoreList map[string]struct{}, path string) bool {
+	if path == "" || len(ignoreList) == 0 {
+		return false
+	}
+
+	dir := filepath.Dir(path)
+	if dir == "." {
+		return false
+	}
+
+	topLevelDir := strings.Split(dir, string(filepath.Separator))[0]
+	_, found := ignoreList[topLevelDir]
+	return found
+}
+
+func (loader *OsLoader) readFileContent(path string) ([]byte, error) {
+	file, err := loader.osWrap.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	return loader.ioWrap.ReadAll(file)
+}
+
+func (loader *OsLoader) fetchIgnoreList(dir string) (map[string]struct{}, error) {
+	ignoreFilePath := filepath.Join(dir, constant.IgnoreFileName)
+	file, err := loader.osWrap.Open(ignoreFilePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return make(map[string]struct{}), nil
+		}
+		return nil, err
+	}
+	defer file.Close()
+
+	content, err := loader.ioWrap.ReadAll(file)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[string]struct{})
+	scanner := bufio.NewScanner(bytes.NewReader(content))
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" {
+			continue
+		}
+		result[line] = struct{}{}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("error reading '%s' input: %v", constant.IgnoreFileName, err)
+	}
+
+	return result, nil
 }

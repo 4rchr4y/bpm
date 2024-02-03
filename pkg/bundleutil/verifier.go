@@ -29,16 +29,28 @@ func NewVerifier() *Verifier {
 	return &Verifier{}
 }
 
-func (v *Verifier) Verify(b *bundle.Bundle) error {
-	if err := verifyBundleFile(b); err != nil {
-		return err
+type VerifyReport struct {
+	Expected string // expected bundle checksum
+	Actual   string // actual bundle checksum
+}
+
+func (vr *VerifyReport) IsValid() bool { return vr.Expected == vr.Actual }
+
+func (vr *VerifyReport) String() string {
+	return fmt.Sprintf("Expected:\t%s\nActual:\t\t%s", vr.Expected, vr.Actual)
+}
+
+func (v *Verifier) Verify(b *bundle.Bundle) (*VerifyReport, error) {
+	result := &VerifyReport{
+		Expected: b.LockFile.Sum,
+		Actual:   b.Sum(),
 	}
 
-	if err := verifyRegoFiles(b); err != nil {
-		return err
+	if b.LockFile.Sum != b.Sum() {
+		return nil, fmt.Errorf("bundle '%s' checksum does not match the expected one", b.Repository())
 	}
 
-	return nil
+	return result, nil
 }
 
 func verifyRegoFiles(b *bundle.Bundle) error {
@@ -66,7 +78,7 @@ func verifyRegoFiles(b *bundle.Bundle) error {
 	return nil
 }
 
-func verifyBundleFile(b *bundle.Bundle) error {
+func verifyBundleCheckSum(b *bundle.Bundle) error {
 	fmt.Println("expected\t", b.LockFile.Sum)
 	fmt.Println("actual\t\t", b.Sum())
 

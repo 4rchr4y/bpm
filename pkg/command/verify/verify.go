@@ -2,6 +2,7 @@ package verify
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/4rchr4y/bpm/cli/require"
 	"github.com/4rchr4y/bpm/pkg/bundleutil"
@@ -12,7 +13,7 @@ import (
 
 func NewCmdVerify(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "verify [PATH]",
+		Use:   "verify PATH",
 		Short: "Verify specified bundle",
 		Args:  require.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -39,9 +40,8 @@ func verifyRun(ctx context.Context, opts *verifyOptions) error {
 		return err
 	}
 
-	if err := opts.Verifier.Verify(b); err != nil {
-		return err
-	}
+	result, err := opts.Verifier.Verify(b)
+	fmt.Println(result)
 
-	return nil
+	return err
 }

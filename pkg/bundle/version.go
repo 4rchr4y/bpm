@@ -42,7 +42,7 @@ func (v *VersionExpr) IsPseudo() bool {
 }
 
 func (v *VersionExpr) String() string {
-	if v.Tag != nil {
+	if v.Tag != nil && v.Tag.Original() != constant.BundlePseudoVersion {
 		return v.Tag.Original()
 	}
 

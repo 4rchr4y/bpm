@@ -1,11 +1,8 @@
 package bundleutil
 
 import (
-	"bufio"
-	"bytes"
 	"fmt"
 	"path/filepath"
-	"strings"
 
 	"github.com/4rchr4y/bpm/constant"
 	"github.com/4rchr4y/bpm/pkg/bundle"
@@ -36,21 +33,14 @@ func NewFileifier(encoder fileifierEncoder, manifester fileifierManifester) *Fil
 	}
 }
 
-func (bp *Fileifier) Fileify(files map[string][]byte) (*bundle.Bundle, error) {
+func (bp *Fileifier) Fileify(files map[string][]byte, options ...BundleOptFn) (*bundle.Bundle, error) {
 	b := &bundle.Bundle{
 		RegoFiles:  make(map[string]*regofile.File),
 		OtherFiles: make(map[string][]byte),
 	}
 
-	// TODO: get rid of this. Should do this filtration before the file processing
-	ignoreFileContent, exist := files[constant.IgnoreFileName]
-	if exist && !isEmpty(ignoreFileContent) {
-		ignoreList, err := bp.parseIgnoreFile(ignoreFileContent)
-		if err != nil {
-			return nil, err
-		}
-
-		b.IgnoreFiles = ignoreList
+	for i := range options {
+		options[i](b)
 	}
 
 	modules := &lockfile.ModulesDecl{
@@ -103,7 +93,7 @@ func (bp *Fileifier) Fileify(files map[string][]byte) (*bundle.Bundle, error) {
 	}
 
 	if len(modules.List) > 0 {
-		b.LockFile.Modules = modules
+		b.LockFile.Modules = modules.Sort()
 	}
 
 	return b, nil
@@ -116,37 +106,6 @@ func (bp *Fileifier) parseRegoFile(fileContent []byte, filePath string) (*ast.Mo
 	}
 
 	return parsed, nil
-}
-
-func (bp *Fileifier) parseIgnoreFile(fileContent []byte) (map[string]struct{}, error) {
-	result := make(map[string]struct{})
-
-	scanner := bufio.NewScanner(bytes.NewReader(fileContent))
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		result[line] = struct{}{}
-	}
-
-	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("error reading '%s' input: %v", constant.IgnoreFileName, err)
-	}
-
-	return result, nil
-}
-
-func shouldIgnore(ignoreList map[string]struct{}, path string) bool {
-	if path == "" || len(ignoreList) == 0 {
-		return false
-	}
-
-	dir := filepath.Dir(path)
-	if dir == "." {
-		return false
-	}
-
-	topLevelDir := strings.Split(dir, string(filepath.Separator))[0]
-	_, found := ignoreList[topLevelDir]
-	return found
 }
 
 func isRegoFile(filePath string) bool    { return filepath.Ext(filePath) == constant.RegoFileExt }

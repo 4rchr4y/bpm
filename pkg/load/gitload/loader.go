@@ -11,10 +11,11 @@ import (
 	"github.com/hashicorp/go-version"
 
 	"github.com/4rchr4y/bpm/pkg/bundle"
+	"github.com/4rchr4y/bpm/pkg/bundleutil"
 )
 
 type bundleFileifier interface {
-	Fileify(files map[string][]byte) (*bundle.Bundle, error)
+	Fileify(files map[string][]byte, options ...bundleutil.BundleOptFn) (*bundle.Bundle, error)
 }
 
 type gitFacade interface {

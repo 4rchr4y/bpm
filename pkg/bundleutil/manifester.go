@@ -93,7 +93,7 @@ func (m *Manifester) Update(input *UpdateInput) error {
 		})
 	}
 
-	input.Target.LockFile.Sum = input.Target.BundleFile.Sum()
+	input.Target.LockFile.Sum = input.Target.Sum()
 	return nil
 }
 
