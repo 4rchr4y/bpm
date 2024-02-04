@@ -61,9 +61,9 @@ func (d *Downloader) Download(ctx context.Context, url string, version string) (
 		return nil, fmt.Errorf("failed to download '%s' bundle: %w", url, err)
 	}
 
-	// if err := d.verifier.Verify(target); err != nil {
-	// 	return nil, err
-	// }
+	if err := d.verifier.Verify(target); err != nil {
+		return nil, err
+	}
 
 	if target.BundleFile.Require == nil {
 		return &DownloadResult{Target: target}, nil

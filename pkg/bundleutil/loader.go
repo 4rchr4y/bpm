@@ -1,45 +1,185 @@
-package gitload
+package bundleutil
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"os"
+	"path/filepath"
 	"strings"
 
+	"github.com/4rchr4y/bpm/constant"
+	"github.com/4rchr4y/bpm/pkg/bundle"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/hashicorp/go-version"
-
-	"github.com/4rchr4y/bpm/pkg/bundle"
-	"github.com/4rchr4y/bpm/pkg/bundleutil"
 )
 
-type bundleFileifier interface {
-	Fileify(files map[string][]byte, options ...bundleutil.BundleOptFn) (*bundle.Bundle, error)
+type loaderOsWrapper interface {
+	Walk(root string, fn filepath.WalkFunc) error
+	Open(name string) (*os.File, error)
 }
 
-type gitFacade interface {
+type loaderIoWrapper interface {
+	ReadAll(reader io.Reader) ([]byte, error)
+}
+
+type loaderFileifier interface {
+	Fileify(files map[string][]byte, options ...BundleOptFn) (*bundle.Bundle, error)
+}
+type loaderGitFacade interface {
 	CloneWithContext(ctx context.Context, opts *git.CloneOptions) (*git.Repository, error)
 }
 
-type GitLoader struct {
-	fileifier bundleFileifier
-	gitFacade gitFacade
+type Loader struct {
+	osWrap    loaderOsWrapper
+	ioWrap    loaderIoWrapper
+	fileifier loaderFileifier
+	gitfacade loaderGitFacade
 }
 
-func NewGitLoader(gitClient gitFacade, bparser bundleFileifier) *GitLoader {
-	return &GitLoader{
-		gitFacade: gitClient,
-		fileifier: bparser,
+func NewLoader(os loaderOsWrapper, io loaderIoWrapper, fileifier loaderFileifier, gitfacade loaderGitFacade) *Loader {
+	return &Loader{
+		osWrap:    os,
+		ioWrap:    io,
+		fileifier: fileifier,
+		gitfacade: gitfacade,
 	}
 }
 
-func (loader *GitLoader) DownloadBundle(ctx context.Context, url string, tag string) (*bundle.Bundle, error) {
+// -----------------------------------------------------------------------
+// Loader of bundle files from the file system
+
+func (loader *Loader) LoadBundle(dirPath string) (*bundle.Bundle, error) {
+	absDirPath, err := filepath.Abs(dirPath)
+	if err != nil {
+		return nil, fmt.Errorf("error getting absolute path for %s: %v", dirPath, err)
+	}
+
+	ignoreList, err := loader.fetchIgnoreList(absDirPath)
+	if err != nil {
+		return nil, err
+	}
+
+	files, err := loader.readBundleDir(absDirPath, ignoreList)
+	if err != nil {
+		return nil, err
+	}
+
+	bundle, err := loader.fileifier.Fileify(files, WithIgnoreList(ignoreList))
+	if err != nil {
+		return nil, err
+	}
+
+	return bundle, nil
+}
+
+func (loader *Loader) readBundleDir(abs string, ignoreList map[string]struct{}) (map[string][]byte, error) {
+	files := make(map[string][]byte)
+	err := loader.osWrap.Walk(abs, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return fmt.Errorf("error occurred while accessing a path %s: %v", path, err)
+		}
+
+		relativePath, err := filepath.Rel(abs, path)
+		if err != nil {
+			return fmt.Errorf("error getting relative path for %s from %s: %v", path, abs, err)
+		}
+
+		if shouldIgnore(ignoreList, relativePath) {
+			if info.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
+		if !info.IsDir() {
+			content, err := loader.readFileContent(path)
+			if err != nil {
+				return err
+			}
+			files[relativePath] = content
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("error walking the path %s: %v", abs, err)
+	}
+
+	return files, nil
+}
+
+func (loader *Loader) readFileContent(path string) ([]byte, error) {
+	file, err := loader.osWrap.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	return loader.ioWrap.ReadAll(file)
+}
+
+func (loader *Loader) fetchIgnoreList(dir string) (map[string]struct{}, error) {
+	ignoreFilePath := filepath.Join(dir, constant.IgnoreFileName)
+	file, err := loader.osWrap.Open(ignoreFilePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return make(map[string]struct{}), nil
+		}
+		return nil, err
+	}
+	defer file.Close()
+
+	content, err := loader.ioWrap.ReadAll(file)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[string]struct{})
+	scanner := bufio.NewScanner(bytes.NewReader(content))
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" {
+			continue
+		}
+		result[line] = struct{}{}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("error reading '%s' input: %v", constant.IgnoreFileName, err)
+	}
+
+	return result, nil
+}
+
+func shouldIgnore(ignoreList map[string]struct{}, path string) bool {
+	if path == "" || len(ignoreList) == 0 {
+		return false
+	}
+
+	dir := filepath.Dir(path)
+	if dir == "." {
+		return false
+	}
+
+	topLevelDir := strings.Split(dir, string(filepath.Separator))[0]
+	_, found := ignoreList[topLevelDir]
+	return found
+}
+
+// -----------------------------------------------------------------------
+// Bundle downloader from a remote git server
+
+func (loader *Loader) DownloadBundle(ctx context.Context, url string, tag string) (*bundle.Bundle, error) {
 	cloneInput := &git.CloneOptions{
 		URL: fmt.Sprintf("https://%s.git", url),
 	}
 
-	repo, err := loader.gitFacade.CloneWithContext(ctx, cloneInput)
+	repo, err := loader.gitfacade.CloneWithContext(ctx, cloneInput)
 	if err != nil {
 		return nil, err
 	}
@@ -206,12 +346,22 @@ func getFilesFromCommit(commit *object.Commit) (map[string][]byte, error) {
 		return nil, err
 	}
 
+	ignoreFile, err := commit.File("constant.IgnoreFileName")
+	if err != nil {
+		if err != object.ErrFileNotFound {
+			return nil, err
+		}
+	}
+
+	fmt.Println(ignoreFile.Name)
+
 	files := make(map[string][]byte)
 	err = filesIter.ForEach(func(f *object.File) error {
 		content, err := f.Contents()
 		if err != nil {
 			return err
 		}
+
 		files[f.Name] = []byte(content)
 		return nil
 	})

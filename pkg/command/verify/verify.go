@@ -6,7 +6,6 @@ import (
 	"github.com/4rchr4y/bpm/cli/require"
 	"github.com/4rchr4y/bpm/pkg/bundleutil"
 	"github.com/4rchr4y/bpm/pkg/cmdutil/factory"
-	"github.com/4rchr4y/bpm/pkg/load/osload"
 	"github.com/spf13/cobra"
 )
 
@@ -18,7 +17,7 @@ func NewCmdVerify(f *factory.Factory) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return verifyRun(cmd.Context(), &verifyOptions{
 				Dir:      args[0],
-				OsLoader: f.OsLoader,
+				Loader:   f.Loader,
 				Verifier: f.Verifier,
 			})
 		},
@@ -28,13 +27,13 @@ func NewCmdVerify(f *factory.Factory) *cobra.Command {
 }
 
 type verifyOptions struct {
-	Dir      string           // specified bundle folder that should be verified
-	OsLoader *osload.OsLoader // bundle file loader from file system
+	Dir      string // specified bundle folder that should be verified
+	Loader   *bundleutil.Loader
 	Verifier *bundleutil.Verifier
 }
 
 func verifyRun(ctx context.Context, opts *verifyOptions) error {
-	b, err := opts.OsLoader.LoadBundle(opts.Dir)
+	b, err := opts.Loader.LoadBundle(opts.Dir)
 	if err != nil {
 		return err
 	}

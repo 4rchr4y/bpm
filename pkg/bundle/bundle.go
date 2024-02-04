@@ -63,10 +63,12 @@ func (b *Bundle) Sum() string {
 	hasher := sha256.New()
 	hasher.Write([]byte(b.BundleFile.Sum())) // Add checksum of the bundle file
 
+	// fmt.Println(b.RegoFiles)
 	for _, k := range sortedMap(b.RegoFiles) {
 		hasher.Write([]byte(b.RegoFiles[k].Sum())) // Add checksums of all Rego files
 	}
 
+	// fmt.Println(b.OtherFiles)
 	for _, k := range sortedMap(b.OtherFiles) {
 		hasher.Write(b.OtherFiles[k]) // Add checksums of all other files
 	}

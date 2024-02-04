@@ -8,7 +8,6 @@ import (
 	"github.com/4rchr4y/bpm/pkg/bundle"
 	"github.com/4rchr4y/bpm/pkg/bundleutil"
 	"github.com/4rchr4y/bpm/pkg/cmdutil/factory"
-	"github.com/4rchr4y/bpm/pkg/load/osload"
 	"github.com/spf13/cobra"
 )
 
@@ -32,7 +31,7 @@ func NewCmdGet(f *factory.Factory) *cobra.Command {
 				WorkDir:    wd,
 				URL:        args[0],
 				Version:    version,
-				OsLoader:   f.OsLoader,
+				Loader:     f.Loader,
 				Saver:      f.Saver,
 				Encoder:    f.Encoder,
 				Downloader: f.Downloader,
@@ -46,10 +45,10 @@ func NewCmdGet(f *factory.Factory) *cobra.Command {
 }
 
 type getOptions struct {
-	WorkDir    string                 // bundle working directory
-	URL        string                 // bundle repository that needs to be installed
-	Version    string                 // specified bundle version
-	OsLoader   *osload.OsLoader       // bundle file loader from file system
+	WorkDir    string // bundle working directory
+	URL        string // bundle repository that needs to be installed
+	Version    string // specified bundle version
+	Loader     *bundleutil.Loader
 	Saver      *bundleutil.Saver      // bundle saver files into the file system
 	Encoder    *bundleutil.Encoder    // decoder of bundle component files
 	Downloader *bundleutil.Downloader // downloader of a bundle and its dependencies
@@ -57,7 +56,7 @@ type getOptions struct {
 }
 
 func getRun(ctx context.Context, opts *getOptions) error {
-	target, err := opts.OsLoader.LoadBundle(opts.WorkDir)
+	target, err := opts.Loader.LoadBundle(opts.WorkDir)
 	if err != nil {
 		return err
 	}
