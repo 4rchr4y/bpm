@@ -40,7 +40,7 @@ func (m *Manifester) InitLockFile(b *bundle.Bundle) error {
 	b.LockFile = &lockfile.File{
 		// TODO: set 'edition' from global app context
 		Edition: "2024",
-		Sum:     b.BundleFile.Sum(),
+		Sum:     b.Sum(),
 	}
 
 	return nil

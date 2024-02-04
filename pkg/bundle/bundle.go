@@ -20,6 +20,10 @@ func (author *AuthorExpr) String() string {
 	return fmt.Sprintf("%s %s", author.Username, author.Email)
 }
 
+type Metadata struct {
+	LockFileGenerated bool // was a lockfile.hcl generated at load time
+}
+
 type Bundle struct {
 	Version     *VersionExpr
 	BundleFile  *bundlefile.File
@@ -27,6 +31,7 @@ type Bundle struct {
 	IgnoreFiles map[string]struct{}
 	RegoFiles   map[string]*regofile.File
 	OtherFiles  map[string][]byte
+	Meta        *Metadata
 }
 
 func (b *Bundle) Name() string       { return b.BundleFile.Package.Name }

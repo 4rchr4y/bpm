@@ -85,6 +85,7 @@ type initOptions struct {
 func initRun(opts *initOptions) error {
 	bundlefileContent := bundleFileContent(opts.Encoder, opts.Repository, opts.Author)
 	bundlefileHash := md5.Sum(bytes.TrimSpace(bundlefileContent))
+	// TODO: to use manifest util to generate init lockfile data
 	lockfileContent := lockfileContent(opts.Encoder, hex.EncodeToString(bundlefileHash[:]), "2024")
 
 	files := map[string][]byte{
