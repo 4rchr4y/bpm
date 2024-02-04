@@ -1,8 +1,6 @@
 package factory
 
 import (
-	"os"
-
 	"github.com/4rchr4y/bpm/pkg/bundleutil"
 	"github.com/4rchr4y/bpm/pkg/iostream"
 	"github.com/4rchr4y/godevkit/syswrap"
@@ -11,7 +9,7 @@ import (
 )
 
 func New(version string) *Factory {
-	io := iostream.NewIOStream(os.Stdin, os.Stdout, os.Stderr)
+	io := iostream.NewIOStream()
 
 	osWrap := new(syswrap.OsWrapper)
 	ioWrap := new(syswrap.IoWrapper)
@@ -23,7 +21,6 @@ func New(version string) *Factory {
 
 	gitFacade := gitfacade.NewGitFacade()
 	loader := bundleutil.NewLoader(osWrap, ioWrap, fileifier, gitFacade)
-	// osLoader := osload.NewOsLoader(osWrap, ioWrap, fileifier)
 
 	f := &Factory{
 		Name:      "bpm",

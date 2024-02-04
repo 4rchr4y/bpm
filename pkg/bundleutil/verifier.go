@@ -35,7 +35,8 @@ func NewVerifier(io core.IO) *Verifier {
 }
 
 func (v *Verifier) Verify(b *bundle.Bundle) error {
-	v.io.Printf("Expected:\t%s\nActual:\t\t%s\n", b.LockFile.Sum, b.Sum())
+	v.io.PrintfDebug("expected:\t%s", b.LockFile.Sum)
+	v.io.PrintfDebug("actual:\t\t%s", b.Sum())
 
 	if b.LockFile.Sum != b.Sum() {
 		return fmt.Errorf("bundle '%s' checksum does not match the expected one", b.Repository())

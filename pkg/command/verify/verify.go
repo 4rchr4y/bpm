@@ -3,6 +3,7 @@ package verify
 import (
 	"context"
 
+	"github.com/4rchr4y/bpm/core"
 	"github.com/4rchr4y/bpm/pkg/bundleutil"
 	"github.com/4rchr4y/bpm/pkg/cmdutil/factory"
 	"github.com/4rchr4y/bpm/pkg/cmdutil/require"
@@ -16,10 +17,11 @@ func NewCmdVerify(f *factory.Factory) *cobra.Command {
 		Args:  require.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return verifyRun(cmd.Context(), &verifyOptions{
-				Dir:        args[0],
-				Loader:     f.Loader,
-				Verifier:   f.Verifier,
-				Manifester: f.Manifester,
+				dir:        args[0],
+				io:         f.IOStream,
+				loader:     f.Loader,
+				verifier:   f.Verifier,
+				manifester: f.Manifester,
 			})
 		},
 	}
@@ -28,14 +30,15 @@ func NewCmdVerify(f *factory.Factory) *cobra.Command {
 }
 
 type verifyOptions struct {
-	Dir        string // specified bundle folder that should be verified
-	Loader     *bundleutil.Loader
-	Verifier   *bundleutil.Verifier
-	Manifester *bundleutil.Manifester
+	dir        string // specified bundle folder that should be verified
+	io         core.IO
+	loader     *bundleutil.Loader
+	verifier   *bundleutil.Verifier
+	manifester *bundleutil.Manifester
 }
 
 func verifyRun(ctx context.Context, opts *verifyOptions) error {
-	b, err := opts.Loader.LoadBundle(opts.Dir)
+	b, err := opts.loader.LoadBundle(opts.dir)
 	if err != nil {
 		return err
 	}
@@ -45,9 +48,14 @@ func verifyRun(ctx context.Context, opts *verifyOptions) error {
 		b.LockFile.Sum = currentChecksum
 	}
 
-	if err := opts.Manifester.Upgrade(opts.Dir, b); err != nil {
+	if err := opts.manifester.Upgrade(opts.dir, b); err != nil {
 		return err
 	}
 
-	return opts.Verifier.Verify(b)
+	if err := opts.verifier.Verify(b); err != nil {
+		return err
+	}
+
+	opts.io.PrintfOk("bundle '%s' is verified", b.Repository())
+	return nil
 }
