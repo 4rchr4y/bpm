@@ -4,10 +4,10 @@ import (
 	"context"
 	"os"
 
-	"github.com/4rchr4y/bpm/cli/require"
 	"github.com/4rchr4y/bpm/pkg/bundle"
 	"github.com/4rchr4y/bpm/pkg/bundleutil"
 	"github.com/4rchr4y/bpm/pkg/cmdutil/factory"
+	"github.com/4rchr4y/bpm/pkg/cmdutil/require"
 	"github.com/spf13/cobra"
 )
 

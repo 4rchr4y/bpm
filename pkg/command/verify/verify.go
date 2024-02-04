@@ -3,9 +3,9 @@ package verify
 import (
 	"context"
 
-	"github.com/4rchr4y/bpm/cli/require"
 	"github.com/4rchr4y/bpm/pkg/bundleutil"
 	"github.com/4rchr4y/bpm/pkg/cmdutil/factory"
+	"github.com/4rchr4y/bpm/pkg/cmdutil/require"
 	"github.com/spf13/cobra"
 )
 
