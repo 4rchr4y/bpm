@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/4rchr4y/bpm/constant"
+	"github.com/4rchr4y/bpm/core"
 	"github.com/4rchr4y/bpm/pkg/bundle"
 	"github.com/4rchr4y/bpm/pkg/fileutil"
 	"github.com/go-git/go-git/v5"
@@ -34,16 +35,18 @@ type loaderGitFacade interface {
 }
 
 type Loader struct {
+	io        core.IO
 	osWrap    loaderOsWrapper
 	ioWrap    loaderIoWrapper
 	fileifier loaderFileifier
 	gitfacade loaderGitFacade
 }
 
-func NewLoader(os loaderOsWrapper, io loaderIoWrapper, fileifier loaderFileifier, gitfacade loaderGitFacade) *Loader {
+func NewLoader(io core.IO, osWrap loaderOsWrapper, ioWrap loaderIoWrapper, fileifier loaderFileifier, gitfacade loaderGitFacade) *Loader {
 	return &Loader{
-		osWrap:    os,
-		ioWrap:    io,
+		io:        io,
+		osWrap:    osWrap,
+		ioWrap:    ioWrap,
 		fileifier: fileifier,
 		gitfacade: gitfacade,
 	}
@@ -57,6 +60,8 @@ func (loader *Loader) LoadBundle(dirPath string) (*bundle.Bundle, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error getting absolute path for %s: %v", dirPath, err)
 	}
+
+	loader.io.PrintfInfo("loading bundle from %s", absDirPath)
 
 	ignoreList, err := loader.fetchIgnoreListFromLocalFile(absDirPath)
 	if err != nil {

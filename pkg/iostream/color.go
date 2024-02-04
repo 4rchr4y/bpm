@@ -7,6 +7,7 @@ var profile = termenv.ColorProfile()
 var (
 	DarkThemeBlack       = profile.Color("#282828")
 	DarkThemeBlackDeep   = profile.Color("#1d2021")
+	DarkThemeBg3         = profile.Color("#665c54")
 	DarkThemeRedLight    = profile.Color("#fb4934")
 	DarkThemeRedDeep     = profile.Color("#cc241d")
 	DarkThemeYellow      = profile.Color("#d79921")
@@ -21,4 +22,5 @@ var (
 	DarkThemePurpleLight = profile.Color("#d3869b")
 	DarkThemeAqua        = profile.Color("#689d6a")
 	DarkThemeAquaLight   = profile.Color("#8ec07c")
+	DarkThemeFg0         = profile.Color("#fbf1c7")
 )

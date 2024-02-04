@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"time"
 
 	"github.com/4rchr4y/bpm/core"
 	"github.com/muesli/termenv"
@@ -13,6 +14,7 @@ var (
 	LabelErr   = termenv.String(" ERROR ").Bold().Background(DarkThemeRedDeep).String()
 	LabelDebug = termenv.String(" DEBUG ").Bold().Background(DarkThemeOrangeLight).String()
 	LabelWarn  = termenv.String(" WARN ").Bold().Background(DarkThemeYellowLight).String()
+	LabelInfo  = termenv.String(" INFO ").Bold().Background(DarkThemeFg0).String()
 	LabelOk    = termenv.String(" OK ").Bold().Background(DarkThemeGreen).String()
 )
 
@@ -21,6 +23,7 @@ type IOStream struct {
 	out,
 	errOut *termenv.Output
 	mode core.StdoutMode
+	pet  time.Time // execution time of the previous operation
 }
 
 type IOStreamOptFn func(io *IOStream)
@@ -72,14 +75,21 @@ func (s *IOStream) Printf(format string, a ...any) { fmt.Fprintf(s.out, format, 
 
 func (s *IOStream) PrintfOk(format string, a ...any) {
 	msg := termenv.String(fmt.Sprintf(format, a...)).String()
-	str := termenv.String(LabelOk, msg).String()
+	str := termenv.String(LabelOk, msg, s.fetchTime(time.Now())).String()
+
+	fmt.Fprint(s.out, str+"\n")
+}
+
+func (s *IOStream) PrintfInfo(format string, a ...any) {
+	msg := termenv.String(fmt.Sprintf(format, a...)).String()
+	str := termenv.String(LabelInfo, msg, s.fetchTime(time.Now())).String()
 
 	fmt.Fprint(s.out, str+"\n")
 }
 
 func (s *IOStream) PrintfWarn(format string, a ...any) {
 	msg := termenv.String(fmt.Sprintf(format, a...)).String()
-	str := termenv.String(LabelWarn, msg).String()
+	str := termenv.String(LabelWarn, msg, s.fetchTime(time.Now())).String()
 
 	fmt.Fprint(s.out, str+"\n")
 }
@@ -90,14 +100,28 @@ func (s *IOStream) PrintfDebug(format string, a ...any) {
 	}
 
 	msg := termenv.String(fmt.Sprintf(format, a...)).String()
-	str := termenv.String(LabelDebug, msg).String()
+	str := termenv.String(LabelDebug, msg, s.fetchTime(time.Now())).String()
 
 	fmt.Fprint(s.out, str+"\n")
 }
 
 func (s *IOStream) PrintfErr(format string, a ...any) {
 	msg := termenv.String(fmt.Sprintf(format, a...)).Foreground(DarkThemeRedDeep).String()
-	str := termenv.String(LabelErr, msg).String()
+	str := termenv.String(LabelErr, msg, s.fetchTime(time.Now())).String()
 
 	fmt.Fprint(s.errOut, str+"\n")
+}
+
+func (s *IOStream) fetchTime(now time.Time) (result string) {
+	result = termenv.String(now.Format(core.StdoutTimeFormat)).Faint().String()
+	if s.pet.IsZero() || s.mode == core.Info {
+		s.pet = now
+		return result
+	}
+
+	s.pet = now
+	duration := time.Since(s.pet)
+	result += termenv.String(fmt.Sprintf(" (%s)", duration)).Faint().String()
+
+	return result
 }

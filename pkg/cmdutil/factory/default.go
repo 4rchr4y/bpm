@@ -20,7 +20,7 @@ func New(version string) *Factory {
 	verifier := bundleutil.NewVerifier(io)
 
 	gitFacade := gitfacade.NewGitFacade()
-	loader := bundleutil.NewLoader(osWrap, ioWrap, fileifier, gitFacade)
+	loader := bundleutil.NewLoader(io, osWrap, ioWrap, fileifier, gitFacade)
 
 	f := &Factory{
 		Name:      "bpm",
