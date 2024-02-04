@@ -1,8 +1,6 @@
 package bundleutil
 
 import (
-	"bufio"
-	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -12,6 +10,7 @@ import (
 
 	"github.com/4rchr4y/bpm/constant"
 	"github.com/4rchr4y/bpm/pkg/bundle"
+	"github.com/4rchr4y/bpm/pkg/fileutil"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -59,12 +58,12 @@ func (loader *Loader) LoadBundle(dirPath string) (*bundle.Bundle, error) {
 		return nil, fmt.Errorf("error getting absolute path for %s: %v", dirPath, err)
 	}
 
-	ignoreList, err := loader.fetchIgnoreList(absDirPath)
+	ignoreList, err := loader.fetchIgnoreListFromLocalFile(absDirPath)
 	if err != nil {
 		return nil, err
 	}
 
-	files, err := loader.readBundleDir(absDirPath, ignoreList)
+	files, err := loader.readLocalBundleDir(absDirPath, ignoreList)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +76,7 @@ func (loader *Loader) LoadBundle(dirPath string) (*bundle.Bundle, error) {
 	return bundle, nil
 }
 
-func (loader *Loader) readBundleDir(abs string, ignoreList map[string]struct{}) (map[string][]byte, error) {
+func (loader *Loader) readLocalBundleDir(abs string, ignoreList map[string]struct{}) (map[string][]byte, error) {
 	files := make(map[string][]byte)
 	err := loader.osWrap.Walk(abs, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -97,7 +96,7 @@ func (loader *Loader) readBundleDir(abs string, ignoreList map[string]struct{}) 
 		}
 
 		if !info.IsDir() {
-			content, err := loader.readFileContent(path)
+			content, err := loader.readLocalFileContent(path)
 			if err != nil {
 				return err
 			}
@@ -113,7 +112,7 @@ func (loader *Loader) readBundleDir(abs string, ignoreList map[string]struct{}) 
 	return files, nil
 }
 
-func (loader *Loader) readFileContent(path string) ([]byte, error) {
+func (loader *Loader) readLocalFileContent(path string) ([]byte, error) {
 	file, err := loader.osWrap.Open(path)
 	if err != nil {
 		return nil, err
@@ -123,7 +122,7 @@ func (loader *Loader) readFileContent(path string) ([]byte, error) {
 	return loader.ioWrap.ReadAll(file)
 }
 
-func (loader *Loader) fetchIgnoreList(dir string) (map[string]struct{}, error) {
+func (loader *Loader) fetchIgnoreListFromLocalFile(dir string) (map[string]struct{}, error) {
 	ignoreFilePath := filepath.Join(dir, constant.IgnoreFileName)
 	file, err := loader.osWrap.Open(ignoreFilePath)
 	if err != nil {
@@ -139,36 +138,7 @@ func (loader *Loader) fetchIgnoreList(dir string) (map[string]struct{}, error) {
 		return nil, err
 	}
 
-	result := make(map[string]struct{})
-	scanner := bufio.NewScanner(bytes.NewReader(content))
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" {
-			continue
-		}
-		result[line] = struct{}{}
-	}
-
-	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("error reading '%s' input: %v", constant.IgnoreFileName, err)
-	}
-
-	return result, nil
-}
-
-func shouldIgnore(ignoreList map[string]struct{}, path string) bool {
-	if path == "" || len(ignoreList) == 0 {
-		return false
-	}
-
-	dir := filepath.Dir(path)
-	if dir == "." {
-		return false
-	}
-
-	topLevelDir := strings.Split(dir, string(filepath.Separator))[0]
-	_, found := ignoreList[topLevelDir]
-	return found
+	return fileutil.ReadLinesToMap(content)
 }
 
 // -----------------------------------------------------------------------
@@ -340,38 +310,6 @@ func getLatestCommit(repo *git.Repository) (*object.Commit, error) {
 	return repo.CommitObject(ref.Hash())
 }
 
-func getFilesFromCommit(commit *object.Commit) (map[string][]byte, error) {
-	filesIter, err := commit.Files()
-	if err != nil {
-		return nil, err
-	}
-
-	ignoreFile, err := commit.File("constant.IgnoreFileName")
-	if err != nil {
-		if err != object.ErrFileNotFound {
-			return nil, err
-		}
-	}
-
-	fmt.Println(ignoreFile.Name)
-
-	files := make(map[string][]byte)
-	err = filesIter.ForEach(func(f *object.File) error {
-		content, err := f.Contents()
-		if err != nil {
-			return err
-		}
-
-		files[f.Name] = []byte(content)
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return files, nil
-}
-
 func getCurrentVersionCommit(repo *git.Repository, tag string) (*object.Commit, error) {
 	tags, err := repo.Tags()
 	if err != nil {
@@ -399,4 +337,77 @@ func getCurrentVersionCommit(repo *git.Repository, tag string) (*object.Commit, 
 	}
 
 	return repo.CommitObject(ref.Hash())
+}
+
+func getFilesFromCommit(commit *object.Commit) (map[string][]byte, error) {
+	filesIter, err := commit.Files()
+	if err != nil {
+		return nil, err
+	}
+
+	ignoreList, err := fetchIgnoreListFromGitCommit(commit)
+	if err != nil {
+		return nil, err
+	}
+
+	files := make(map[string][]byte)
+	err = filesIter.ForEach(func(f *object.File) error {
+		if shouldIgnore(ignoreList, f.Name) {
+			return nil
+		}
+
+		content, err := f.Contents()
+		if err != nil {
+			return err
+		}
+
+		fmt.Println(f.Name)
+
+		files[f.Name] = []byte(content)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return files, nil
+}
+
+func fetchIgnoreListFromGitCommit(commit *object.Commit) (map[string]struct{}, error) {
+	ignoreFile, err := commit.File(constant.IgnoreFileName)
+	if err != nil {
+		if err != object.ErrFileNotFound {
+			return nil, err
+		}
+	}
+
+	ignoreFileContent, err := ignoreFile.Contents()
+	if err != nil {
+		return nil, err
+	}
+
+	ignoreList, err := fileutil.ReadLinesToMap([]byte(ignoreFileContent))
+	if err != nil {
+		return nil, err
+	}
+
+	return ignoreList, nil
+}
+
+// -----------------------------------------------------------------------
+// Common helper functions
+
+func shouldIgnore(ignoreList map[string]struct{}, path string) bool {
+	if path == "" || len(ignoreList) == 0 {
+		return false
+	}
+
+	dir := filepath.Dir(path)
+	if dir == "." {
+		return false
+	}
+
+	topLevelDir := strings.Split(dir, string(filepath.Separator))[0]
+	_, found := ignoreList[topLevelDir]
+	return found
 }
