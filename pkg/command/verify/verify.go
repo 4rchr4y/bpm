@@ -43,9 +43,8 @@ func verifyRun(ctx context.Context, opts *verifyOptions) error {
 		return err
 	}
 
-	currentChecksum := b.Sum()
-	if currentChecksum != b.LockFile.Sum {
-		b.LockFile.Sum = currentChecksum
+	if err := opts.manifester.Update(&bundleutil.UpdateInput{Target: b}); err != nil {
+		return err
 	}
 
 	if err := opts.manifester.Upgrade(opts.dir, b); err != nil {

@@ -23,7 +23,7 @@ type IOStream struct {
 	out,
 	errOut *termenv.Output
 	mode core.StdoutMode
-	pet  time.Time // execution time of the previous operation
+	poet time.Time // execution time of the previous operation
 }
 
 type IOStreamOptFn func(io *IOStream)
@@ -74,24 +74,15 @@ func (s *IOStream) Println(a ...any)               { fmt.Fprintln(s.out, a...) }
 func (s *IOStream) Printf(format string, a ...any) { fmt.Fprintf(s.out, format, a...) }
 
 func (s *IOStream) PrintfOk(format string, a ...any) {
-	msg := termenv.String(fmt.Sprintf(format, a...)).String()
-	str := termenv.String(LabelOk, msg, s.fetchTime(time.Now())).String()
-
-	fmt.Fprint(s.out, str+"\n")
+	s.Println(s.prepareWithLabel(LabelOk, format, a...))
 }
 
 func (s *IOStream) PrintfInfo(format string, a ...any) {
-	msg := termenv.String(fmt.Sprintf(format, a...)).String()
-	str := termenv.String(LabelInfo, msg, s.fetchTime(time.Now())).String()
-
-	fmt.Fprint(s.out, str+"\n")
+	s.Println(s.prepareWithLabel(LabelInfo, format, a...))
 }
 
 func (s *IOStream) PrintfWarn(format string, a ...any) {
-	msg := termenv.String(fmt.Sprintf(format, a...)).String()
-	str := termenv.String(LabelWarn, msg, s.fetchTime(time.Now())).String()
-
-	fmt.Fprint(s.out, str+"\n")
+	s.Println(s.prepareWithLabel(LabelWarn, format, a...))
 }
 
 func (s *IOStream) PrintfDebug(format string, a ...any) {
@@ -99,29 +90,31 @@ func (s *IOStream) PrintfDebug(format string, a ...any) {
 		return
 	}
 
-	msg := termenv.String(fmt.Sprintf(format, a...)).String()
-	str := termenv.String(LabelDebug, msg, s.fetchTime(time.Now())).String()
-
-	fmt.Fprint(s.out, str+"\n")
+	s.Println(s.prepareWithLabel(LabelDebug, format, a...))
 }
 
 func (s *IOStream) PrintfErr(format string, a ...any) {
 	msg := termenv.String(fmt.Sprintf(format, a...)).Foreground(DarkThemeRedDeep).String()
-	str := termenv.String(LabelErr, msg, s.fetchTime(time.Now())).String()
+	str := termenv.String(LabelErr, msg).String()
 
 	fmt.Fprint(s.errOut, str+"\n")
 }
 
 func (s *IOStream) fetchTime(now time.Time) (result string) {
 	result = termenv.String(now.Format(core.StdoutTimeFormat)).Faint().String()
-	if s.pet.IsZero() || s.mode == core.Info {
-		s.pet = now
+	if s.poet.IsZero() || s.mode == core.Info {
+		s.poet = now
 		return result
 	}
 
-	s.pet = now
-	duration := time.Since(s.pet)
+	s.poet = now
+	duration := time.Since(s.poet)
 	result += termenv.String(fmt.Sprintf(" (%s)", duration)).Faint().String()
 
 	return result
+}
+
+func (s *IOStream) prepareWithLabel(label, format string, a ...any) string {
+	msg := termenv.String(fmt.Sprintf(format, a...)).String()
+	return termenv.String(label, msg, s.fetchTime(time.Now())).String()
 }

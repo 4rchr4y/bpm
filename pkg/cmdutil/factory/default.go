@@ -15,7 +15,7 @@ func New(version string) *Factory {
 	ioWrap := new(syswrap.IoWrapper)
 	encoder := bundleutil.NewEncoder()
 
-	manifester := bundleutil.NewManifester(osWrap, encoder)
+	manifester := bundleutil.NewManifester(io, osWrap, encoder)
 	fileifier := bundleutil.NewFileifier(io, encoder, manifester)
 	verifier := bundleutil.NewVerifier(io)
 
