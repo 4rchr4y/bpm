@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"path"
 
-	"github.com/4rchr4y/bpm/pkg/bundle"
 	"github.com/4rchr4y/bpm/pkg/bundle/bundlefile"
 	"github.com/4rchr4y/bpm/pkg/bundle/lockfile"
 	"github.com/4rchr4y/bpm/pkg/bundleutil"
 )
 
-func bundleFileContent(encoder *bundleutil.Encoder, repo string, author *bundle.AuthorExpr) []byte {
+func bundleFileContent(encoder *bundleutil.Encoder, repo string, author *bundlefile.AuthorExpr) []byte {
 	repoName := path.Base(repo)
 	bundlefile := &bundlefile.File{
 		Package: &bundlefile.PackageDecl{

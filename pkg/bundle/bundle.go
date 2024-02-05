@@ -3,26 +3,12 @@ package bundle
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
 	"sort"
 
 	"github.com/4rchr4y/bpm/pkg/bundle/bundlefile"
 	"github.com/4rchr4y/bpm/pkg/bundle/lockfile"
 	"github.com/4rchr4y/bpm/pkg/bundle/regofile"
 )
-
-type AuthorExpr struct {
-	Username string // value of git 'config --get user.username'
-	Email    string // value of git 'config --get user.email'
-}
-
-func (author *AuthorExpr) String() string {
-	return fmt.Sprintf("%s %s", author.Username, author.Email)
-}
-
-type Metadata struct {
-	LockFileGenerated bool // was a lockfile.hcl generated at load time
-}
 
 type Bundle struct {
 	Version     *VersionExpr
@@ -31,7 +17,6 @@ type Bundle struct {
 	IgnoreFiles map[string]struct{}
 	RegoFiles   map[string]*regofile.File
 	OtherFiles  map[string][]byte
-	Meta        *Metadata
 }
 
 func (b *Bundle) Name() string       { return b.BundleFile.Package.Name }

@@ -39,14 +39,14 @@ func NewSaver(osWrap saverOsWrapper, encoder saverHclEncoder) *Saver {
 	}
 }
 
-func (bs *Saver) SaveToDisk(bundles ...*bundle.Bundle) error {
-	homeDir, err := bs.osWrap.UserHomeDir()
+func (s *Saver) SaveToDisk(bundles ...*bundle.Bundle) error {
+	homeDir, err := s.osWrap.UserHomeDir()
 	if err != nil {
 		return err
 	}
 
 	for _, b := range bundles {
-		if err := bs.save(homeDir, b); err != nil {
+		if err := s.save(homeDir, b); err != nil {
 			return fmt.Errorf("can't save bundle '%s': %v", b.Name(), err)
 		}
 	}
@@ -54,45 +54,45 @@ func (bs *Saver) SaveToDisk(bundles ...*bundle.Bundle) error {
 	return nil
 }
 
-func (bs *Saver) save(homeDir string, b *bundle.Bundle) error {
+func (s *Saver) save(homeDir string, b *bundle.Bundle) error {
 	dirPath := filepath.Join(homeDir, constant.BPMDirName, b.Repository(), b.Version.String())
 
-	if err := bs.processRegoFiles(b.RegoFiles, dirPath); err != nil {
+	if err := s.processRegoFiles(b.RegoFiles, dirPath); err != nil {
 		return fmt.Errorf("error occurred rego files processing: %v", err)
 	}
 
-	if err := bs.processBundleLockFile(b.LockFile, dirPath); err != nil {
+	if err := s.processBundleLockFile(b.LockFile, dirPath); err != nil {
 		return fmt.Errorf("failed to encode %s file: %v", b.LockFile.Filename(), err)
 	}
 
-	if err := bs.processBundleFile(b.BundleFile, dirPath); err != nil {
+	if err := s.processBundleFile(b.BundleFile, dirPath); err != nil {
 		return fmt.Errorf("failed to encode %s file: %v", b.BundleFile.Filename(), err)
 	}
 
 	return nil
 }
 
-func (bs *Saver) processBundleLockFile(lockFile *lockfile.File, bundleVersionDir string) error {
-	bytes := bs.encode.EncodeLockFile(lockFile)
+func (s *Saver) processBundleLockFile(lockFile *lockfile.File, bundleVersionDir string) error {
+	bytes := s.encode.EncodeLockFile(lockFile)
 	path := filepath.Join(bundleVersionDir, lockFile.Filename())
-	if err := bs.osWrap.WriteFile(path, bytes, 0644); err != nil {
+	if err := s.osWrap.WriteFile(path, bytes, 0644); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (bs *Saver) processBundleFile(bundleFile *bundlefile.File, bundleVersionDir string) error {
-	bytes := bs.encode.EncodeBundleFile(bundleFile)
+func (s *Saver) processBundleFile(bundleFile *bundlefile.File, bundleVersionDir string) error {
+	bytes := s.encode.EncodeBundleFile(bundleFile)
 	path := filepath.Join(bundleVersionDir, bundleFile.Filename())
-	if err := bs.osWrap.WriteFile(path, bytes, 0644); err != nil {
+	if err := s.osWrap.WriteFile(path, bytes, 0644); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (bs *Saver) processRegoFiles(files map[string]*regofile.File, bundleVersionDir string) error {
+func (s *Saver) processRegoFiles(files map[string]*regofile.File, bundleVersionDir string) error {
 	for filePath, file := range files {
 		pathToSave := filepath.Join(bundleVersionDir, filePath)
 		dirToSave := filepath.Dir(pathToSave)
@@ -105,7 +105,7 @@ func (bs *Saver) processRegoFiles(files map[string]*regofile.File, bundleVersion
 			return fmt.Errorf("error checking directory '%s': %v", dirToSave, err)
 		}
 
-		if err := bs.osWrap.WriteFile(pathToSave, file.Raw, 0644); err != nil {
+		if err := s.osWrap.WriteFile(pathToSave, file.Raw, 0644); err != nil {
 			return fmt.Errorf("failed to write file '%s': %v", pathToSave, err)
 		}
 	}

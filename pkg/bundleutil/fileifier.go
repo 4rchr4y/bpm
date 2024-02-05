@@ -36,7 +36,7 @@ func NewFileifier(io core.IO, encoder fileifierEncoder, manifester fileifierMani
 	}
 }
 
-func (bp *Fileifier) Fileify(files map[string][]byte, options ...BundleOptFn) (*bundle.Bundle, error) {
+func (f *Fileifier) Fileify(files map[string][]byte, options ...BundleOptFn) (*bundle.Bundle, error) {
 	b := &bundle.Bundle{
 		RegoFiles:  make(map[string]*regofile.File),
 		OtherFiles: make(map[string][]byte),
@@ -53,7 +53,7 @@ func (bp *Fileifier) Fileify(files map[string][]byte, options ...BundleOptFn) (*
 	for filePath, content := range files {
 		switch {
 		case isRegoFile(filePath):
-			parsed, err := bp.parseRegoFile(content, filePath)
+			parsed, err := f.parseRegoFile(content, filePath)
 			if err != nil {
 				return nil, err
 			}
@@ -68,7 +68,7 @@ func (bp *Fileifier) Fileify(files map[string][]byte, options ...BundleOptFn) (*
 			})
 
 		case isBPMFile(filePath):
-			bundlefile, err := bp.encoder.DecodeBundleFile(content)
+			bundlefile, err := f.encoder.DecodeBundleFile(content)
 			if err != nil {
 				return nil, fmt.Errorf("error occurred while decoding %s content: %v", constant.BundleFileName, err)
 			}
@@ -76,7 +76,7 @@ func (bp *Fileifier) Fileify(files map[string][]byte, options ...BundleOptFn) (*
 			b.BundleFile = bundlefile
 
 		case isBPMLockFile(filePath):
-			lockfile, err := bp.encoder.DecodeLockFile(content)
+			lockfile, err := f.encoder.DecodeLockFile(content)
 			if err != nil {
 				return nil, fmt.Errorf("error occurred while decoding %s content: %v", constant.BundleFileName, err)
 			}
@@ -89,9 +89,9 @@ func (bp *Fileifier) Fileify(files map[string][]byte, options ...BundleOptFn) (*
 	}
 
 	if b.LockFile == nil {
-		bp.io.PrintfWarn("file '%s' in bundle '%s' was not found", constant.LockFileName, b.Name())
+		f.io.PrintfWarn("file '%s' in bundle '%s' was not found", constant.LockFileName, b.Name())
 
-		if err := bp.manifester.InitLockFile(b); err != nil {
+		if err := f.manifester.InitLockFile(b); err != nil {
 			return nil, err
 		}
 	}
@@ -103,7 +103,7 @@ func (bp *Fileifier) Fileify(files map[string][]byte, options ...BundleOptFn) (*
 	return b, nil
 }
 
-func (bp *Fileifier) parseRegoFile(fileContent []byte, filePath string) (*ast.Module, error) {
+func (f *Fileifier) parseRegoFile(fileContent []byte, filePath string) (*ast.Module, error) {
 	parsed, err := ast.ParseModule(filePath, string(fileContent))
 	if err != nil {
 		return nil, fmt.Errorf("error parsing file contents: %v", err)

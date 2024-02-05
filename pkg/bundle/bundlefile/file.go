@@ -2,12 +2,22 @@ package bundlefile
 
 import (
 	"crypto/sha256"
+	"fmt"
 
 	"github.com/4rchr4y/bpm/constant"
 	"github.com/4rchr4y/bpm/pkg/util"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclwrite"
 )
+
+type AuthorExpr struct {
+	Username string // value of git 'config --get user.username'
+	Email    string // value of git 'config --get user.email'
+}
+
+func (author *AuthorExpr) String() string {
+	return fmt.Sprintf("%s %s", author.Username, author.Email)
+}
 
 type PackageDecl struct {
 	Name        string   `hcl:"name"`
