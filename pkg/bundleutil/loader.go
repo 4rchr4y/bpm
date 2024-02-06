@@ -30,6 +30,7 @@ type loaderIoWrapper interface {
 type loaderFileifier interface {
 	Fileify(files map[string][]byte, options ...BundleOptFn) (*bundle.Bundle, error)
 }
+
 type loaderGitFacade interface {
 	CloneWithContext(ctx context.Context, opts *git.CloneOptions) (*git.Repository, error)
 }
@@ -39,6 +40,7 @@ type Loader struct {
 	osWrap    loaderOsWrapper
 	ioWrap    loaderIoWrapper
 	fileifier loaderFileifier
+	verifier  downloaderVerifier
 	gitfacade loaderGitFacade
 }
 
@@ -149,7 +151,15 @@ func (loader *Loader) fetchIgnoreListFromLocalFile(dir string) (map[string]struc
 // -----------------------------------------------------------------------
 // Bundle downloader from a remote git server
 
-func (loader *Loader) DownloadBundle(ctx context.Context, url string, tag string) (*bundle.Bundle, error) {
+func (loader *Loader) DownloadBundle(ctx context.Context, url string, tag *bundle.VersionExpr) (*bundle.Bundle, error) {
+	loader.io.PrintfInfo("downloading bundle from %s+%s", url, func() string {
+		if tag != nil {
+			return tag.String()
+		}
+
+		return "latest"
+	}())
+
 	cloneInput := &git.CloneOptions{
 		URL: fmt.Sprintf("https://%s.git", url),
 	}
@@ -175,24 +185,29 @@ func (loader *Loader) DownloadBundle(ctx context.Context, url string, tag string
 	}
 
 	b.Version = v
+	// TODO: probably don't need this operation
 	b.BundleFile.Package.Repository = url
 
 	return b, nil
 }
 
-func fetchCommitByTag(repo *git.Repository, tag string) (*object.Commit, *bundle.VersionExpr, error) {
-	v, err := bundle.ParseVersionExpr(tag)
-	if err != nil {
-		switch err {
-		case bundle.ErrVersionInvalidFormat{}:
-			return nil, nil, err
+func fetchCommitByTag(repo *git.Repository, v *bundle.VersionExpr) (*object.Commit, *bundle.VersionExpr, error) {
+	// v, err := bundle.ParseVersionExpr(tag)
+	// if err != nil {
+	// 	switch err {
+	// 	case bundle.ErrVersionInvalidFormat{}:
+	// 		return nil, nil, err
 
-		case bundle.ErrEmptyVersion{}:
-			return getLatestVersionCommit(repo)
+	// 	case bundle.ErrEmptyVersion{}:
+	// 		return getLatestVersionCommit(repo)
 
-		default:
-			return nil, nil, err
-		}
+	// 	default:
+	// 		return nil, nil, err
+	// 	}
+	// }
+
+	if v == nil {
+		return getLatestVersionCommit(repo)
 	}
 
 	if v.IsPseudo() {
@@ -204,7 +219,7 @@ func fetchCommitByTag(repo *git.Repository, tag string) (*object.Commit, *bundle
 		return commit, v, nil
 	}
 
-	commit, err := getCurrentVersionCommit(repo, tag)
+	commit, err := getCurrentVersionCommit(repo, v.Tag.Original())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -365,8 +380,6 @@ func getFilesFromCommit(commit *object.Commit) (map[string][]byte, error) {
 		if err != nil {
 			return err
 		}
-
-		fmt.Println(f.Name)
 
 		files[f.Name] = []byte(content)
 		return nil

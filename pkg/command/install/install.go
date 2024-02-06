@@ -42,14 +42,14 @@ type installOptions struct {
 }
 
 func installRun(ctx context.Context, opts *installOptions) error {
-	b, err := opts.Loader.DownloadBundle(ctx, opts.URL, opts.Version)
-	if err != nil {
-		return err
-	}
+	// b, err := opts.Loader.DownloadBundle(ctx, opts.URL, opts.Version)
+	// if err != nil {
+	// 	return err
+	// }
 
-	if err := opts.Saver.SaveToDisk(b); err != nil {
-		return err
-	}
+	// if err := opts.Saver.SaveToDisk(b); err != nil {
+	// 	return err
+	// }
 
 	return nil
 }

@@ -22,15 +22,6 @@ type Bundle struct {
 func (b *Bundle) Name() string       { return b.BundleFile.Package.Name }
 func (b *Bundle) Repository() string { return b.BundleFile.Package.Repository }
 
-func (b *Bundle) Update() *Bundle {
-	currentChecksum := b.Sum()
-	if currentChecksum != b.LockFile.Sum {
-		b.LockFile.Sum = currentChecksum
-	}
-
-	return b
-}
-
 // Sum computes the overall checksum of the bundle. This method ensures the integrity
 // of the bundle by taking into account various components that make up the bundle.
 // It generates a SHA-256 hash that represents the combined checksum of the bundle's
@@ -62,12 +53,10 @@ func (b *Bundle) Sum() string {
 	hasher := sha256.New()
 	hasher.Write([]byte(b.BundleFile.Sum())) // Add checksum of the bundle file
 
-	// fmt.Println(b.RegoFiles)
 	for _, k := range sortedMap(b.RegoFiles) {
 		hasher.Write([]byte(b.RegoFiles[k].Sum())) // Add checksums of all Rego files
 	}
 
-	// fmt.Println(b.OtherFiles)
 	for _, k := range sortedMap(b.OtherFiles) {
 		hasher.Write(b.OtherFiles[k]) // Add checksums of all other files
 	}

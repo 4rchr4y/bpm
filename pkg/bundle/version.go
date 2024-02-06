@@ -37,6 +37,13 @@ func NewVersionExpr(commit *object.Commit, tag *version.Version) *VersionExpr {
 	}
 }
 
+func (v *VersionExpr) Major() int { return v.Tag.Segments()[0] }
+func (v *VersionExpr) Minor() int { return v.Tag.Segments()[1] }
+func (v *VersionExpr) Path() int  { return v.Tag.Segments()[2] }
+
+func (v *VersionExpr) Equal(o *VersionExpr) bool       { return v.Tag.Equal(o.Tag) }
+func (v *VersionExpr) GreaterThan(o *VersionExpr) bool { return v.Tag.GreaterThan(o.Tag) }
+
 func (v *VersionExpr) IsPseudo() bool {
 	return v.Tag.Original() == constant.BundlePseudoVersion && v.Hash != "" && v.Timestamp != ""
 }
@@ -49,19 +56,10 @@ func (v *VersionExpr) String() string {
 	return fmt.Sprintf("%s+%s-%s", constant.BundlePseudoVersion, v.Timestamp, v.Hash)
 }
 
-type (
-	ErrEmptyVersion         struct{ error }
-	ErrVersionInvalidFormat struct{ error }
-	ErrVersionMalformed     struct{ error }
-)
-
-func (ErrEmptyVersion) Error() string         { return "version is empty" }
-func (ErrVersionInvalidFormat) Error() string { return "invalid version format" }
-
 func ParseVersionExpr(versionStr string) (*VersionExpr, error) {
 	switch {
 	case versionStr == "":
-		return nil, ErrEmptyVersion{}
+		return nil, nil
 
 	case !strings.Contains(versionStr, "+"):
 		v, err := version.NewVersion(versionStr)
@@ -74,7 +72,7 @@ func ParseVersionExpr(versionStr string) (*VersionExpr, error) {
 	default:
 		matches := versionRegex.FindStringSubmatch(versionStr)
 		if matches == nil || len(matches) != 4 {
-			return nil, &ErrVersionInvalidFormat{}
+			return nil, fmt.Errorf("invalid version format")
 		}
 
 		v, err := version.NewVersion(matches[1])

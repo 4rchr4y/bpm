@@ -3,14 +3,12 @@ package bundleutil
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"github.com/4rchr4y/bpm/pkg/bundle"
-	"github.com/4rchr4y/bpm/pkg/bundle/bundlefile"
 )
 
 type downloaderGitLoader interface {
-	DownloadBundle(ctx context.Context, url string, tag string) (*bundle.Bundle, error)
+	DownloadBundle(ctx context.Context, url string, tag *bundle.VersionExpr) (*bundle.Bundle, error)
 }
 
 type downloaderVerifier interface {
@@ -55,12 +53,13 @@ func (dr *DownloadResult) Merge() []*bundle.Bundle {
 	return result
 }
 
-func (d *Downloader) Download(ctx context.Context, url string, version string) (*DownloadResult, error) {
+func (d *Downloader) Download(ctx context.Context, url string, version *bundle.VersionExpr) (*DownloadResult, error) {
 	target, err := d.git.DownloadBundle(ctx, url, version)
 	if err != nil {
 		return nil, fmt.Errorf("failed to download '%s' bundle: %w", url, err)
 	}
 
+	// TODO: probably should be moved to Loader
 	if err := d.verifier.Verify(target); err != nil {
 		return nil, err
 	}
@@ -69,68 +68,116 @@ func (d *Downloader) Download(ctx context.Context, url string, version string) (
 		return &DownloadResult{Target: target}, nil
 	}
 
-	result, err := d.downloadRequires(ctx, target.BundleFile.Require.List)
-	if err != nil {
-		return nil, err
+	rindirect := make([]*bundle.Bundle, 0)
+	rdirect := make([]*bundle.Bundle, len(target.BundleFile.Require.List))
+	for i, r := range target.BundleFile.Require.List {
+		v, err := bundle.ParseVersionExpr(r.Version)
+		if err != nil {
+			return nil, err
+		}
+
+		result, err := d.Download(ctx, r.Repository, v)
+		if err != nil {
+			return nil, err
+		}
+
+		rdirect[i] = result.Target
+		rindirect = append(rindirect, result.Rdirect...)
 	}
 
 	return &DownloadResult{
 		Target:    target,
-		Rdirect:   result.direct,
-		Rindirect: result.indirect,
+		Rdirect:   rdirect,
+		Rindirect: rindirect,
 	}, nil
 }
 
-type downloadRequiresResults struct {
-	direct   []*bundle.Bundle
-	indirect []*bundle.Bundle
+// func (d *Downloader) Download(ctx context.Context, url string, version *bundle.VersionExpr) (*DownloadResult, error) {
+// 	// 1. Fetch local bundle storage
+
+// 	return nil, nil
+// }
+
+func (d *Downloader) download(ctx context.Context, url string, v *bundle.VersionExpr) (*DownloadResult, error) {
+	return nil, nil
 }
 
-func (d *Downloader) downloadRequires(ctx context.Context, requires []*bundlefile.RequirementDecl) (*downloadRequiresResults, error) {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+// func (d *Downloader) Download(ctx context.Context, url string, version string) (*DownloadResult, error) {
+// 	target, err := d.git.DownloadBundle(ctx, url, version)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("failed to download '%s' bundle: %w", url, err)
+// 	}
 
-	var wg sync.WaitGroup
-	resultsChan := make(chan *DownloadResult)
-	errChan := make(chan error)
+// 	if err := d.verifier.Verify(target); err != nil {
+// 		return nil, err
+// 	}
 
-	for _, req := range requires {
-		wg.Add(1)
-		go func(req *bundlefile.RequirementDecl) {
-			defer wg.Done()
-			result, err := d.Download(ctx, req.Repository, req.Version)
-			if err != nil {
-				select {
-				case errChan <- fmt.Errorf("failed to download required '%s': %w", req.Repository, err):
-				case <-ctx.Done():
-				}
-				return
-			}
-			select {
-			case resultsChan <- result:
-			case <-ctx.Done():
-			}
-		}(req)
-	}
+// 	if target.BundleFile.Require == nil {
+// 		return &DownloadResult{Target: target}, nil
+// 	}
 
-	go func() {
-		wg.Wait()
-		close(resultsChan)
-		close(errChan)
-	}()
+// 	result, err := d.downloadRequires(ctx, target.BundleFile.Require.List)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	result := new(downloadRequiresResults)
-	for i := 0; i < len(requires); i++ {
-		select {
-		case err := <-errChan:
-			return nil, err
-		case r := <-resultsChan:
-			result.direct = append(result.direct, r.Target)
-			result.indirect = append(result.indirect, r.Rdirect...)
-		case <-ctx.Done():
-			return result, ctx.Err()
-		}
-	}
+// 	return &DownloadResult{
+// 		Target:    target,
+// 		Rdirect:   result.direct,
+// 		Rindirect: result.indirect,
+// 	}, nil
+// }
 
-	return result, nil
-}
+// type downloadRequiresResults struct {
+// 	direct   []*bundle.Bundle
+// 	indirect []*bundle.Bundle
+// }
+
+// func (d *Downloader) downloadRequires(ctx context.Context, requires []*bundlefile.RequirementDecl) (*downloadRequiresResults, error) {
+// 	ctx, cancel := context.WithCancel(ctx)
+// 	defer cancel()
+
+// 	var wg sync.WaitGroup
+// 	resultsChan := make(chan *DownloadResult)
+// 	errChan := make(chan error)
+
+// 	for _, req := range requires {
+// 		wg.Add(1)
+// 		go func(req *bundlefile.RequirementDecl) {
+// 			defer wg.Done()
+// 			result, err := d.Download(ctx, req.Repository, req.Version)
+// 			if err != nil {
+// 				select {
+// 				case errChan <- fmt.Errorf("failed to download required '%s': %w", req.Repository, err):
+// 				case <-ctx.Done():
+// 				}
+// 				return
+// 			}
+// 			select {
+// 			case resultsChan <- result:
+// 			case <-ctx.Done():
+// 			}
+// 		}(req)
+// 	}
+
+// 	go func() {
+// 		wg.Wait()
+// 		close(resultsChan)
+// 		close(errChan)
+// 	}()
+
+// 	result := new(downloadRequiresResults)
+// 	for i := 0; i < len(requires); i++ {
+// 		select {
+// 		case err := <-errChan:
+// 			return nil, err
+// 		case r := <-resultsChan:
+// 			result.direct = append(result.direct, r.Target)
+// 			result.indirect = append(result.indirect, r.Rdirect...)
+// 		case <-ctx.Done():
+// 			return result, ctx.Err()
+// 		}
+// 	}
+
+// 	return result, nil
+// }

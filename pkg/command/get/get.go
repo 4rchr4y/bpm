@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 
+	"github.com/4rchr4y/bpm/core"
 	"github.com/4rchr4y/bpm/pkg/bundle"
 	"github.com/4rchr4y/bpm/pkg/bundleutil"
 	"github.com/4rchr4y/bpm/pkg/cmdutil/factory"
@@ -28,6 +29,7 @@ func NewCmdGet(f *factory.Factory) *cobra.Command {
 			}
 
 			return getRun(cmd.Context(), &getOptions{
+				io:         f.IOStream,
 				WorkDir:    wd,
 				URL:        args[0],
 				Version:    version,
@@ -45,6 +47,7 @@ func NewCmdGet(f *factory.Factory) *cobra.Command {
 }
 
 type getOptions struct {
+	io         core.IO
 	WorkDir    string // bundle working directory
 	URL        string // bundle repository that needs to be installed
 	Version    string // specified bundle version
@@ -61,7 +64,26 @@ func getRun(ctx context.Context, opts *getOptions) error {
 		return err
 	}
 
-	result, err := opts.Downloader.Download(ctx, opts.URL, opts.Version)
+	installedList, err := findRequirementByRepo(target, opts.URL)
+	if err != nil {
+		return err
+	}
+
+	v, err := bundle.ParseVersionExpr(opts.Version)
+	if err != nil {
+		return err
+	}
+
+	if v != nil {
+		for _, r := range installedList {
+			if r.Version.String() == v.String() {
+				opts.io.PrintfOk("bundle '%s+%s' is already installed", opts.URL, v.String())
+				return nil
+			}
+		}
+	}
+
+	result, err := opts.Downloader.Download(ctx, opts.URL, v)
 	if err != nil {
 		return err
 	}
@@ -85,4 +107,37 @@ func getRun(ctx context.Context, opts *getOptions) error {
 	}
 
 	return nil
+}
+
+// func determineVersion(version string) (*bundle.VersionExpr, error) {
+
+// }
+
+type RequirementLite struct {
+	Repository string
+	Version    *bundle.VersionExpr
+	Index      int
+}
+
+func findRequirementByRepo(b *bundle.Bundle, repo string) ([]*RequirementLite, error) {
+	result := make([]*RequirementLite, 0)
+
+	for i, r := range b.BundleFile.Require.List {
+		if r.Repository != repo {
+			continue
+		}
+
+		v, err := bundle.ParseVersionExpr(r.Version)
+		if err != nil {
+			return nil, err
+		}
+
+		result = append(result, &RequirementLite{
+			Repository: r.Repository,
+			Version:    v,
+			Index:      i,
+		})
+	}
+
+	return result, nil
 }
