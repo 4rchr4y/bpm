@@ -4,7 +4,8 @@ import (
 	"github.com/4rchr4y/bpm/core"
 	"github.com/4rchr4y/bpm/internal/gitfacade"
 	"github.com/4rchr4y/bpm/pkg/bundleutil"
-	"github.com/4rchr4y/godevkit/syswrap"
+	"github.com/4rchr4y/godevkit/syswrap/ioiface"
+	"github.com/4rchr4y/godevkit/syswrap/osiface"
 )
 
 type Factory struct {
@@ -22,6 +23,6 @@ type Factory struct {
 	Saver      *bundleutil.Saver      // bundle saver files into the file system
 	Downloader *bundleutil.Downloader // downloader of a bundle and its dependencies
 	Manifester *bundleutil.Manifester // bundle manifest file control operator
-	OS         *syswrap.OsWrapper     // set of functions for working with the OS
-	IO         *syswrap.IoWrapper     // set of functions for working with input/output
+	OS         osiface.OSWrapper      // set of functions for working with the OS
+	IO         ioiface.IOWrapper      // set of functions for working with input/output
 }

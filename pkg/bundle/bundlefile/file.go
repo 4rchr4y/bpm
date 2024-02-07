@@ -8,6 +8,7 @@ import (
 	"github.com/4rchr4y/bpm/pkg/util"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclwrite"
+	"github.com/samber/lo"
 )
 
 type AuthorExpr struct {
@@ -47,4 +48,18 @@ func (bf *File) Sum() string {
 	f := hclwrite.NewEmptyFile()
 	gohcl.EncodeIntoBody(bf, f.Body())
 	return util.ChecksumSHA256(sha256.New(), f.Bytes())
+}
+
+func (bf *File) IsRequirementListed(repo string, version string) bool {
+	if bf.Require == nil {
+		return false
+	}
+
+	return lo.SomeBy(bf.Require.List, func(item *RequirementDecl) bool {
+		if item.Repository == repo {
+			return item.Version == version
+		}
+
+		return false
+	})
 }

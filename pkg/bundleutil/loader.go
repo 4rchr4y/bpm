@@ -3,7 +3,6 @@ package bundleutil
 import (
 	"context"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,20 +11,13 @@ import (
 	"github.com/4rchr4y/bpm/core"
 	"github.com/4rchr4y/bpm/pkg/bundle"
 	"github.com/4rchr4y/bpm/pkg/fileutil"
+	"github.com/4rchr4y/godevkit/syswrap/ioiface"
+	"github.com/4rchr4y/godevkit/syswrap/osiface"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/hashicorp/go-version"
 )
-
-type loaderOsWrapper interface {
-	Walk(root string, fn filepath.WalkFunc) error
-	Open(name string) (*os.File, error)
-}
-
-type loaderIoWrapper interface {
-	ReadAll(reader io.Reader) ([]byte, error)
-}
 
 type loaderFileifier interface {
 	Fileify(files map[string][]byte, options ...BundleOptFn) (*bundle.Bundle, error)
@@ -37,14 +29,14 @@ type loaderGitFacade interface {
 
 type Loader struct {
 	io        core.IO
-	osWrap    loaderOsWrapper
-	ioWrap    loaderIoWrapper
+	osWrap    osiface.OSWrapper
+	ioWrap    ioiface.IOWrapper
 	fileifier loaderFileifier
 	verifier  downloaderVerifier
 	gitfacade loaderGitFacade
 }
 
-func NewLoader(io core.IO, osWrap loaderOsWrapper, ioWrap loaderIoWrapper, fileifier loaderFileifier, gitfacade loaderGitFacade) *Loader {
+func NewLoader(io core.IO, osWrap osiface.OSWrapper, ioWrap ioiface.IOWrapper, fileifier loaderFileifier, gitfacade loaderGitFacade) *Loader {
 	return &Loader{
 		io:        io,
 		osWrap:    osWrap,
@@ -120,7 +112,7 @@ func (loader *Loader) readLocalBundleDir(abs string, ignoreList map[string]struc
 }
 
 func (loader *Loader) readLocalFileContent(path string) ([]byte, error) {
-	file, err := loader.osWrap.Open(path)
+	file, err := loader.osWrap.OpenFile(path)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +123,7 @@ func (loader *Loader) readLocalFileContent(path string) ([]byte, error) {
 
 func (loader *Loader) fetchIgnoreListFromLocalFile(dir string) (map[string]struct{}, error) {
 	ignoreFilePath := filepath.Join(dir, constant.IgnoreFileName)
-	file, err := loader.osWrap.Open(ignoreFilePath)
+	file, err := loader.osWrap.OpenFile(ignoreFilePath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return make(map[string]struct{}), nil
@@ -152,7 +144,7 @@ func (loader *Loader) fetchIgnoreListFromLocalFile(dir string) (map[string]struc
 // Bundle downloader from a remote git server
 
 func (loader *Loader) DownloadBundle(ctx context.Context, url string, tag *bundle.VersionExpr) (*bundle.Bundle, error) {
-	loader.io.PrintfInfo("downloading bundle from %s+%s", url, func() string {
+	loader.io.PrintfInfo("downloading %s+%s", url, func() string {
 		if tag != nil {
 			return tag.String()
 		}
@@ -192,20 +184,6 @@ func (loader *Loader) DownloadBundle(ctx context.Context, url string, tag *bundl
 }
 
 func fetchCommitByTag(repo *git.Repository, v *bundle.VersionExpr) (*object.Commit, *bundle.VersionExpr, error) {
-	// v, err := bundle.ParseVersionExpr(tag)
-	// if err != nil {
-	// 	switch err {
-	// 	case bundle.ErrVersionInvalidFormat{}:
-	// 		return nil, nil, err
-
-	// 	case bundle.ErrEmptyVersion{}:
-	// 		return getLatestVersionCommit(repo)
-
-	// 	default:
-	// 		return nil, nil, err
-	// 	}
-	// }
-
 	if v == nil {
 		return getLatestVersionCommit(repo)
 	}

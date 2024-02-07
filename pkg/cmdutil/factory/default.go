@@ -11,8 +11,8 @@ import (
 func New(version string) *Factory {
 	io := iostream.NewIOStream()
 
-	osWrap := new(syswrap.OsWrapper)
-	ioWrap := new(syswrap.IoWrapper)
+	osWrap := new(syswrap.OSWrap)
+	ioWrap := new(syswrap.IOWrap)
 	encoder := bundleutil.NewEncoder()
 
 	manifester := bundleutil.NewManifester(io, osWrap, encoder)

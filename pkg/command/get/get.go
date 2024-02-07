@@ -64,23 +64,14 @@ func getRun(ctx context.Context, opts *getOptions) error {
 		return err
 	}
 
-	installedList, err := findRequirementByRepo(target, opts.URL)
-	if err != nil {
-		return err
-	}
-
 	v, err := bundle.ParseVersionExpr(opts.Version)
 	if err != nil {
 		return err
 	}
 
-	if v != nil {
-		for _, r := range installedList {
-			if r.Version.String() == v.String() {
-				opts.io.PrintfOk("bundle '%s+%s' is already installed", opts.URL, v.String())
-				return nil
-			}
-		}
+	if target.BundleFile.IsRequirementListed(opts.URL, v.String()) {
+		opts.io.PrintfOk("bundle '%s+%s' is already installed", opts.URL, v.String())
+		return nil
 	}
 
 	result, err := opts.Downloader.Download(ctx, opts.URL, v)
@@ -106,38 +97,7 @@ func getRun(ctx context.Context, opts *getOptions) error {
 		return err
 	}
 
+	opts.io.PrintfOk("bundle '%s+%s' was successfully added", result.Target.Repository(), result.Target.Version)
+
 	return nil
-}
-
-// func determineVersion(version string) (*bundle.VersionExpr, error) {
-
-// }
-
-type RequirementLite struct {
-	Repository string
-	Version    *bundle.VersionExpr
-	Index      int
-}
-
-func findRequirementByRepo(b *bundle.Bundle, repo string) ([]*RequirementLite, error) {
-	result := make([]*RequirementLite, 0)
-
-	for i, r := range b.BundleFile.Require.List {
-		if r.Repository != repo {
-			continue
-		}
-
-		v, err := bundle.ParseVersionExpr(r.Version)
-		if err != nil {
-			return nil, err
-		}
-
-		result = append(result, &RequirementLite{
-			Repository: r.Repository,
-			Version:    v,
-			Index:      i,
-		})
-	}
-
-	return result, nil
 }

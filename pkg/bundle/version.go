@@ -24,6 +24,7 @@ var (
 )
 
 type VersionExpr struct {
+	// TODO: create Tag type
 	Tag       *version.Version // semantic tag if available, or pseudo version
 	Timestamp string           // commit timestamp
 	Hash      string           // commit hash
@@ -49,6 +50,10 @@ func (v *VersionExpr) IsPseudo() bool {
 }
 
 func (v *VersionExpr) String() string {
+	if v == nil {
+		return "latest"
+	}
+
 	if v.Tag != nil && v.Tag.Original() != constant.BundlePseudoVersion {
 		return v.Tag.Original()
 	}

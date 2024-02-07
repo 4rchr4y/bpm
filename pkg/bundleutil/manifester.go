@@ -98,25 +98,20 @@ func (m *Manifester) Update(input *UpdateInput) error {
 
 	input.Target.LockFile.Sum = input.Target.Sum()
 
-	m.io.PrintfOk("bundle '%s' has been successfully updated", input.Target.Repository())
+	m.io.PrintfDebug("bundle '%s' has been successfully updated", input.Target.Repository())
 	return nil
 }
 
-type (
-	ErrUpgradeBundleFile struct{ error }
-	ErrUpgradeLockFile   struct{ error }
-)
-
 func (m *Manifester) Upgrade(workDir string, b *bundle.Bundle) error {
 	if err := m.upgradeBundleFile(workDir, b); err != nil {
-		return ErrUpgradeBundleFile{err}
+		return err
 	}
 
 	if err := m.upgradeLockFile(workDir, b); err != nil {
-		return ErrUpgradeLockFile{err}
+		return err
 	}
 
-	m.io.PrintfOk("bundle '%s' has been successfully upgraded", b.Repository())
+	m.io.PrintfDebug("bundle '%s' has been successfully upgraded", b.Repository())
 	return nil
 }
 

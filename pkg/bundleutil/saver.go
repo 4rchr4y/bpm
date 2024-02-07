@@ -2,7 +2,6 @@ package bundleutil
 
 import (
 	"fmt"
-	"io/fs"
 	"os"
 	"path/filepath"
 
@@ -11,15 +10,8 @@ import (
 	"github.com/4rchr4y/bpm/pkg/bundle/bundlefile"
 	"github.com/4rchr4y/bpm/pkg/bundle/lockfile"
 	"github.com/4rchr4y/bpm/pkg/bundle/regofile"
+	"github.com/4rchr4y/godevkit/syswrap/osiface"
 )
-
-type saverOsWrapper interface {
-	Mkdir(name string, perm fs.FileMode) error
-	MkdirAll(path string, perm fs.FileMode) error
-	Create(name string) (*os.File, error)
-	UserHomeDir() (string, error)
-	WriteFile(name string, data []byte, perm fs.FileMode) error
-}
 
 type saverHclEncoder interface {
 	EncodeBundleFile(bundlefile *bundlefile.File) []byte
@@ -28,11 +20,11 @@ type saverHclEncoder interface {
 
 type Saver struct {
 	Dir    string // folder where all packages will be saved
-	osWrap saverOsWrapper
+	osWrap osiface.OSWrapper
 	encode saverHclEncoder
 }
 
-func NewSaver(osWrap saverOsWrapper, encoder saverHclEncoder) *Saver {
+func NewSaver(osWrap osiface.OSWrapper, encoder saverHclEncoder) *Saver {
 	return &Saver{
 		osWrap: osWrap,
 		encode: encoder,
