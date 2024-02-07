@@ -6,10 +6,10 @@ import (
 
 	"github.com/4rchr4y/bpm/pkg/bundle/bundlefile"
 	"github.com/4rchr4y/bpm/pkg/bundle/lockfile"
-	"github.com/4rchr4y/bpm/pkg/bundleutil"
+	"github.com/4rchr4y/bpm/pkg/bundleutil/encode"
 )
 
-func bundleFileContent(encoder *bundleutil.Encoder, repo string, author *bundlefile.AuthorExpr) []byte {
+func bundleFileContent(encoder *encode.Encoder, repo string, author *bundlefile.AuthorExpr) []byte {
 	repoName := path.Base(repo)
 	bundlefile := &bundlefile.File{
 		Package: &bundlefile.PackageDecl{
@@ -23,7 +23,7 @@ func bundleFileContent(encoder *bundleutil.Encoder, repo string, author *bundlef
 	return encoder.EncodeBundleFile(bundlefile)
 }
 
-func lockfileContent(encoder *bundleutil.Encoder, sum string, edition string) []byte {
+func lockfileContent(encoder *encode.Encoder, sum string, edition string) []byte {
 	lockfile := &lockfile.File{
 		Sum:     sum,
 		Edition: edition,

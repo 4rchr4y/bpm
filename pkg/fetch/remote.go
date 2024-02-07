@@ -7,7 +7,6 @@ import (
 
 	"github.com/4rchr4y/bpm/constant"
 	"github.com/4rchr4y/bpm/pkg/bundle"
-	"github.com/4rchr4y/bpm/pkg/fileutil"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -36,7 +35,7 @@ func (fetcher *Fetcher) FetchRemote(ctx context.Context, url string, tag *bundle
 		return nil, err
 	}
 
-	b, err := fetcher.Fileifier.Fileify(files)
+	b, err := fetcher.Fileify(files)
 	if err != nil {
 		return nil, err
 	}
@@ -234,7 +233,7 @@ func getFilesFromCommit(commit *object.Commit) (map[string][]byte, error) {
 	return files, nil
 }
 
-func fetchIgnoreListFromGitCommit(commit *object.Commit) (map[string]struct{}, error) {
+func fetchIgnoreListFromGitCommit(commit *object.Commit) (bundle.IgnoreList, error) {
 	ignoreFile, err := commit.File(constant.IgnoreFileName)
 	if err != nil {
 		if err != object.ErrFileNotFound {
@@ -247,10 +246,5 @@ func fetchIgnoreListFromGitCommit(commit *object.Commit) (map[string]struct{}, e
 		return nil, err
 	}
 
-	ignoreList, err := fileutil.ReadLinesToMap([]byte(ignoreFileContent))
-	if err != nil {
-		return nil, err
-	}
-
-	return ignoreList, nil
+	return readLinesToMap([]byte(ignoreFileContent))
 }

@@ -8,7 +8,6 @@ import (
 	"github.com/4rchr4y/bpm/constant"
 	"github.com/4rchr4y/bpm/pkg/bundle"
 	"github.com/4rchr4y/bpm/pkg/bundleutil"
-	"github.com/4rchr4y/bpm/pkg/fileutil"
 )
 
 func (fetcher *Fetcher) FetchLocal(dirPath string) (*bundle.Bundle, error) {
@@ -29,7 +28,7 @@ func (fetcher *Fetcher) FetchLocal(dirPath string) (*bundle.Bundle, error) {
 		return nil, err
 	}
 
-	bundle, err := fetcher.Fileifier.Fileify(files, bundleutil.WithIgnoreList(ignoreList))
+	bundle, err := fetcher.Fileify(files, bundleutil.WithIgnoreList(ignoreList))
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +36,7 @@ func (fetcher *Fetcher) FetchLocal(dirPath string) (*bundle.Bundle, error) {
 	return bundle, nil
 }
 
-func (fetcher *Fetcher) readLocalBundleDir(abs string, ignoreList map[string]struct{}) (map[string][]byte, error) {
+func (fetcher *Fetcher) readLocalBundleDir(abs string, ignoreList bundle.IgnoreList) (map[string][]byte, error) {
 	files := make(map[string][]byte)
 	err := fetcher.OSWrap.Walk(abs, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -83,13 +82,14 @@ func (fetcher *Fetcher) readLocalFileContent(path string) ([]byte, error) {
 	return fetcher.IOWrap.ReadAll(file)
 }
 
-func (fetcher *Fetcher) fetchIgnoreListFromLocalFile(dir string) (map[string]struct{}, error) {
+func (fetcher *Fetcher) fetchIgnoreListFromLocalFile(dir string) (bundle.IgnoreList, error) {
 	ignoreFilePath := filepath.Join(dir, constant.IgnoreFileName)
 	file, err := fetcher.OSWrap.OpenFile(ignoreFilePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return make(map[string]struct{}), nil
+			return make(bundle.IgnoreList), nil
 		}
+
 		return nil, err
 	}
 	defer file.Close()
@@ -99,5 +99,5 @@ func (fetcher *Fetcher) fetchIgnoreListFromLocalFile(dir string) (map[string]str
 		return nil, err
 	}
 
-	return fileutil.ReadLinesToMap(content)
+	return readLinesToMap(content)
 }

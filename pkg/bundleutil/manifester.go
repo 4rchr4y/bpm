@@ -35,20 +35,6 @@ func NewManifester(io core.IO, osWrap manifesterOsWrapper, encoder manifesterEnc
 	}
 }
 
-func (m *Manifester) InitLockFile(b *bundle.Bundle) error {
-	if b.BundleFile == nil {
-		return fmt.Errorf("can't find '%s' file", constant.BundleFileName)
-	}
-
-	b.LockFile = &lockfile.File{
-		// TODO: set 'edition' from global app context
-		Edition: "2024",
-		Sum:     b.Sum(),
-	}
-
-	return nil
-}
-
 type UpdateInput struct {
 	Target    *bundle.Bundle   // target bundle that needed to be updated
 	Rdirect   []*bundle.Bundle // directly incoming required bundles

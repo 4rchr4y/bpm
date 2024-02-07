@@ -1,4 +1,4 @@
-package bundleutil
+package encode
 
 import (
 	"bytes"

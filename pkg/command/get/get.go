@@ -7,6 +7,7 @@ import (
 	"github.com/4rchr4y/bpm/core"
 	"github.com/4rchr4y/bpm/pkg/bundle"
 	"github.com/4rchr4y/bpm/pkg/bundleutil"
+	"github.com/4rchr4y/bpm/pkg/bundleutil/encode"
 	"github.com/4rchr4y/bpm/pkg/cmdutil/factory"
 	"github.com/4rchr4y/bpm/pkg/cmdutil/require"
 	"github.com/4rchr4y/bpm/pkg/fetch"
@@ -54,7 +55,7 @@ type getOptions struct {
 	Version    string // specified bundle version
 	Fetcher    *fetch.Fetcher
 	Saver      *bundleutil.Saver      // bundle saver files into the file system
-	Encoder    *bundleutil.Encoder    // decoder of bundle component files
+	Encoder    *encode.Encoder        // decoder of bundle component files
 	Downloader *bundleutil.Downloader // downloader of a bundle and its dependencies
 	Manifester *bundleutil.Manifester // bundle manifest file control operator
 }

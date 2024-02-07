@@ -10,11 +10,13 @@ import (
 	"github.com/4rchr4y/bpm/pkg/bundle/regofile"
 )
 
+type IgnoreList map[string]struct{}
+
 type Bundle struct {
 	Version     *VersionExpr
 	BundleFile  *bundlefile.File
 	LockFile    *lockfile.File
-	IgnoreFiles map[string]struct{}
+	IgnoreFiles IgnoreList
 	RegoFiles   map[string]*regofile.File
 	OtherFiles  map[string][]byte
 }
