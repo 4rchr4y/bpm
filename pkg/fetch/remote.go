@@ -1,162 +1,27 @@
-package bundleutil
+package fetch
 
 import (
 	"context"
 	"fmt"
-	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/4rchr4y/bpm/constant"
-	"github.com/4rchr4y/bpm/core"
 	"github.com/4rchr4y/bpm/pkg/bundle"
 	"github.com/4rchr4y/bpm/pkg/fileutil"
-	"github.com/4rchr4y/godevkit/syswrap/ioiface"
-	"github.com/4rchr4y/godevkit/syswrap/osiface"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/hashicorp/go-version"
 )
 
-type loaderFileifier interface {
-	Fileify(files map[string][]byte, options ...BundleOptFn) (*bundle.Bundle, error)
-}
-
-type loaderGitFacade interface {
-	CloneWithContext(ctx context.Context, opts *git.CloneOptions) (*git.Repository, error)
-}
-
-type Loader struct {
-	io        core.IO
-	osWrap    osiface.OSWrapper
-	ioWrap    ioiface.IOWrapper
-	fileifier loaderFileifier
-	verifier  downloaderVerifier
-	gitfacade loaderGitFacade
-}
-
-func NewLoader(io core.IO, osWrap osiface.OSWrapper, ioWrap ioiface.IOWrapper, fileifier loaderFileifier, gitfacade loaderGitFacade) *Loader {
-	return &Loader{
-		io:        io,
-		osWrap:    osWrap,
-		ioWrap:    ioWrap,
-		fileifier: fileifier,
-		gitfacade: gitfacade,
-	}
-}
-
-// -----------------------------------------------------------------------
-// Loader of bundle files from the file system
-
-func (loader *Loader) LoadBundle(dirPath string) (*bundle.Bundle, error) {
-	absDirPath, err := filepath.Abs(dirPath)
-	if err != nil {
-		return nil, fmt.Errorf("error getting absolute path for %s: %v", dirPath, err)
-	}
-
-	loader.io.PrintfInfo("loading bundle from %s", absDirPath)
-
-	ignoreList, err := loader.fetchIgnoreListFromLocalFile(absDirPath)
-	if err != nil {
-		return nil, err
-	}
-
-	files, err := loader.readLocalBundleDir(absDirPath, ignoreList)
-	if err != nil {
-		return nil, err
-	}
-
-	bundle, err := loader.fileifier.Fileify(files, WithIgnoreList(ignoreList))
-	if err != nil {
-		return nil, err
-	}
-
-	return bundle, nil
-}
-
-func (loader *Loader) readLocalBundleDir(abs string, ignoreList map[string]struct{}) (map[string][]byte, error) {
-	files := make(map[string][]byte)
-	err := loader.osWrap.Walk(abs, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return fmt.Errorf("error occurred while accessing a path %s: %v", path, err)
-		}
-
-		relativePath, err := filepath.Rel(abs, path)
-		if err != nil {
-			return fmt.Errorf("error getting relative path for %s from %s: %v", path, abs, err)
-		}
-
-		if shouldIgnore(ignoreList, relativePath) {
-			if info.IsDir() {
-				return filepath.SkipDir
-			}
-			return nil
-		}
-
-		if !info.IsDir() {
-			content, err := loader.readLocalFileContent(path)
-			if err != nil {
-				return err
-			}
-			files[relativePath] = content
-		}
-
-		return nil
-	})
-	if err != nil {
-		return nil, fmt.Errorf("error walking the path %s: %v", abs, err)
-	}
-
-	return files, nil
-}
-
-func (loader *Loader) readLocalFileContent(path string) ([]byte, error) {
-	file, err := loader.osWrap.OpenFile(path)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	return loader.ioWrap.ReadAll(file)
-}
-
-func (loader *Loader) fetchIgnoreListFromLocalFile(dir string) (map[string]struct{}, error) {
-	ignoreFilePath := filepath.Join(dir, constant.IgnoreFileName)
-	file, err := loader.osWrap.OpenFile(ignoreFilePath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return make(map[string]struct{}), nil
-		}
-		return nil, err
-	}
-	defer file.Close()
-
-	content, err := loader.ioWrap.ReadAll(file)
-	if err != nil {
-		return nil, err
-	}
-
-	return fileutil.ReadLinesToMap(content)
-}
-
-// -----------------------------------------------------------------------
-// Bundle downloader from a remote git server
-
-func (loader *Loader) DownloadBundle(ctx context.Context, url string, tag *bundle.VersionExpr) (*bundle.Bundle, error) {
-	loader.io.PrintfInfo("downloading %s+%s", url, func() string {
-		if tag != nil {
-			return tag.String()
-		}
-
-		return "latest"
-	}())
+func (fetcher *Fetcher) FetchRemote(ctx context.Context, url string, tag *bundle.VersionExpr) (*bundle.Bundle, error) {
+	fetcher.IO.PrintfInfo("downloading %s+%s", url, tag.String())
 
 	cloneInput := &git.CloneOptions{
 		URL: fmt.Sprintf("https://%s.git", url),
 	}
 
-	repo, err := loader.gitfacade.CloneWithContext(ctx, cloneInput)
+	repo, err := fetcher.GitFacade.CloneWithContext(ctx, cloneInput)
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +36,7 @@ func (loader *Loader) DownloadBundle(ctx context.Context, url string, tag *bundl
 		return nil, err
 	}
 
-	b, err := loader.fileifier.Fileify(files)
+	b, err := fetcher.Fileifier.Fileify(files)
 	if err != nil {
 		return nil, err
 	}
@@ -388,22 +253,4 @@ func fetchIgnoreListFromGitCommit(commit *object.Commit) (map[string]struct{}, e
 	}
 
 	return ignoreList, nil
-}
-
-// -----------------------------------------------------------------------
-// Common helper functions
-
-func shouldIgnore(ignoreList map[string]struct{}, path string) bool {
-	if path == "" || len(ignoreList) == 0 {
-		return false
-	}
-
-	dir := filepath.Dir(path)
-	if dir == "." {
-		return false
-	}
-
-	topLevelDir := strings.Split(dir, string(filepath.Separator))[0]
-	_, found := ignoreList[topLevelDir]
-	return found
 }

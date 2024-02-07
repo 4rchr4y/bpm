@@ -21,7 +21,6 @@ import (
 
 	"github.com/4rchr4y/bpm/core"
 	"github.com/4rchr4y/bpm/pkg/bundle"
-	"github.com/4rchr4y/bpm/pkg/bundle/lockfile"
 )
 
 type Verifier struct {
@@ -40,31 +39,6 @@ func (v *Verifier) Verify(b *bundle.Bundle) error {
 
 	if b.LockFile.Sum != b.Sum() {
 		return fmt.Errorf("bundle '%s' checksum does not match the expected one", b.Repository())
-	}
-
-	return nil
-}
-
-func verifyRegoFiles(b *bundle.Bundle) error {
-	modules := make(map[string]*lockfile.ModDecl, len(b.LockFile.Modules.List))
-
-	for _, m := range b.LockFile.Modules.List {
-		modules[m.Source] = m
-	}
-
-	if len(b.RegoFiles) != len(modules) {
-		return fmt.Errorf("expected number of files (%d) does not match the received one (%d)", len(modules), len(b.RegoFiles))
-	}
-
-	for filePath, file := range b.RegoFiles {
-		m, exits := modules[filePath]
-		if !exits {
-			return fmt.Errorf("can't find '%s' file", filePath)
-		}
-
-		if file.Sum() != m.Sum {
-			return fmt.Errorf("file '%s' checksum does not match the expected one", filePath)
-		}
 	}
 
 	return nil

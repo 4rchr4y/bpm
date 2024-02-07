@@ -9,6 +9,7 @@ import (
 	"github.com/4rchr4y/bpm/pkg/bundleutil"
 	"github.com/4rchr4y/bpm/pkg/cmdutil/factory"
 	"github.com/4rchr4y/bpm/pkg/cmdutil/require"
+	"github.com/4rchr4y/bpm/pkg/fetch"
 	"github.com/spf13/cobra"
 )
 
@@ -33,7 +34,7 @@ func NewCmdGet(f *factory.Factory) *cobra.Command {
 				WorkDir:    wd,
 				URL:        args[0],
 				Version:    version,
-				Loader:     f.Loader,
+				Fetcher:    f.Fetcher,
 				Saver:      f.Saver,
 				Encoder:    f.Encoder,
 				Downloader: f.Downloader,
@@ -51,7 +52,7 @@ type getOptions struct {
 	WorkDir    string // bundle working directory
 	URL        string // bundle repository that needs to be installed
 	Version    string // specified bundle version
-	Loader     *bundleutil.Loader
+	Fetcher    *fetch.Fetcher
 	Saver      *bundleutil.Saver      // bundle saver files into the file system
 	Encoder    *bundleutil.Encoder    // decoder of bundle component files
 	Downloader *bundleutil.Downloader // downloader of a bundle and its dependencies
@@ -59,7 +60,7 @@ type getOptions struct {
 }
 
 func getRun(ctx context.Context, opts *getOptions) error {
-	target, err := opts.Loader.LoadBundle(opts.WorkDir)
+	target, err := opts.Fetcher.FetchLocal(opts.WorkDir)
 	if err != nil {
 		return err
 	}

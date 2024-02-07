@@ -6,6 +6,7 @@ import (
 	"github.com/4rchr4y/bpm/pkg/bundleutil"
 	"github.com/4rchr4y/bpm/pkg/cmdutil/factory"
 	"github.com/4rchr4y/bpm/pkg/cmdutil/require"
+	"github.com/4rchr4y/bpm/pkg/fetch"
 	"github.com/spf13/cobra"
 )
 
@@ -24,7 +25,7 @@ func NewCmdInstall(f *factory.Factory) *cobra.Command {
 			return installRun(cmd.Context(), &installOptions{
 				URL:     args[0],
 				Version: version,
-				Loader:  f.Loader,
+				Fetcher: f.Fetcher,
 				Saver:   f.Saver,
 			})
 		},
@@ -37,7 +38,7 @@ func NewCmdInstall(f *factory.Factory) *cobra.Command {
 type installOptions struct {
 	URL     string // bundle repository that needs to be installed
 	Version string // specified bundle version
-	Loader  *bundleutil.Loader
+	Fetcher *fetch.Fetcher
 	Saver   *bundleutil.Saver // bundle saver files into the file system
 }
 

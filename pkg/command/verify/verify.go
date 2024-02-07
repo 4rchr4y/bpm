@@ -7,6 +7,7 @@ import (
 	"github.com/4rchr4y/bpm/pkg/bundleutil"
 	"github.com/4rchr4y/bpm/pkg/cmdutil/factory"
 	"github.com/4rchr4y/bpm/pkg/cmdutil/require"
+	"github.com/4rchr4y/bpm/pkg/fetch"
 	"github.com/spf13/cobra"
 )
 
@@ -19,7 +20,7 @@ func NewCmdVerify(f *factory.Factory) *cobra.Command {
 			return verifyRun(cmd.Context(), &verifyOptions{
 				dir:        args[0],
 				io:         f.IOStream,
-				loader:     f.Loader,
+				Fetcher:    f.Fetcher,
 				verifier:   f.Verifier,
 				manifester: f.Manifester,
 			})
@@ -32,13 +33,13 @@ func NewCmdVerify(f *factory.Factory) *cobra.Command {
 type verifyOptions struct {
 	dir        string // specified bundle folder that should be verified
 	io         core.IO
-	loader     *bundleutil.Loader
+	Fetcher    *fetch.Fetcher
 	verifier   *bundleutil.Verifier
 	manifester *bundleutil.Manifester
 }
 
 func verifyRun(ctx context.Context, opts *verifyOptions) error {
-	b, err := opts.loader.LoadBundle(opts.dir)
+	b, err := opts.Fetcher.FetchLocal(opts.dir)
 	if err != nil {
 		return err
 	}

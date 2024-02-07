@@ -9,6 +9,7 @@ import (
 	"github.com/4rchr4y/bpm/pkg/bundleutil"
 	"github.com/4rchr4y/bpm/pkg/cmdutil/factory"
 	"github.com/4rchr4y/bpm/pkg/cmdutil/require"
+	"github.com/4rchr4y/bpm/pkg/fetch"
 	"github.com/spf13/cobra"
 )
 
@@ -33,7 +34,7 @@ func NewCmdCheck(f *factory.Factory) *cobra.Command {
 				Path:      args[0],
 				Encoder:   f.Encoder,
 				Fileifier: f.Fileifier,
-				Loader:    f.Loader,
+				Fetcher:   f.Fetcher,
 			})
 		},
 	}
@@ -45,11 +46,11 @@ type checkOptions struct {
 	Path      string                // path to the bundle that needs to be checked
 	Encoder   *bundleutil.Encoder   // decoder of bundle component files
 	Fileifier *bundleutil.Fileifier // transformer of file contents into structures
-	Loader    *bundleutil.Loader    // bundle file loader from file system
+	Fetcher   *fetch.Fetcher        // bundle file loader from file system
 }
 
 func checkRun(opts *checkOptions) error {
-	b, err := opts.Loader.LoadBundle(opts.Path)
+	b, err := opts.Fetcher.FetchLocal(opts.Path)
 	if err != nil {
 		return fmt.Errorf("failed to load '%s' bundle: %v", opts.Path, err)
 	}

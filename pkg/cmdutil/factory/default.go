@@ -2,6 +2,7 @@ package factory
 
 import (
 	"github.com/4rchr4y/bpm/pkg/bundleutil"
+	"github.com/4rchr4y/bpm/pkg/fetch"
 	"github.com/4rchr4y/bpm/pkg/iostream"
 	"github.com/4rchr4y/godevkit/syswrap"
 
@@ -20,7 +21,15 @@ func New(version string) *Factory {
 	verifier := bundleutil.NewVerifier(io)
 
 	gitFacade := gitfacade.NewGitFacade()
-	loader := bundleutil.NewLoader(io, osWrap, ioWrap, fileifier, gitFacade)
+
+	fetcher := &fetch.Fetcher{
+		IO:        io,
+		OSWrap:    osWrap,
+		IOWrap:    ioWrap,
+		Verifier:  verifier,
+		Fileifier: fileifier,
+		GitFacade: gitFacade,
+	}
 
 	f := &Factory{
 		Name:      "bpm",
@@ -28,11 +37,11 @@ func New(version string) *Factory {
 		IOStream:  io,
 		Encoder:   encoder,
 		Fileifier: fileifier,
-		Loader:    loader,
+		Fetcher:   fetcher,
 		GitFacade: gitFacade,
 		// GitLoader:  loader,
 		Saver:      bundleutil.NewSaver(osWrap, encoder),
-		Downloader: bundleutil.NewDownloader(loader, verifier),
+		Downloader: bundleutil.NewDownloader(fetcher, verifier),
 		Manifester: manifester,
 		Verifier:   verifier,
 		IO:         ioWrap,

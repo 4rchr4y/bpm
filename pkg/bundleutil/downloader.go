@@ -8,7 +8,7 @@ import (
 )
 
 type downloaderGitLoader interface {
-	DownloadBundle(ctx context.Context, url string, tag *bundle.VersionExpr) (*bundle.Bundle, error)
+	FetchRemote(ctx context.Context, url string, tag *bundle.VersionExpr) (*bundle.Bundle, error)
 }
 
 type downloaderVerifier interface {
@@ -54,7 +54,7 @@ func (dr *DownloadResult) Merge() []*bundle.Bundle {
 }
 
 func (d *Downloader) Download(ctx context.Context, url string, version *bundle.VersionExpr) (*DownloadResult, error) {
-	target, err := d.git.DownloadBundle(ctx, url, version)
+	target, err := d.git.FetchRemote(ctx, url, version)
 	if err != nil {
 		return nil, fmt.Errorf("failed to download '%s' bundle: %w", url, err)
 	}
