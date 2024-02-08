@@ -33,12 +33,19 @@ type fetcherVerifier interface {
 type fetcherEncoder interface {
 	DecodeBundleFile(content []byte) (*bundlefile.File, error)
 	DecodeLockFile(content []byte) (*lockfile.File, error)
+	DecodeIgnoreFile(content []byte) (*bundle.IgnoreFile, error)
+}
+
+type fetcherStorage interface {
+	Load(dirPath string) (*bundle.Bundle, error)
 }
 
 type Fetcher struct {
 	IO     core.IO
 	OSWrap osiface.OSWrapper
 	IOWrap ioiface.IOWrapper
+
+	Storage fetcherStorage
 
 	Verifier  fetcherVerifier
 	GitFacade fetcherGitFacade

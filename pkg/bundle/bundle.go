@@ -3,22 +3,54 @@ package bundle
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/4rchr4y/bpm/pkg/bundle/bundlefile"
 	"github.com/4rchr4y/bpm/pkg/bundle/lockfile"
 	"github.com/4rchr4y/bpm/pkg/bundle/regofile"
 )
 
-type IgnoreList map[string]struct{}
+type IgnoreFile struct {
+	List map[string]struct{}
+}
+
+func NewIgnoreFile() *IgnoreFile {
+	return &IgnoreFile{
+		List: make(map[string]struct{}),
+	}
+}
+
+func (f *IgnoreFile) Store(fileName string) {
+	if fileName != "" {
+		f.List[fileName] = struct{}{}
+		return
+	}
+}
+
+func (f *IgnoreFile) Lookup(path string) bool {
+	if path == "" || len(f.List) == 0 {
+		return false
+	}
+
+	dir := filepath.Dir(path)
+	if dir == "." {
+		return false
+	}
+
+	topLevelDir := strings.Split(dir, string(filepath.Separator))[0]
+	_, found := f.List[topLevelDir]
+	return found
+}
 
 type Bundle struct {
-	Version     *VersionExpr
-	BundleFile  *bundlefile.File
-	LockFile    *lockfile.File
-	IgnoreFiles IgnoreList
-	RegoFiles   map[string]*regofile.File
-	OtherFiles  map[string][]byte
+	Version    *VersionExpr
+	BundleFile *bundlefile.File
+	LockFile   *lockfile.File
+	IgnoreFile *IgnoreFile
+	RegoFiles  map[string]*regofile.File
+	OtherFiles map[string][]byte
 }
 
 func (b *Bundle) Name() string       { return b.BundleFile.Package.Name }

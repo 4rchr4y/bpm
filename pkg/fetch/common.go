@@ -1,46 +1,35 @@
 package fetch
 
-import (
-	"bufio"
-	"bytes"
-	"fmt"
-	"path/filepath"
-	"strings"
+// func shouldIgnore(ignoreList bundle.IgnoreList, path string) bool {
+// 	if path == "" || len(ignoreList) == 0 {
+// 		return false
+// 	}
 
-	"github.com/4rchr4y/bpm/constant"
-	"github.com/4rchr4y/bpm/pkg/bundle"
-)
+// 	dir := filepath.Dir(path)
+// 	if dir == "." {
+// 		return false
+// 	}
 
-func shouldIgnore(ignoreList bundle.IgnoreList, path string) bool {
-	if path == "" || len(ignoreList) == 0 {
-		return false
-	}
+// 	topLevelDir := strings.Split(dir, string(filepath.Separator))[0]
+// 	_, found := ignoreList[topLevelDir]
+// 	return found
+// }
 
-	dir := filepath.Dir(path)
-	if dir == "." {
-		return false
-	}
+// func readLinesToMap(content []byte) (bundle.IgnoreList, error) {
+// 	result := make(bundle.IgnoreList)
+// 	scanner := bufio.NewScanner(bytes.NewReader(content))
+// 	for scanner.Scan() {
+// 		line := strings.TrimSpace(scanner.Text())
+// 		if line == "" {
+// 			continue
+// 		}
 
-	topLevelDir := strings.Split(dir, string(filepath.Separator))[0]
-	_, found := ignoreList[topLevelDir]
-	return found
-}
+// 		result[line] = struct{}{}
+// 	}
 
-func readLinesToMap(content []byte) (bundle.IgnoreList, error) {
-	result := make(bundle.IgnoreList)
-	scanner := bufio.NewScanner(bytes.NewReader(content))
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" {
-			continue
-		}
+// 	if err := scanner.Err(); err != nil {
+// 		return nil, fmt.Errorf("error reading '%s' input: %v", constant.IgnoreFileName, err)
+// 	}
 
-		result[line] = struct{}{}
-	}
-
-	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("error reading '%s' input: %v", constant.IgnoreFileName, err)
-	}
-
-	return result, nil
-}
+// 	return result, nil
+// }

@@ -30,7 +30,7 @@ func (fetcher *Fetcher) FetchRemote(ctx context.Context, url string, tag *bundle
 		return nil, err
 	}
 
-	files, err := getFilesFromCommit(commit)
+	files, err := fetcher.getFilesFromCommit(commit)
 	if err != nil {
 		return nil, err
 	}
@@ -201,20 +201,20 @@ func getCurrentVersionCommit(repo *git.Repository, tag string) (*object.Commit, 
 	return repo.CommitObject(ref.Hash())
 }
 
-func getFilesFromCommit(commit *object.Commit) (map[string][]byte, error) {
+func (fetcher *Fetcher) getFilesFromCommit(commit *object.Commit) (map[string][]byte, error) {
 	filesIter, err := commit.Files()
 	if err != nil {
 		return nil, err
 	}
 
-	ignoreList, err := fetchIgnoreListFromGitCommit(commit)
+	ignoreList, err := fetcher.fetchIgnoreListFromGitCommit(commit)
 	if err != nil {
 		return nil, err
 	}
 
 	files := make(map[string][]byte)
 	err = filesIter.ForEach(func(f *object.File) error {
-		if shouldIgnore(ignoreList, f.Name) {
+		if ignoreList.Lookup(f.Name) {
 			return nil
 		}
 
@@ -233,7 +233,7 @@ func getFilesFromCommit(commit *object.Commit) (map[string][]byte, error) {
 	return files, nil
 }
 
-func fetchIgnoreListFromGitCommit(commit *object.Commit) (bundle.IgnoreList, error) {
+func (fetcher *Fetcher) fetchIgnoreListFromGitCommit(commit *object.Commit) (*bundle.IgnoreFile, error) {
 	ignoreFile, err := commit.File(constant.IgnoreFileName)
 	if err != nil {
 		if err != object.ErrFileNotFound {
@@ -246,5 +246,5 @@ func fetchIgnoreListFromGitCommit(commit *object.Commit) (bundle.IgnoreList, err
 		return nil, err
 	}
 
-	return readLinesToMap([]byte(ignoreFileContent))
+	return fetcher.Encoder.DecodeIgnoreFile([]byte(ignoreFileContent))
 }

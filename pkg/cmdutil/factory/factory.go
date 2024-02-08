@@ -6,6 +6,7 @@ import (
 	"github.com/4rchr4y/bpm/pkg/bundleutil"
 	"github.com/4rchr4y/bpm/pkg/bundleutil/encode"
 	"github.com/4rchr4y/bpm/pkg/fetch"
+	"github.com/4rchr4y/bpm/pkg/storage"
 	"github.com/4rchr4y/godevkit/syswrap/ioiface"
 	"github.com/4rchr4y/godevkit/syswrap/osiface"
 )
@@ -15,8 +16,9 @@ type Factory struct {
 	Version string // app version
 
 	IOStream core.IO
+	Storage  *storage.Storage
 	Verifier *bundleutil.Verifier
-	Encoder  *encode.Encoder // decoder of bundle component files
+	Encoder  *encode.Encoder
 	// OsLoader   *osload.OsLoader       // bundle file loader from file system
 	GitFacade *gitfacade.GitFacade // facade for interaction with both the CLI and the API
 	// GitLoader  *gitload.GitLoader     // bundle file loader from the git repo

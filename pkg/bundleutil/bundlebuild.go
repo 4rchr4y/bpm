@@ -4,9 +4,9 @@ import "github.com/4rchr4y/bpm/pkg/bundle"
 
 type BundleOptFn func(*bundle.Bundle)
 
-func WithIgnoreList(ignoreList map[string]struct{}) BundleOptFn {
+func WithIgnoreList(ignoreFile *bundle.IgnoreFile) BundleOptFn {
 	return func(b *bundle.Bundle) {
-		b.IgnoreFiles = ignoreList
+		b.IgnoreFile = ignoreFile
 	}
 }
 
