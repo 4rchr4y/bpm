@@ -1,10 +1,10 @@
 package factory
 
 import (
-	"github.com/4rchr4y/bpm/pkg/bundleutil"
 	"github.com/4rchr4y/bpm/pkg/bundleutil/encode"
 	"github.com/4rchr4y/bpm/pkg/bundleutil/inspect"
 	"github.com/4rchr4y/bpm/pkg/bundleutil/manifest"
+	"github.com/4rchr4y/bpm/pkg/download"
 	"github.com/4rchr4y/bpm/pkg/fetch"
 	"github.com/4rchr4y/bpm/pkg/iostream"
 	"github.com/4rchr4y/bpm/pkg/storage"
@@ -49,6 +49,15 @@ func New() *Factory {
 		Encoder:   encoder,
 	}
 
+	downloader := &download.Downloader{
+		IO:        io,
+		OSWrap:    osWrap,
+		IOWrap:    ioWrap,
+		Inspector: inspector,
+		GitFacade: gitFacade,
+		Encoder:   encoder,
+	}
+
 	f := &Factory{
 		Name:       "bpm",
 		Version:    version,
@@ -58,7 +67,7 @@ func New() *Factory {
 		Fetcher:    fetcher,
 		Storage:    storage,
 		GitFacade:  gitFacade,
-		Downloader: bundleutil.NewDownloader(fetcher, inspector),
+		Downloader: downloader,
 		Manifester: manifester,
 		IO:         ioWrap,
 		OS:         osWrap,

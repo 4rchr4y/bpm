@@ -6,11 +6,11 @@ import (
 
 	"github.com/4rchr4y/bpm/core"
 	"github.com/4rchr4y/bpm/pkg/bundle"
-	"github.com/4rchr4y/bpm/pkg/bundleutil"
 	"github.com/4rchr4y/bpm/pkg/bundleutil/encode"
 	"github.com/4rchr4y/bpm/pkg/bundleutil/manifest"
 	"github.com/4rchr4y/bpm/pkg/cmdutil/factory"
 	"github.com/4rchr4y/bpm/pkg/cmdutil/require"
+	"github.com/4rchr4y/bpm/pkg/download"
 	"github.com/4rchr4y/bpm/pkg/fetch"
 	"github.com/4rchr4y/bpm/pkg/storage"
 	"github.com/spf13/cobra"
@@ -57,9 +57,9 @@ type getOptions struct {
 	Version    string // specified bundle version
 	Fetcher    *fetch.Fetcher
 	Storage    *storage.Storage
-	Encoder    *encode.Encoder        // decoder of bundle component files
-	Downloader *bundleutil.Downloader // downloader of a bundle and its dependencies
-	Manifester *manifest.Manifester   // bundle manifest file control operator
+	Encoder    *encode.Encoder      // decoder of bundle component files
+	Downloader *download.Downloader // downloader of a bundle and its dependencies
+	Manifester *manifest.Manifester // bundle manifest file control operator
 }
 
 func getRun(ctx context.Context, opts *getOptions) error {
@@ -78,7 +78,7 @@ func getRun(ctx context.Context, opts *getOptions) error {
 		return nil
 	}
 
-	result, err := opts.Downloader.Download(ctx, opts.URL, v)
+	result, err := opts.Downloader.DownloadWithContext(ctx, opts.URL, v)
 	if err != nil {
 		return err
 	}
