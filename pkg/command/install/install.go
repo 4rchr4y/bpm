@@ -3,10 +3,10 @@ package install
 import (
 	"context"
 
-	"github.com/4rchr4y/bpm/pkg/bundleutil"
 	"github.com/4rchr4y/bpm/pkg/cmdutil/factory"
 	"github.com/4rchr4y/bpm/pkg/cmdutil/require"
 	"github.com/4rchr4y/bpm/pkg/fetch"
+	"github.com/4rchr4y/bpm/pkg/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -26,7 +26,7 @@ func NewCmdInstall(f *factory.Factory) *cobra.Command {
 				URL:     args[0],
 				Version: version,
 				Fetcher: f.Fetcher,
-				Saver:   f.Saver,
+				Storage: f.Storage,
 			})
 		},
 	}
@@ -39,7 +39,7 @@ type installOptions struct {
 	URL     string // bundle repository that needs to be installed
 	Version string // specified bundle version
 	Fetcher *fetch.Fetcher
-	Saver   *bundleutil.Saver // bundle saver files into the file system
+	Storage *storage.Storage
 }
 
 func installRun(ctx context.Context, opts *installOptions) error {

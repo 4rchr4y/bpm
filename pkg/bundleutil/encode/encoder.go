@@ -13,7 +13,7 @@ import (
 	"github.com/4rchr4y/bpm/pkg/bundle/bundlefile"
 	"github.com/4rchr4y/bpm/pkg/bundle/lockfile"
 	"github.com/4rchr4y/bpm/pkg/bundle/regofile"
-	"github.com/4rchr4y/bpm/pkg/bundleutil"
+	"github.com/4rchr4y/bpm/pkg/bundleutil/bundlebuild"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsimple"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
@@ -93,7 +93,7 @@ func (e *Encoder) EncodeLockFile(lockfile *lockfile.File) []byte {
 	return result
 }
 
-func (e *Encoder) Fileify(files map[string][]byte, options ...bundleutil.BundleOptFn) (*bundle.Bundle, error) {
+func (e *Encoder) Fileify(files map[string][]byte, options ...bundlebuild.BundleOptFn) (*bundle.Bundle, error) {
 	b := &bundle.Bundle{
 		RegoFiles:  make(map[string]*regofile.File),
 		OtherFiles: make(map[string][]byte),

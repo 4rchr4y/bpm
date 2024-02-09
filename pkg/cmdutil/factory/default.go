@@ -3,15 +3,20 @@ package factory
 import (
 	"github.com/4rchr4y/bpm/pkg/bundleutil"
 	"github.com/4rchr4y/bpm/pkg/bundleutil/encode"
+	"github.com/4rchr4y/bpm/pkg/bundleutil/inspect"
 	"github.com/4rchr4y/bpm/pkg/fetch"
 	"github.com/4rchr4y/bpm/pkg/iostream"
 	"github.com/4rchr4y/bpm/pkg/storage"
+	"github.com/4rchr4y/godevkit/config"
 	"github.com/4rchr4y/godevkit/syswrap"
 
 	"github.com/4rchr4y/bpm/internal/gitfacade"
 )
 
-func New(version string) *Factory {
+func New() *Factory {
+	dir := config.MustGetString("BPM_PATH")
+	version := config.MustGetString("BPM_VERSION")
+
 	io := iostream.NewIOStream()
 
 	osWrap := new(syswrap.OSWrap)
@@ -19,11 +24,14 @@ func New(version string) *Factory {
 	encoder := encode.NewEncoder()
 
 	manifester := bundleutil.NewManifester(io, osWrap, encoder)
-	verifier := bundleutil.NewVerifier(io)
+	inspector := &inspect.Inspector{
+		IO: io,
+	}
 
 	gitFacade := gitfacade.NewGitFacade()
 
 	storage := &storage.Storage{
+		Dir:     dir,
 		IO:      io,
 		OSWrap:  osWrap,
 		IOWrap:  ioWrap,
@@ -34,25 +42,23 @@ func New(version string) *Factory {
 		IO:        io,
 		OSWrap:    osWrap,
 		IOWrap:    ioWrap,
-		Verifier:  verifier,
+		Inspector: inspector,
 		GitFacade: gitFacade,
 		Storage:   storage,
 		Encoder:   encoder,
 	}
 
 	f := &Factory{
-		Name:      "bpm",
-		Version:   version,
-		IOStream:  io,
-		Encoder:   encoder,
-		Fetcher:   fetcher,
-		Storage:   storage,
-		GitFacade: gitFacade,
-		// GitLoader:  loader,
-		Saver:      bundleutil.NewSaver(osWrap, encoder),
-		Downloader: bundleutil.NewDownloader(fetcher, verifier),
+		Name:       "bpm",
+		Version:    version,
+		IOStream:   io,
+		Encoder:    encoder,
+		Inspector:  inspector,
+		Fetcher:    fetcher,
+		Storage:    storage,
+		GitFacade:  gitFacade,
+		Downloader: bundleutil.NewDownloader(fetcher, inspector),
 		Manifester: manifester,
-		Verifier:   verifier,
 		IO:         ioWrap,
 		OS:         osWrap,
 	}

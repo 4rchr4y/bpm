@@ -22,7 +22,7 @@ func main() {
 }
 
 func run() exitCode {
-	cmdFactory := factory.New(build.Version)
+	cmdFactory := factory.New()
 	rootCmd, err := root.NewCmdRoot(cmdFactory, build.Version)
 	if err != nil {
 		log.Fatalf("failed to create root command: %v\n", err)

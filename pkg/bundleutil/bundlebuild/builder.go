@@ -1,4 +1,4 @@
-package bundleutil
+package bundlebuild
 
 import "github.com/4rchr4y/bpm/pkg/bundle"
 

@@ -11,6 +11,7 @@ import (
 	"github.com/4rchr4y/bpm/pkg/cmdutil/factory"
 	"github.com/4rchr4y/bpm/pkg/cmdutil/require"
 	"github.com/4rchr4y/bpm/pkg/fetch"
+	"github.com/4rchr4y/bpm/pkg/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -36,7 +37,7 @@ func NewCmdGet(f *factory.Factory) *cobra.Command {
 				URL:        args[0],
 				Version:    version,
 				Fetcher:    f.Fetcher,
-				Saver:      f.Saver,
+				Storage:    f.Storage,
 				Encoder:    f.Encoder,
 				Downloader: f.Downloader,
 				Manifester: f.Manifester,
@@ -54,7 +55,7 @@ type getOptions struct {
 	URL        string // bundle repository that needs to be installed
 	Version    string // specified bundle version
 	Fetcher    *fetch.Fetcher
-	Saver      *bundleutil.Saver      // bundle saver files into the file system
+	Storage    *storage.Storage
 	Encoder    *encode.Encoder        // decoder of bundle component files
 	Downloader *bundleutil.Downloader // downloader of a bundle and its dependencies
 	Manifester *bundleutil.Manifester // bundle manifest file control operator
@@ -81,7 +82,7 @@ func getRun(ctx context.Context, opts *getOptions) error {
 		return err
 	}
 
-	if err := opts.Saver.SaveToDisk(result.Merge()...); err != nil {
+	if err := opts.Storage.StoreMultiple(result.Merge()); err != nil {
 		return err
 	}
 

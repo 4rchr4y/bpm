@@ -35,7 +35,7 @@ func (fetcher *Fetcher) FetchRemote(ctx context.Context, url string, tag *bundle
 		return nil, err
 	}
 
-	b, err := fetcher.Fileify(files)
+	b, err := fetcher.Encoder.Fileify(files)
 	if err != nil {
 		return nil, err
 	}

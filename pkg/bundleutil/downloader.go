@@ -11,19 +11,19 @@ type downloaderGitLoader interface {
 	FetchRemote(ctx context.Context, url string, tag *bundle.VersionExpr) (*bundle.Bundle, error)
 }
 
-type downloaderVerifier interface {
-	Verify(b *bundle.Bundle) error
+type downloaderInspector interface {
+	Inspect(b *bundle.Bundle) error
 }
 
 type Downloader struct {
-	verifier downloaderVerifier
-	git      downloaderGitLoader
+	inspector downloaderInspector
+	git       downloaderGitLoader
 }
 
-func NewDownloader(git downloaderGitLoader, verifier downloaderVerifier) *Downloader {
+func NewDownloader(git downloaderGitLoader, verifier downloaderInspector) *Downloader {
 	return &Downloader{
-		git:      git,
-		verifier: verifier,
+		git:       git,
+		inspector: verifier,
 	}
 }
 
@@ -60,7 +60,7 @@ func (d *Downloader) Download(ctx context.Context, url string, version *bundle.V
 	}
 
 	// TODO: probably should be moved to Loader
-	if err := d.verifier.Verify(target); err != nil {
+	if err := d.inspector.Inspect(target); err != nil {
 		return nil, err
 	}
 
