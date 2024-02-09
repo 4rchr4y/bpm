@@ -4,6 +4,7 @@ import (
 	"github.com/4rchr4y/bpm/pkg/bundleutil"
 	"github.com/4rchr4y/bpm/pkg/bundleutil/encode"
 	"github.com/4rchr4y/bpm/pkg/bundleutil/inspect"
+	"github.com/4rchr4y/bpm/pkg/bundleutil/manifest"
 	"github.com/4rchr4y/bpm/pkg/fetch"
 	"github.com/4rchr4y/bpm/pkg/iostream"
 	"github.com/4rchr4y/bpm/pkg/storage"
@@ -23,7 +24,7 @@ func New() *Factory {
 	ioWrap := new(syswrap.IOWrap)
 	encoder := encode.NewEncoder()
 
-	manifester := bundleutil.NewManifester(io, osWrap, encoder)
+	manifester := manifest.NewManifester(io, osWrap, encoder)
 	inspector := &inspect.Inspector{
 		IO: io,
 	}

@@ -1,4 +1,4 @@
-package bundleutil
+package manifest
 
 import (
 	"fmt"

@@ -8,6 +8,7 @@ import (
 	"github.com/4rchr4y/bpm/pkg/bundle"
 	"github.com/4rchr4y/bpm/pkg/bundleutil"
 	"github.com/4rchr4y/bpm/pkg/bundleutil/encode"
+	"github.com/4rchr4y/bpm/pkg/bundleutil/manifest"
 	"github.com/4rchr4y/bpm/pkg/cmdutil/factory"
 	"github.com/4rchr4y/bpm/pkg/cmdutil/require"
 	"github.com/4rchr4y/bpm/pkg/fetch"
@@ -58,7 +59,7 @@ type getOptions struct {
 	Storage    *storage.Storage
 	Encoder    *encode.Encoder        // decoder of bundle component files
 	Downloader *bundleutil.Downloader // downloader of a bundle and its dependencies
-	Manifester *bundleutil.Manifester // bundle manifest file control operator
+	Manifester *manifest.Manifester   // bundle manifest file control operator
 }
 
 func getRun(ctx context.Context, opts *getOptions) error {
@@ -86,7 +87,7 @@ func getRun(ctx context.Context, opts *getOptions) error {
 		return err
 	}
 
-	updateInput := &bundleutil.UpdateInput{
+	updateInput := &manifest.UpdateInput{
 		Target:    target,
 		Rdirect:   append([]*bundle.Bundle(nil), result.Target),
 		Rindirect: append(result.Rdirect, result.Rindirect...),

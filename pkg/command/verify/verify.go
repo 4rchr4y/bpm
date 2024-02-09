@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/4rchr4y/bpm/core"
-	"github.com/4rchr4y/bpm/pkg/bundleutil"
 	"github.com/4rchr4y/bpm/pkg/bundleutil/inspect"
+	"github.com/4rchr4y/bpm/pkg/bundleutil/manifest"
 	"github.com/4rchr4y/bpm/pkg/cmdutil/factory"
 	"github.com/4rchr4y/bpm/pkg/cmdutil/require"
 	"github.com/4rchr4y/bpm/pkg/fetch"
@@ -36,7 +36,7 @@ type verifyOptions struct {
 	io         core.IO
 	Fetcher    *fetch.Fetcher
 	inspector  *inspect.Inspector
-	manifester *bundleutil.Manifester
+	manifester *manifest.Manifester
 }
 
 func verifyRun(ctx context.Context, opts *verifyOptions) error {
@@ -45,7 +45,7 @@ func verifyRun(ctx context.Context, opts *verifyOptions) error {
 		return err
 	}
 
-	if err := opts.manifester.Update(&bundleutil.UpdateInput{Target: b}); err != nil {
+	if err := opts.manifester.Update(&manifest.UpdateInput{Target: b}); err != nil {
 		return err
 	}
 

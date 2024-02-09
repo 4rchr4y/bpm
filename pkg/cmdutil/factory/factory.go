@@ -6,6 +6,7 @@ import (
 	"github.com/4rchr4y/bpm/pkg/bundleutil"
 	"github.com/4rchr4y/bpm/pkg/bundleutil/encode"
 	"github.com/4rchr4y/bpm/pkg/bundleutil/inspect"
+	"github.com/4rchr4y/bpm/pkg/bundleutil/manifest"
 	"github.com/4rchr4y/bpm/pkg/fetch"
 	"github.com/4rchr4y/bpm/pkg/storage"
 	"github.com/4rchr4y/godevkit/syswrap/ioiface"
@@ -26,7 +27,7 @@ type Factory struct {
 	// GitLoader  *gitload.GitLoader     // bundle file loader from the git repo
 	Fetcher    *fetch.Fetcher
 	Downloader *bundleutil.Downloader // downloader of a bundle and its dependencies
-	Manifester *bundleutil.Manifester // bundle manifest file control operator
+	Manifester *manifest.Manifester   // bundle manifest file control operator
 	OS         osiface.OSWrapper      // set of functions for working with the OS
 	IO         ioiface.IOWrapper      // set of functions for working with input/output
 }
