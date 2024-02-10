@@ -33,13 +33,13 @@ type RequirementDecl struct {
 	Version    string `hcl:"version"`
 }
 
-type RequireDecl struct {
+type RequireBlock struct {
 	List []*RequirementDecl `hcl:"bundle,block"`
 }
 
 type File struct {
-	Package *PackageDecl `hcl:"package,block"`
-	Require *RequireDecl `hcl:"require,block"`
+	Package *PackageDecl  `hcl:"package,block"`
+	Require *RequireBlock `hcl:"require,block"`
 }
 
 func (*File) Filename() string { return constant.BundleFileName }

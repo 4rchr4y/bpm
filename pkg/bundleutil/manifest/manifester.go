@@ -43,13 +43,13 @@ type UpdateInput struct {
 
 func (m *Manifester) Update(input *UpdateInput) error {
 	if input.Target.BundleFile.Require == nil && input.Rdirect != nil {
-		input.Target.BundleFile.Require = &bundlefile.RequireDecl{
+		input.Target.BundleFile.Require = &bundlefile.RequireBlock{
 			List: make([]*bundlefile.RequirementDecl, len(input.Rdirect)),
 		}
 	}
 
 	if input.Target.LockFile.Require == nil && input.Rindirect != nil {
-		input.Target.LockFile.Require = &lockfile.RequireDecl{
+		input.Target.LockFile.Require = &lockfile.RequireBlock{
 			List: make([]*lockfile.RequirementDecl, len(input.Rindirect)),
 		}
 	}

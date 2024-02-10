@@ -60,7 +60,7 @@ func (fetcher *Storage) readBundleDir(abs string, ignoreFile *bundle.IgnoreFile)
 		}
 
 		if !info.IsDir() {
-			content, err := fetcher.readLocalFileContent(path)
+			content, err := fetcher.readFileContent(path)
 			if err != nil {
 				return err
 			}
@@ -76,13 +76,14 @@ func (fetcher *Storage) readBundleDir(abs string, ignoreFile *bundle.IgnoreFile)
 	return files, nil
 }
 
-func (fetcher *Storage) readLocalFileContent(path string) ([]byte, error) {
+func (fetcher *Storage) readFileContent(path string) ([]byte, error) {
 	file, err := fetcher.OSWrap.OpenFile(path)
 	if err != nil {
 		return nil, err
 	}
 	defer file.Close()
 
+	// TODO: use bufio buffer instead of ReadAll
 	return fetcher.IOWrap.ReadAll(file)
 }
 
@@ -98,6 +99,7 @@ func (fetcher *Storage) readIgnoreFile(dir string) (*bundle.IgnoreFile, error) {
 	}
 	defer file.Close()
 
+	// TODO: use bufio buffer instead of ReadAll
 	content, err := fetcher.IOWrap.ReadAll(file)
 	if err != nil {
 		return nil, err

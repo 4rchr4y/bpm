@@ -103,7 +103,7 @@ func (e *Encoder) Fileify(files map[string][]byte, options ...bundlebuild.Bundle
 		options[i](b)
 	}
 
-	modules := &lockfile.ModulesDecl{
+	modules := &lockfile.ModulesBlock{
 		List: make([]*lockfile.ModDecl, 0),
 	}
 

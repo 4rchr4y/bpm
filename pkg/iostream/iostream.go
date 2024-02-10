@@ -11,11 +11,11 @@ import (
 )
 
 var (
-	LabelErr   = termenv.String(" ERROR ").Bold().Background(DarkThemeRedDeep).String()
-	LabelDebug = termenv.String(" DEBUG ").Bold().Background(DarkThemeOrangeLight).String()
-	LabelWarn  = termenv.String(" WARN ").Bold().Background(DarkThemeYellowLight).String()
-	LabelInfo  = termenv.String(" INFO ").Bold().Background(DarkThemeFg0).String()
-	LabelOk    = termenv.String(" OK ").Bold().Background(DarkThemeGreen).String()
+	LabelErr   = labelTemplate(termenv.String(" ERROR ").Foreground(DarkThemeRedDeep).String())
+	LabelDebug = labelTemplate(termenv.String(" DEBUG ").Foreground(DarkThemeOrangeLight).String())
+	LabelWarn  = labelTemplate(termenv.String(" WARN ").Foreground(DarkThemeYellowLight).String())
+	LabelInfo  = labelTemplate(termenv.String(" INFO ").Foreground(DarkThemeFg0).String())
+	LabelOk    = labelTemplate(termenv.String(" OK ").Foreground(DarkThemeGreen).String())
 )
 
 type IOStream struct {
@@ -29,27 +29,19 @@ type IOStream struct {
 type IOStreamOptFn func(io *IOStream)
 
 func WithInput(input io.Reader) IOStreamOptFn {
-	return func(io *IOStream) {
-		io.in = input
-	}
+	return func(io *IOStream) { io.in = input }
 }
 
 func WithOutput(output io.Writer) IOStreamOptFn {
-	return func(io *IOStream) {
-		io.out = termenv.NewOutput(output)
-	}
+	return func(io *IOStream) { io.out = termenv.NewOutput(output) }
 }
 
 func WithErrOutput(errOutput io.Writer) IOStreamOptFn {
-	return func(io *IOStream) {
-		io.errOut = termenv.NewOutput(errOutput)
-	}
+	return func(io *IOStream) { io.errOut = termenv.NewOutput(errOutput) }
 }
 
 func WithMode(mode core.StdoutMode) IOStreamOptFn {
-	return func(io *IOStream) {
-		io.mode = mode
-	}
+	return func(io *IOStream) { io.mode = mode }
 }
 
 func NewIOStream(options ...IOStreamOptFn) *IOStream {
@@ -117,4 +109,8 @@ func (s *IOStream) fetchTime(now time.Time) (result string) {
 func (s *IOStream) prepareWithLabel(label, format string, a ...any) string {
 	msg := termenv.String(fmt.Sprintf(format, a...)).String()
 	return termenv.String(label, msg, s.fetchTime(time.Now())).String()
+}
+
+func labelTemplate(labelText string) string {
+	return termenv.String("[").Foreground(DarkThemeFg0).Bold().String() + labelText + termenv.String("]").Foreground(DarkThemeFg0).Bold().String()
 }

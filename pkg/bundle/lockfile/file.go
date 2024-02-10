@@ -25,12 +25,12 @@ type (
 		Require []string `hcl:"require"`       // direct module dependencies 	e.g. '{...}'
 	}
 
-	ModulesDecl struct {
+	ModulesBlock struct {
 		List []*ModDecl `hcl:"mod,block"` // e.g. '{...}'
 	}
 )
 
-func (md *ModulesDecl) Sort() *ModulesDecl {
+func (md *ModulesBlock) Sort() *ModulesBlock {
 	sort.Slice(md.List, func(i, j int) bool {
 		return md.List[i].Package < md.List[j].Package
 	})
@@ -49,16 +49,16 @@ type (
 		// Why        []string `hcl:"why"`
 	}
 
-	RequireDecl struct {
+	RequireBlock struct {
 		List []*RequirementDecl `hcl:"bundle,block"`
 	}
 )
 
 type File struct {
-	Sum     string       `hcl:"sum"`           // bundle file checksum				e.g. 'd973b71fd6dd925...'
-	Edition string       `hcl:"edition"`       // lock file edition 				e.g. '2024'
-	Modules *ModulesDecl `hcl:"modules,block"` // list of nested modules			e.g. '{...}'
-	Require *RequireDecl `hcl:"require,block"` // list of declared dependencies		e.g. '{...}'
+	Sum     string        `hcl:"sum"`           // bundle file checksum				e.g. 'd973b71fd6dd925...'
+	Edition string        `hcl:"edition"`       // lock file edition 				e.g. '2024'
+	Modules *ModulesBlock `hcl:"modules,block"` // list of nested modules			e.g. '{...}'
+	Require *RequireBlock `hcl:"require,block"` // list of declared dependencies		e.g. '{...}'
 }
 
 func (*File) Filename() string { return constant.LockFileName }
