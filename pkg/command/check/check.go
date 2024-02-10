@@ -1,11 +1,6 @@
 package check
 
 import (
-	"fmt"
-	"os"
-	"path/filepath"
-
-	"github.com/4rchr4y/bpm/constant"
 	"github.com/4rchr4y/bpm/pkg/bundleutil/encode"
 	"github.com/4rchr4y/bpm/pkg/cmdutil/factory"
 	"github.com/4rchr4y/bpm/pkg/cmdutil/require"
@@ -48,18 +43,18 @@ type checkOptions struct {
 }
 
 func checkRun(opts *checkOptions) error {
-	b, err := opts.Fetcher.FetchLocal(opts.Path)
-	if err != nil {
-		return fmt.Errorf("failed to load '%s' bundle: %v", opts.Path, err)
-	}
+	// b, err := opts.Fetcher.FetchLocal(opts.Path)
+	// if err != nil {
+	// 	return fmt.Errorf("failed to load '%s' bundle: %v", opts.Path, err)
+	// }
 
-	if err := os.WriteFile(
-		filepath.Join(opts.Path, constant.LockFileName),
-		opts.Encoder.EncodeLockFile(b.LockFile),
-		0644,
-	); err != nil {
-		return fmt.Errorf("failed to write file '%s': %v", "fileName", err)
-	}
+	// if err := os.WriteFile(
+	// 	filepath.Join(opts.Path, constant.LockFileName),
+	// 	opts.Encoder.EncodeLockFile(b.LockFile),
+	// 	0644,
+	// ); err != nil {
+	// 	return fmt.Errorf("failed to write file '%s': %v", "fileName", err)
+	// }
 
 	return nil
 }

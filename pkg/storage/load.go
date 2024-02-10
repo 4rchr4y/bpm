@@ -10,20 +10,28 @@ import (
 	"github.com/4rchr4y/bpm/pkg/bundleutil/bundlebuild"
 )
 
-func (fetcher *Storage) Load(dirPath string) (*bundle.Bundle, error) {
-	absDirPath, err := filepath.Abs(dirPath)
+func (s *Storage) Load(repo string, version *bundle.VersionExpr) (*bundle.Bundle, error) {
+	return s.load(s.buildBundleSourcePath(repo, version.String()))
+}
+
+func (s *Storage) LoadFromAbs(dir string) (*bundle.Bundle, error) {
+	absDirPath, err := filepath.Abs(dir)
 	if err != nil {
-		return nil, fmt.Errorf("error getting absolute path for %s: %v", dirPath, err)
+		return nil, fmt.Errorf("error getting absolute path for %s: %v", dir, err)
 	}
 
-	fetcher.IO.PrintfInfo("loading from %s", absDirPath)
+	return s.load(absDirPath)
+}
 
-	ignoreList, err := fetcher.fetchIgnoreListFromLocalFile(absDirPath)
+func (fetcher *Storage) load(dir string) (*bundle.Bundle, error) {
+	fetcher.IO.PrintfInfo("loading from %s", dir)
+
+	ignoreList, err := fetcher.readIgnoreFile(dir)
 	if err != nil {
 		return nil, err
 	}
 
-	files, err := fetcher.readLocalBundleDir(absDirPath, ignoreList)
+	files, err := fetcher.readBundleDir(dir, ignoreList)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +44,7 @@ func (fetcher *Storage) Load(dirPath string) (*bundle.Bundle, error) {
 	return bundle, nil
 }
 
-func (fetcher *Storage) readLocalBundleDir(abs string, ignoreFile *bundle.IgnoreFile) (map[string][]byte, error) {
+func (fetcher *Storage) readBundleDir(abs string, ignoreFile *bundle.IgnoreFile) (map[string][]byte, error) {
 	files := make(map[string][]byte)
 	err := fetcher.OSWrap.Walk(abs, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -82,7 +90,7 @@ func (fetcher *Storage) readLocalFileContent(path string) ([]byte, error) {
 	return fetcher.IOWrap.ReadAll(file)
 }
 
-func (fetcher *Storage) fetchIgnoreListFromLocalFile(dir string) (*bundle.IgnoreFile, error) {
+func (fetcher *Storage) readIgnoreFile(dir string) (*bundle.IgnoreFile, error) {
 	ignoreFilePath := filepath.Join(dir, constant.IgnoreFileName)
 	file, err := fetcher.OSWrap.OpenFile(ignoreFilePath)
 	if err != nil {

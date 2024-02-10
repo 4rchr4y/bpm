@@ -22,7 +22,7 @@ func (s *Storage) StoreMultiple(bundleset []*bundle.Bundle) error {
 }
 
 func (s *Storage) Store(b *bundle.Bundle) error {
-	dirPath := filepath.Join(s.Dir, b.Repository(), b.Version.String())
+	dirPath := s.buildBundleSourcePath(b.Repository(), b.Version.String())
 
 	s.IO.PrintfDebug("saving to %s", dirPath)
 

@@ -5,31 +5,16 @@ import (
 
 	"github.com/4rchr4y/bpm/core"
 	"github.com/4rchr4y/bpm/pkg/bundle"
-	"github.com/4rchr4y/bpm/pkg/bundle/bundlefile"
-	"github.com/4rchr4y/bpm/pkg/bundle/lockfile"
-	"github.com/4rchr4y/bpm/pkg/bundleutil/bundlebuild"
-	"github.com/4rchr4y/godevkit/syswrap/ioiface"
-	"github.com/4rchr4y/godevkit/syswrap/osiface"
-	"github.com/go-git/go-git/v5"
+	"github.com/4rchr4y/godevkit/v3/syswrap/ioiface"
+	"github.com/4rchr4y/godevkit/v3/syswrap/osiface"
 )
 
-type fetcherGitFacade interface {
-	CloneWithContext(ctx context.Context, opts *git.CloneOptions) (*git.Repository, error)
-}
-
-type fetcherInspector interface {
-	Inspect(b *bundle.Bundle) error
-}
-
-type fetcherEncoder interface {
-	DecodeBundleFile(content []byte) (*bundlefile.File, error)
-	DecodeLockFile(content []byte) (*lockfile.File, error)
-	DecodeIgnoreFile(content []byte) (*bundle.IgnoreFile, error)
-	Fileify(files map[string][]byte, options ...bundlebuild.BundleOptFn) (*bundle.Bundle, error)
-}
-
 type fetcherStorage interface {
-	Load(dirPath string) (*bundle.Bundle, error)
+	Load(repo string, version *bundle.VersionExpr) (*bundle.Bundle, error)
+}
+
+type fetcherDownloader interface {
+	PlainDownloadWithContext(ctx context.Context, url string, tag *bundle.VersionExpr) (*bundle.Bundle, error)
 }
 
 type Fetcher struct {
@@ -37,8 +22,33 @@ type Fetcher struct {
 	OSWrap osiface.OSWrapper
 	IOWrap ioiface.IOWrapper
 
-	Storage   fetcherStorage
-	Inspector fetcherInspector
-	GitFacade fetcherGitFacade
-	Encoder   fetcherEncoder
+	Storage    fetcherStorage
+	Downloader fetcherDownloader
+}
+
+type SourceType int
+
+const (
+	Remote SourceType = iota
+	Local
+)
+
+var sourceTypeStr = [...]string{
+	Remote: "remote",
+	Local:  "local",
+}
+
+func (st SourceType) String() string { return sourceTypeStr[st] }
+
+type FetchOutput struct {
+	Source SourceType
+	Bundle *bundle.Bundle
+}
+
+func (f *Fetcher) FetchLocal(ctx context.Context, repo string, version *bundle.VersionExpr) (*bundle.Bundle, error) {
+	return f.Storage.Load(repo, version)
+}
+
+func (f *Fetcher) FetchRemote(ctx context.Context, repo string, version *bundle.VersionExpr) (*bundle.Bundle, error) {
+	return f.Downloader.PlainDownloadWithContext(ctx, repo, version)
 }

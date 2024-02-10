@@ -1,6 +1,7 @@
 package factory
 
 import (
+	"github.com/4rchr4y/bpm/internal/gitfacade"
 	"github.com/4rchr4y/bpm/pkg/bundleutil/encode"
 	"github.com/4rchr4y/bpm/pkg/bundleutil/inspect"
 	"github.com/4rchr4y/bpm/pkg/bundleutil/manifest"
@@ -8,15 +9,13 @@ import (
 	"github.com/4rchr4y/bpm/pkg/fetch"
 	"github.com/4rchr4y/bpm/pkg/iostream"
 	"github.com/4rchr4y/bpm/pkg/storage"
-	"github.com/4rchr4y/godevkit/config"
-	"github.com/4rchr4y/godevkit/syswrap"
-
-	"github.com/4rchr4y/bpm/internal/gitfacade"
+	"github.com/4rchr4y/godevkit/v3/env"
+	"github.com/4rchr4y/godevkit/v3/syswrap"
 )
 
 func New() *Factory {
-	dir := config.MustGetString("BPM_PATH")
-	version := config.MustGetString("BPM_VERSION")
+	dir := env.MustGetString("BPM_PATH")
+	version := env.MustGetString("BPM_VERSION")
 
 	io := iostream.NewIOStream()
 
@@ -39,16 +38,6 @@ func New() *Factory {
 		Encoder: encoder,
 	}
 
-	fetcher := &fetch.Fetcher{
-		IO:        io,
-		OSWrap:    osWrap,
-		IOWrap:    ioWrap,
-		Inspector: inspector,
-		GitFacade: gitFacade,
-		Storage:   storage,
-		Encoder:   encoder,
-	}
-
 	downloader := &download.Downloader{
 		IO:        io,
 		OSWrap:    osWrap,
@@ -56,6 +45,14 @@ func New() *Factory {
 		Inspector: inspector,
 		GitFacade: gitFacade,
 		Encoder:   encoder,
+	}
+
+	fetcher := &fetch.Fetcher{
+		IO:         io,
+		OSWrap:     osWrap,
+		IOWrap:     ioWrap,
+		Downloader: downloader,
+		Storage:    storage,
 	}
 
 	f := &Factory{

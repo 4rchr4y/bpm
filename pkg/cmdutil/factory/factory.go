@@ -9,8 +9,8 @@ import (
 	"github.com/4rchr4y/bpm/pkg/download"
 	"github.com/4rchr4y/bpm/pkg/fetch"
 	"github.com/4rchr4y/bpm/pkg/storage"
-	"github.com/4rchr4y/godevkit/syswrap/ioiface"
-	"github.com/4rchr4y/godevkit/syswrap/osiface"
+	"github.com/4rchr4y/godevkit/v3/syswrap/ioiface"
+	"github.com/4rchr4y/godevkit/v3/syswrap/osiface"
 )
 
 type Factory struct {
