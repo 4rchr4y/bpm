@@ -10,7 +10,6 @@ import (
 	"github.com/4rchr4y/bpm/pkg/bundleutil/manifest"
 	"github.com/4rchr4y/bpm/pkg/cmdutil/factory"
 	"github.com/4rchr4y/bpm/pkg/cmdutil/require"
-	"github.com/4rchr4y/bpm/pkg/download"
 	"github.com/4rchr4y/bpm/pkg/fetch"
 	"github.com/4rchr4y/bpm/pkg/storage"
 	"github.com/spf13/cobra"
@@ -40,7 +39,6 @@ func NewCmdGet(f *factory.Factory) *cobra.Command {
 				Fetcher:    f.Fetcher,
 				Storage:    f.Storage,
 				Encoder:    f.Encoder,
-				Downloader: f.Downloader,
 				Manifester: f.Manifester,
 			})
 		},
@@ -58,12 +56,10 @@ type getOptions struct {
 	Fetcher    *fetch.Fetcher
 	Storage    *storage.Storage
 	Encoder    *encode.Encoder      // decoder of bundle component files
-	Downloader *download.Downloader // downloader of a bundle and its dependencies
 	Manifester *manifest.Manifester // bundle manifest file control operator
 }
 
 func getRun(ctx context.Context, opts *getOptions) error {
-
 	target, err := opts.Storage.LoadFromAbs(opts.WorkDir)
 	if err != nil {
 		return err
@@ -79,7 +75,7 @@ func getRun(ctx context.Context, opts *getOptions) error {
 		return nil
 	}
 
-	result, err := opts.Downloader.DownloadWithContext(ctx, opts.URL, v)
+	result, err := opts.Fetcher.Fetch(ctx, opts.URL, v)
 	if err != nil {
 		return err
 	}

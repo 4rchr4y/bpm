@@ -17,6 +17,7 @@
         "Fileify",
         "fileload",
         "fileutil",
+        "fres",
         "gitcli",
         "gitfacade",
         "gitload",

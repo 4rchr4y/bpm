@@ -5,7 +5,6 @@ import (
 	"github.com/4rchr4y/bpm/pkg/bundleutil/encode"
 	"github.com/4rchr4y/bpm/pkg/bundleutil/inspect"
 	"github.com/4rchr4y/bpm/pkg/bundleutil/manifest"
-	"github.com/4rchr4y/bpm/pkg/download"
 	"github.com/4rchr4y/bpm/pkg/fetch"
 	"github.com/4rchr4y/bpm/pkg/iostream"
 	"github.com/4rchr4y/bpm/pkg/storage"
@@ -38,7 +37,7 @@ func New() *Factory {
 		Encoder: encoder,
 	}
 
-	downloader := &download.Downloader{
+	fetcher := &fetch.Fetcher{
 		IO:        io,
 		OSWrap:    osWrap,
 		IOWrap:    ioWrap,
@@ -46,14 +45,6 @@ func New() *Factory {
 		Inspector: inspector,
 		GitFacade: gitFacade,
 		Encoder:   encoder,
-	}
-
-	fetcher := &fetch.Fetcher{
-		IO:         io,
-		OSWrap:     osWrap,
-		IOWrap:     ioWrap,
-		Downloader: downloader,
-		Storage:    storage,
 	}
 
 	f := &Factory{
@@ -65,7 +56,6 @@ func New() *Factory {
 		Fetcher:    fetcher,
 		Storage:    storage,
 		GitFacade:  gitFacade,
-		Downloader: downloader,
 		Manifester: manifester,
 		IO:         ioWrap,
 		OS:         osWrap,
