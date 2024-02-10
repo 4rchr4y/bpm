@@ -11,7 +11,7 @@ import (
 )
 
 func (s *Storage) Load(repo string, version *bundle.VersionExpr) (*bundle.Bundle, error) {
-	return s.load(s.buildBundleSourcePath(repo, version.String()))
+	return s.LoadFromAbs(s.buildBundleSourcePath(repo, version.String()))
 }
 
 func (s *Storage) LoadFromAbs(dir string) (*bundle.Bundle, error) {
@@ -20,23 +20,19 @@ func (s *Storage) LoadFromAbs(dir string) (*bundle.Bundle, error) {
 		return nil, fmt.Errorf("error getting absolute path for %s: %v", dir, err)
 	}
 
-	return s.load(absDirPath)
-}
+	s.IO.PrintfInfo("loading from %s", absDirPath)
 
-func (fetcher *Storage) load(dir string) (*bundle.Bundle, error) {
-	fetcher.IO.PrintfInfo("loading from %s", dir)
-
-	ignoreList, err := fetcher.readIgnoreFile(dir)
+	ignoreList, err := s.readIgnoreFile(absDirPath)
 	if err != nil {
 		return nil, err
 	}
 
-	files, err := fetcher.readBundleDir(dir, ignoreList)
+	files, err := s.readBundleDir(absDirPath, ignoreList)
 	if err != nil {
 		return nil, err
 	}
 
-	bundle, err := fetcher.Encoder.Fileify(files, bundlebuild.WithIgnoreList(ignoreList))
+	bundle, err := s.Encoder.Fileify(files, bundlebuild.WithIgnoreList(ignoreList))
 	if err != nil {
 		return nil, err
 	}
