@@ -115,9 +115,13 @@ func (e *Encoder) Fileify(files map[string][]byte, options ...bundlebuild.Bundle
 				return nil, fmt.Errorf("error parsing file contents: %v", err)
 			}
 
-			file := &regofile.File{Path: filePath, Parsed: parsed}
-			b.RegoFiles[filePath] = file
+			file := &regofile.File{
+				Path:   filePath,
+				Parsed: parsed,
+				Raw:    content,
+			}
 
+			b.RegoFiles[filePath] = file
 			modules.List = append(modules.List, &lockfile.ModDecl{
 				Package: file.Package(),
 				Source:  filePath,
