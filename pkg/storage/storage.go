@@ -34,6 +34,11 @@ type Storage struct {
 	Encoder storageHCLEncoder
 }
 
-func (s *Storage) buildBundleSourcePath(repo string, version string) string {
+func (s *Storage) Lookup(repo string, version string) bool {
+	ok, _ := s.OSWrap.Exists(s.MakeBundleSourcePath(repo, version))
+	return ok
+}
+
+func (s *Storage) MakeBundleSourcePath(repo string, version string) string {
 	return filepath.Join(s.Dir, fmt.Sprintf("%s@%s", repo, version))
 }

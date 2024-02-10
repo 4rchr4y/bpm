@@ -14,7 +14,7 @@ var (
 	LabelErr   = labelTemplate(termenv.String(" ERROR ").Foreground(DarkThemeRedDeep).String())
 	LabelDebug = labelTemplate(termenv.String(" DEBUG ").Foreground(DarkThemeOrangeLight).String())
 	LabelWarn  = labelTemplate(termenv.String(" WARN ").Foreground(DarkThemeYellowLight).String())
-	LabelInfo  = labelTemplate(termenv.String(" INFO ").Foreground(DarkThemeFg0).String())
+	LabelInfo  = labelTemplate(termenv.String(" INFO ").Foreground(DarkThemeBlue).String())
 	LabelOk    = labelTemplate(termenv.String(" OK ").Foreground(DarkThemeGreen).String())
 )
 

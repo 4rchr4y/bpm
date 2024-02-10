@@ -63,6 +63,7 @@ type getOptions struct {
 }
 
 func getRun(ctx context.Context, opts *getOptions) error {
+
 	target, err := opts.Storage.LoadFromAbs(opts.WorkDir)
 	if err != nil {
 		return err

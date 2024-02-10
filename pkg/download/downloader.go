@@ -8,8 +8,6 @@ import (
 	"github.com/4rchr4y/bpm/constant"
 	"github.com/4rchr4y/bpm/core"
 	"github.com/4rchr4y/bpm/pkg/bundle"
-	"github.com/4rchr4y/bpm/pkg/bundle/bundlefile"
-	"github.com/4rchr4y/bpm/pkg/bundle/lockfile"
 	"github.com/4rchr4y/bpm/pkg/bundleutil/bundlebuild"
 	"github.com/4rchr4y/godevkit/v3/syswrap/ioiface"
 	"github.com/4rchr4y/godevkit/v3/syswrap/osiface"
@@ -19,19 +17,23 @@ import (
 	"github.com/hashicorp/go-version"
 )
 
-type fetcherGitFacade interface {
+type downloaderGitFacade interface {
 	CloneWithContext(ctx context.Context, opts *git.CloneOptions) (*git.Repository, error)
 }
 
-type fetcherInspector interface {
+type downloaderInspector interface {
 	Inspect(b *bundle.Bundle) error
 }
 
-type fetcherEncoder interface {
-	DecodeBundleFile(content []byte) (*bundlefile.File, error)
-	DecodeLockFile(content []byte) (*lockfile.File, error)
+type downloaderEncoder interface {
 	DecodeIgnoreFile(content []byte) (*bundle.IgnoreFile, error)
 	Fileify(files map[string][]byte, options ...bundlebuild.BundleOptFn) (*bundle.Bundle, error)
+}
+
+type downloaderStorage interface {
+	Lookup(repo string, version string) bool
+	Load(repo string, version *bundle.VersionExpr) (*bundle.Bundle, error)
+	MakeBundleSourcePath(repo string, version string) string
 }
 
 type Downloader struct {
@@ -39,9 +41,10 @@ type Downloader struct {
 	OSWrap osiface.OSWrapper
 	IOWrap ioiface.IOWrapper
 
-	Inspector fetcherInspector
-	GitFacade fetcherGitFacade
-	Encoder   fetcherEncoder
+	Storage   downloaderStorage
+	Inspector downloaderInspector
+	GitFacade downloaderGitFacade
+	Encoder   downloaderEncoder
 }
 
 type DownloadResult struct {
@@ -71,9 +74,9 @@ func (dr *DownloadResult) Merge() []*bundle.Bundle {
 }
 
 func (d *Downloader) DownloadWithContext(ctx context.Context, url string, version *bundle.VersionExpr) (*DownloadResult, error) {
-	target, err := d.PlainDownloadWithContext(ctx, url, version)
+	target, err := d.Fetch(ctx, url, version)
 	if err != nil {
-		return nil, fmt.Errorf("failed to download '%s' bundle: %w", url, err)
+		return nil, fmt.Errorf("failed to fetch %s: %v", url, err)
 	}
 
 	if err := d.Inspector.Inspect(target); err != nil {
@@ -108,8 +111,40 @@ func (d *Downloader) DownloadWithContext(ctx context.Context, url string, versio
 	}, nil
 }
 
+func (f *Downloader) Fetch(ctx context.Context, repo string, version *bundle.VersionExpr) (*bundle.Bundle, error) {
+	if b, _ := f.FetchLocal(ctx, repo, version); b != nil {
+		return b, nil
+	}
+
+	b, err := f.FetchRemote(ctx, repo, version)
+	if err != nil {
+		return nil, err
+	}
+
+	return b, nil
+}
+
+func (f *Downloader) FetchLocal(ctx context.Context, repo string, version *bundle.VersionExpr) (*bundle.Bundle, error) {
+	if ok := f.Storage.Lookup(repo, version.String()); !ok {
+		return nil, nil
+	}
+
+	b, err := f.Storage.Load(repo, version)
+	if err != nil {
+		f.IO.PrintfErr("failed to load bundle %s from local storage: %v", f.Storage.MakeBundleSourcePath(repo, version.String()), err)
+		return nil, err
+	}
+
+	return b, nil
+
+}
+
+func (f *Downloader) FetchRemote(ctx context.Context, repo string, version *bundle.VersionExpr) (*bundle.Bundle, error) {
+	return f.PlainDownloadWithContext(ctx, repo, version)
+}
+
 func (d *Downloader) PlainDownloadWithContext(ctx context.Context, url string, tag *bundle.VersionExpr) (*bundle.Bundle, error) {
-	d.IO.PrintfInfo("downloading %s+%s", url, tag.String())
+	d.IO.PrintfInfo("downloading %s@%s", url, tag.String())
 
 	cloneInput := &git.CloneOptions{
 		URL: fmt.Sprintf("https://%s.git", url),

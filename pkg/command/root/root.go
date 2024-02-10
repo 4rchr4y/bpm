@@ -15,9 +15,11 @@ import (
 
 func NewCmdRoot(f *factory.Factory, version string) (*cobra.Command, error) {
 	cmd := &cobra.Command{
-		Use:   "bpm",
-		Short: "Bundle Package Manager",
-		Long:  "",
+		Use:           "bpm",
+		Short:         "Bundle Package Manager",
+		Long:          "",
+		SilenceErrors: true,
+		SilenceUsage:  true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			debug, err := cmd.Flags().GetBool("debug")
 			if err != nil {

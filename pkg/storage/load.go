@@ -10,11 +10,23 @@ import (
 	"github.com/4rchr4y/bpm/pkg/bundleutil/bundlebuild"
 )
 
+type ErrNotExist struct{}
+
+func (ErrNotExist) Error() string { return "bundle does not exist" }
+
 func (s *Storage) Load(repo string, version *bundle.VersionExpr) (*bundle.Bundle, error) {
-	return s.LoadFromAbs(s.buildBundleSourcePath(repo, version.String()))
+	return s.LoadFromAbs(s.MakeBundleSourcePath(repo, version.String()))
 }
 
 func (s *Storage) LoadFromAbs(dir string) (*bundle.Bundle, error) {
+	ok, err := s.OSWrap.Exists(dir)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, ErrNotExist{}
+	}
+
 	absDirPath, err := filepath.Abs(dir)
 	if err != nil {
 		return nil, fmt.Errorf("error getting absolute path for %s: %v", dir, err)

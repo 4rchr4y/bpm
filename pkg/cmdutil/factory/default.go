@@ -42,6 +42,7 @@ func New() *Factory {
 		IO:        io,
 		OSWrap:    osWrap,
 		IOWrap:    ioWrap,
+		Storage:   storage,
 		Inspector: inspector,
 		GitFacade: gitFacade,
 		Encoder:   encoder,
