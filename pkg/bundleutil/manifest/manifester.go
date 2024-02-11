@@ -48,7 +48,7 @@ func (m *Manifester) Update(input *UpdateInput) error {
 		}
 	}
 
-	if input.Target.LockFile.Require == nil && input.Rindirect != nil {
+	if input.Target.LockFile.Require == nil && (input.Rindirect != nil || input.Rdirect != nil) {
 		input.Target.LockFile.Require = &lockfile.RequireBlock{
 			List: make([]*lockfile.RequirementDecl, len(input.Rindirect)),
 		}

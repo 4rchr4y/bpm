@@ -1,5 +1,7 @@
 package core
 
+import "io"
+
 type StdoutMode int
 
 const (
@@ -19,6 +21,10 @@ type IO interface {
 	PrintfOk(format string, a ...any)
 	PrintfInfo(format string, a ...any)
 
+	GetStdin() io.Reader
+	GetStdout() io.Writer
+	GetStdoutErr() io.Writer
 	GetStdoutMode(mode StdoutMode) StdoutMode
+
 	SetStdoutMode(mode StdoutMode)
 }

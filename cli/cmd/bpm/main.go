@@ -32,7 +32,6 @@ func run() exitCode {
 	ctx := context.Background()
 	if _, err := rootCmd.ExecuteContextC(ctx); err != nil {
 		cmdFactory.IOStream.PrintfErr(err.Error())
-
 		return exitErr
 	}
 

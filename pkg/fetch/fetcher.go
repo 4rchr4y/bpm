@@ -146,11 +146,11 @@ func (f *Fetcher) FetchRemote(ctx context.Context, repo string, version *bundle.
 func (d *Fetcher) Download(ctx context.Context, url string, tag *bundle.VersionExpr) (*bundle.Bundle, error) {
 	d.IO.PrintfInfo("downloading %s@%s", url, tag.String())
 
-	cloneInput := &git.CloneOptions{
+	options := &git.CloneOptions{
 		URL: fmt.Sprintf("https://%s.git", url),
 	}
 
-	repo, err := d.GitFacade.CloneWithContext(ctx, cloneInput)
+	repo, err := d.GitFacade.CloneWithContext(ctx, options)
 	if err != nil {
 		return nil, err
 	}

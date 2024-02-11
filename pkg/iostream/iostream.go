@@ -59,8 +59,12 @@ func NewIOStream(options ...IOStreamOptFn) *IOStream {
 	return io
 }
 
+func (s *IOStream) GetStdin() io.Reader                                { return s.in }
+func (s *IOStream) GetStdout() io.Writer                               { return s.out }
+func (s *IOStream) GetStdoutErr() io.Writer                            { return s.errOut }
 func (s *IOStream) GetStdoutMode(mode core.StdoutMode) core.StdoutMode { return s.mode }
-func (s *IOStream) SetStdoutMode(mode core.StdoutMode)                 { s.mode = mode }
+
+func (s *IOStream) SetStdoutMode(mode core.StdoutMode) { s.mode = mode }
 
 func (s *IOStream) Println(a ...any)               { fmt.Fprintln(s.out, a...) }
 func (s *IOStream) Printf(format string, a ...any) { fmt.Fprintf(s.out, format, a...) }
