@@ -10,6 +10,7 @@ import (
 	"github.com/4rchr4y/bpm/pkg/bundle"
 	"github.com/4rchr4y/bpm/pkg/bundle/bundlefile"
 	"github.com/4rchr4y/bpm/pkg/bundle/lockfile"
+	"github.com/4rchr4y/bpm/pkg/bundleutil"
 )
 
 type manifesterEncoder interface {
@@ -35,44 +36,56 @@ func NewManifester(io core.IO, osWrap manifesterOsWrapper, encoder manifesterEnc
 	}
 }
 
-type UpdateInput struct {
-	Target    *bundle.Bundle   // target bundle that needed to be updated
+type AppendInput struct {
+	Parent    *bundle.Bundle   // target bundle that needed to be updated
 	Rdirect   []*bundle.Bundle // directly incoming required bundles
 	Rindirect []*bundle.Bundle // indirectly incoming required bundles
 }
 
-func (m *Manifester) Update(input *UpdateInput) error {
-	if input.Target.BundleFile.Require == nil && input.Rdirect != nil {
-		input.Target.BundleFile.Require = &bundlefile.RequireBlock{
-			List: make([]*bundlefile.RequirementDecl, len(input.Rdirect)),
+func (m *Manifester) AppendBundle(input *AppendInput) error {
+	if input.Parent.BundleFile.Require == nil && input.Rdirect != nil {
+		input.Parent.BundleFile.Require = &bundlefile.RequireBlock{
+			List: make([]*bundlefile.RequirementDecl, 0, len(input.Rdirect)),
 		}
 	}
 
-	if input.Target.LockFile.Require == nil && (input.Rindirect != nil || input.Rdirect != nil) {
-		input.Target.LockFile.Require = &lockfile.RequireBlock{
-			List: make([]*lockfile.RequirementDecl, len(input.Rindirect)),
+	if input.Parent.LockFile.Require == nil && (input.Rindirect != nil || input.Rdirect != nil) {
+		input.Parent.LockFile.Require = &lockfile.RequireBlock{
+			List: make([]*lockfile.RequirementDecl, 0, len(input.Rindirect)),
 		}
 	}
 
-	for _, requirement := range input.Rdirect {
-		input.Target.BundleFile.Require.List = append(input.Target.BundleFile.Require.List, &bundlefile.RequirementDecl{
-			Repository: requirement.Repository(),
-			Name:       requirement.Name(),
-			Version:    requirement.Version.String(),
-		})
+	var wasUpdated bool
 
-		input.Target.LockFile.Require.List = append(input.Target.LockFile.Require.List, &lockfile.RequirementDecl{
-			Repository: requirement.Repository(),
-			Direction:  lockfile.Direct,
-			Name:       requirement.Name(),
-			Version:    requirement.Version.String(),
-			H1:         requirement.BundleFile.Sum(),
-			H2:         requirement.Sum(),
-		})
+	for _, comingRequirement := range input.Rdirect {
+		existingRequirement, idx, ok := input.Parent.BundleFile.FindIndexOfRequirement(comingRequirement.Repository())
+		if ok && existingRequirement.Version == comingRequirement.Version.String() {
+			m.io.PrintfOk("bundle %s is already updated", bundleutil.FormatVersionFromBundle(comingRequirement))
+			continue
+		}
+
+		if existingRequirement != nil {
+			input := &replaceInput{
+				Parent:      input.Parent,
+				Actual:      existingRequirement,
+				ActualIndex: idx,
+				Coming:      comingRequirement,
+			}
+
+			if err := m.replaceBundleFileRequirement(input); err != nil {
+				return err
+			}
+
+			continue
+		}
+
+		wasUpdated = true
+
+		m.appendBundleFileRequirement(input.Parent, comingRequirement)
 	}
 
 	for _, requirement := range input.Rindirect {
-		input.Target.LockFile.Require.List = append(input.Target.LockFile.Require.List, &lockfile.RequirementDecl{
+		input.Parent.LockFile.Require.List = append(input.Parent.LockFile.Require.List, &lockfile.RequirementDecl{
 			Repository: requirement.Repository(),
 			Direction:  lockfile.Indirect,
 			Name:       requirement.Name(),
@@ -82,10 +95,84 @@ func (m *Manifester) Update(input *UpdateInput) error {
 		})
 	}
 
-	input.Target.LockFile.Sum = input.Target.Sum()
+	if wasUpdated {
+		input.Parent.LockFile.Sum = input.Parent.Sum()
+	}
 
-	m.io.PrintfDebug("bundle '%s' has been successfully updated", input.Target.Repository())
 	return nil
+}
+
+type replaceInput struct {
+	Parent      *bundle.Bundle
+	Actual      *bundlefile.RequirementDecl
+	ActualIndex int // index in the require list of the bundle file
+	Coming      *bundle.Bundle
+}
+
+func (m *Manifester) replaceBundleFileRequirement(input *replaceInput) error {
+	actualVersion, err := bundle.ParseVersionExpr(input.Actual.Version)
+	if err != nil {
+		return nil
+	}
+
+	isGreater := actualVersion.GreaterThan(input.Coming.Version)
+	if !isGreater {
+		m.io.PrintfWarn("installing an older bundle %s version", input.Actual.Repository)
+	}
+
+	m.io.PrintfInfo("upgrading %s %s %s",
+		bundleutil.FormatVersion(input.Actual.Repository, input.Actual.Version),
+		symbol(isGreater),
+		bundleutil.FormatVersionFromBundle(input.Coming),
+	)
+
+	input.Parent.BundleFile.Require.List[input.ActualIndex] = &bundlefile.RequirementDecl{
+		Name:       input.Coming.Name(),
+		Repository: input.Actual.Repository,
+		Version:    input.Coming.Version.String(),
+	}
+
+	// Update or add a requirement in a lockfile. Its absence is unusual
+	// if present in the bundlefile but not treated as an error to handle
+	// non-critical oddities gracefully.
+
+	_, idx, ok := input.Parent.LockFile.FindIndexOfRequirement(
+		input.Actual.Repository,
+		lockfile.FilterByVersion(input.Actual.Version),
+	)
+	if !ok {
+		return nil
+	}
+
+	input.Parent.LockFile.Require.List[idx] = &lockfile.RequirementDecl{
+		Repository: input.Coming.Repository(),
+		Direction:  lockfile.Direct,
+		Name:       input.Coming.Name(),
+		Version:    input.Coming.Version.String(),
+		H1:         input.Coming.BundleFile.Sum(),
+		H2:         input.Coming.Sum(),
+	}
+
+	return nil
+}
+
+func (m *Manifester) appendBundleFileRequirement(b *bundle.Bundle, requirement *bundle.Bundle) {
+	b.BundleFile.Require.List = append(b.BundleFile.Require.List, &bundlefile.RequirementDecl{
+		Repository: requirement.Repository(),
+		Name:       requirement.Name(),
+		Version:    requirement.Version.String(),
+	})
+
+	b.LockFile.Require.List = append(b.LockFile.Require.List, &lockfile.RequirementDecl{
+		Repository: requirement.Repository(),
+		Direction:  lockfile.Direct,
+		Name:       requirement.Name(),
+		Version:    requirement.Version.String(),
+		H1:         requirement.BundleFile.Sum(),
+		H2:         requirement.Sum(),
+	})
+
+	m.io.PrintfOk("bundle %s has been successfully added", bundleutil.FormatVersionFromBundle(requirement))
 }
 
 func (m *Manifester) Upgrade(workDir string, b *bundle.Bundle) error {
@@ -97,7 +184,7 @@ func (m *Manifester) Upgrade(workDir string, b *bundle.Bundle) error {
 		return err
 	}
 
-	m.io.PrintfDebug("bundle '%s' has been successfully upgraded", b.Repository())
+	m.io.PrintfDebug("bundle %s has been successfully upgraded", b.Repository())
 	return nil
 }
 
@@ -121,4 +208,12 @@ func (m *Manifester) upgradeLockFile(workDir string, b *bundle.Bundle) error {
 	}
 
 	return nil
+}
+
+func symbol(isGreater bool) string {
+	if isGreater {
+		return "=>"
+	} else {
+		return "<="
+	}
 }

@@ -13,7 +13,6 @@ import (
 	"github.com/4rchr4y/bpm/pkg/bundle/bundlefile"
 	"github.com/4rchr4y/bpm/pkg/bundle/lockfile"
 	"github.com/4rchr4y/bpm/pkg/bundle/regofile"
-	"github.com/4rchr4y/bpm/pkg/bundleutil/bundlebuild"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsimple"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
@@ -93,18 +92,10 @@ func (e *Encoder) EncodeLockFile(lockfile *lockfile.File) []byte {
 	return result
 }
 
-func (e *Encoder) Fileify(files map[string][]byte, options ...bundlebuild.BundleOptFn) (*bundle.Bundle, error) {
-	b := &bundle.Bundle{
+func (e *Encoder) Fileify(files map[string][]byte) (*bundle.BundleRaw, error) {
+	bundleRaw := &bundle.BundleRaw{
 		RegoFiles:  make(map[string]*regofile.File),
 		OtherFiles: make(map[string][]byte),
-	}
-
-	for i := range options {
-		options[i](b)
-	}
-
-	modules := &lockfile.ModulesBlock{
-		List: make([]*lockfile.ModDecl, 0),
 	}
 
 	for filePath, content := range files {
@@ -121,12 +112,7 @@ func (e *Encoder) Fileify(files map[string][]byte, options ...bundlebuild.Bundle
 				Raw:    content,
 			}
 
-			b.RegoFiles[filePath] = file
-			modules.List = append(modules.List, &lockfile.ModDecl{
-				Package: file.Package(),
-				Source:  filePath,
-				Sum:     file.Sum(),
-			})
+			bundleRaw.RegoFiles[filePath] = file
 
 		case isBPMFile(filePath):
 			bundlefile, err := e.DecodeBundleFile(content)
@@ -134,7 +120,7 @@ func (e *Encoder) Fileify(files map[string][]byte, options ...bundlebuild.Bundle
 				return nil, fmt.Errorf("error occurred while decoding %s content: %v", constant.BundleFileName, err)
 			}
 
-			b.BundleFile = bundlefile
+			bundleRaw.BundleFile = bundlefile
 
 		case isBPMLockFile(filePath):
 			lockfile, err := e.DecodeLockFile(content)
@@ -142,43 +128,17 @@ func (e *Encoder) Fileify(files map[string][]byte, options ...bundlebuild.Bundle
 				return nil, fmt.Errorf("error occurred while decoding %s content: %v", constant.BundleFileName, err)
 			}
 
-			b.LockFile = lockfile
+			bundleRaw.LockFile = lockfile
 
 		default:
-			b.OtherFiles[filePath] = content
+			bundleRaw.OtherFiles[filePath] = content
 		}
 	}
 
-	if b.LockFile == nil {
-		e.IO.PrintfWarn("file '%s' in bundle '%s' was not found", constant.LockFileName, b.Name())
-
-		if err := initLockFile(b); err != nil {
-			return nil, err
-		}
-	}
-
-	if len(modules.List) > 0 {
-		b.LockFile.Modules = modules.Sort()
-	}
-
-	return b, nil
+	return bundleRaw, nil
 }
 
 func isRegoFile(filePath string) bool    { return filepath.Ext(filePath) == constant.RegoFileExt }
 func isBPMFile(filePath string) bool     { return filePath == constant.BundleFileName }
 func isBPMLockFile(filePath string) bool { return filePath == constant.LockFileName }
 func isEmpty(content []byte) bool        { return len(content) < 1 }
-
-func initLockFile(b *bundle.Bundle) error {
-	if b.BundleFile == nil {
-		return fmt.Errorf("can't find '%s' file", constant.BundleFileName)
-	}
-
-	b.LockFile = &lockfile.File{
-		// TODO: set 'edition' from global app context
-		Edition: "2024",
-		Sum:     b.Sum(),
-	}
-
-	return nil
-}
