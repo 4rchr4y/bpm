@@ -40,12 +40,12 @@ type verifyOptions struct {
 }
 
 func verifyRun(ctx context.Context, opts *verifyOptions) error {
-	b, err := opts.Storage.LoadFromAbs(opts.dir)
+	b, err := opts.Storage.LoadFromAbs(opts.dir, nil)
 	if err != nil {
 		return err
 	}
 
-	if err := opts.manifester.Update(&manifest.UpdateInput{Target: b}); err != nil {
+	if err := opts.manifester.AppendBundle(&manifest.AppendInput{Parent: b}); err != nil {
 		return err
 	}
 

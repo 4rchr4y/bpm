@@ -4,6 +4,7 @@ import (
 	"sort"
 
 	"github.com/4rchr4y/bpm/constant"
+	"github.com/samber/lo"
 )
 
 type DirectionType string
@@ -61,4 +62,52 @@ type File struct {
 	Require *RequireBlock `hcl:"require,block"` // list of declared dependencies		e.g. '{...}'
 }
 
+func Init() *File {
+	return &File{
+		Edition: "2024",
+	}
+}
+
 func (*File) Filename() string { return constant.LockFileName }
+
+type FilterFn func(r *RequirementDecl) bool
+
+func FilterByVersion(version string) FilterFn {
+	return func(r *RequirementDecl) bool {
+		return r.Version == version
+	}
+}
+
+func (f *File) SomeRequirement(source string, version string) bool {
+	if f.Require == nil {
+		return false
+	}
+
+	return lo.SomeBy(f.Require.List, func(item *RequirementDecl) bool {
+		if item.Repository == source {
+			return item.Version == version
+		}
+
+		return false
+	})
+}
+
+func (f *File) FindIndexOfRequirement(source string, filters ...FilterFn) (*RequirementDecl, int, bool) {
+	if f.Require == nil {
+		return nil, -1, false
+	}
+
+	return lo.FindIndexOf(f.Require.List, func(item *RequirementDecl) bool {
+		if item.Repository != source {
+			return false
+		}
+
+		for _, filterFn := range filters {
+			if !filterFn(item) {
+				return false
+			}
+		}
+
+		return true
+	})
+}

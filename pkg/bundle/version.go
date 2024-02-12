@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/4rchr4y/bpm/constant"
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -11,6 +12,7 @@ import (
 )
 
 const (
+	versionLatestStr    = "latest"
 	VersionDateFormat   = "20060102150405"
 	VersionShortHashLen = 12
 )
@@ -26,39 +28,60 @@ var (
 type VersionExpr struct {
 	// TODO: create Tag type
 	Tag       *version.Version // semantic tag if available, or pseudo version
-	Timestamp string           // commit timestamp
+	Timestamp time.Time        // commit timestamp
 	Hash      string           // commit hash
 }
 
-func NewVersionExpr(commit *object.Commit, tag *version.Version) *VersionExpr {
+func NewVersionExprFromCommit(commit *object.Commit, tag *version.Version) *VersionExpr {
 	return &VersionExpr{
 		Tag:       tag,
-		Timestamp: commit.Committer.When.UTC().Format(VersionDateFormat),
+		Timestamp: commit.Committer.When.UTC(),
 		Hash:      commit.Hash.String()[:VersionShortHashLen],
 	}
 }
+
+func (v *VersionExpr) IsPseudo() bool {
+	return v.Tag.Original() == constant.BundlePseudoVersion && v.Hash != "" && !v.Timestamp.IsZero()
+}
+
+// func (v *VersionExpr) IsLatest() bool {
+// return v.Tag.S
+// }
 
 func (v *VersionExpr) Major() int { return v.Tag.Segments()[0] }
 func (v *VersionExpr) Minor() int { return v.Tag.Segments()[1] }
 func (v *VersionExpr) Path() int  { return v.Tag.Segments()[2] }
 
-func (v *VersionExpr) Equal(o *VersionExpr) bool       { return v.Tag.Equal(o.Tag) }
-func (v *VersionExpr) GreaterThan(o *VersionExpr) bool { return v.Tag.GreaterThan(o.Tag) }
+func (v *VersionExpr) Equal(o *VersionExpr) bool {
+	if v.IsPseudo() && o.IsPseudo() {
+		return v.String() == o.String()
+	}
 
-func (v *VersionExpr) IsPseudo() bool {
-	return v.Tag.Original() == constant.BundlePseudoVersion && v.Hash != "" && v.Timestamp != ""
+	return v.Tag.Equal(o.Tag)
+}
+
+func (v *VersionExpr) GreaterThan(o *VersionExpr) bool {
+	if v.IsPseudo() && o.IsPseudo() {
+		return v.Timestamp.After(o.Timestamp)
+	}
+
+	return v.Tag.GreaterThan(o.Tag)
 }
 
 func (v *VersionExpr) String() string {
 	if v == nil {
-		return "latest"
+		return versionLatestStr
 	}
 
 	if v.Tag != nil && v.Tag.Original() != constant.BundlePseudoVersion {
 		return v.Tag.Original()
 	}
 
-	return fmt.Sprintf("%s+%s-%s", constant.BundlePseudoVersion, v.Timestamp, v.Hash)
+	return fmt.Sprintf("%s+%s-%s",
+		constant.BundlePseudoVersion,
+		v.Timestamp.Format(VersionDateFormat),
+		v.Hash,
+	)
 }
 
 func ParseVersionExpr(versionStr string) (*VersionExpr, error) {
@@ -85,9 +108,14 @@ func ParseVersionExpr(versionStr string) (*VersionExpr, error) {
 			return nil, err
 		}
 
+		timestamp, err := time.Parse(VersionDateFormat, matches[2])
+		if err != nil {
+			return nil, err
+		}
+
 		return &VersionExpr{
 			Tag:       v,
-			Timestamp: matches[2],
+			Timestamp: timestamp,
 			Hash:      matches[3],
 		}, nil
 	}

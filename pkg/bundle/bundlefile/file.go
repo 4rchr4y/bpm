@@ -50,16 +50,44 @@ func (bf *File) Sum() string {
 	return util.ChecksumSHA256(sha256.New(), f.Bytes())
 }
 
-func (bf *File) IsRequirementListed(repo string, version string) bool {
+type FilterFn func(r *RequirementDecl) bool
+
+func FilterByVersion(version string) FilterFn {
+	return func(r *RequirementDecl) bool {
+		return r.Version == version
+	}
+}
+
+func (bf *File) SomeRequirement(source string, version string) bool {
 	if bf.Require == nil {
 		return false
 	}
 
 	return lo.SomeBy(bf.Require.List, func(item *RequirementDecl) bool {
-		if item.Repository == repo {
+		if item.Repository == source {
 			return item.Version == version
 		}
 
 		return false
+	})
+}
+
+func (bf *File) FindIndexOfRequirement(source string, filters ...FilterFn) (*RequirementDecl, int, bool) {
+	if bf.Require == nil {
+		return nil, -1, false
+	}
+
+	return lo.FindIndexOf(bf.Require.List, func(item *RequirementDecl) bool {
+		if item.Repository != source {
+			return false
+		}
+
+		for _, filterFn := range filters {
+			if !filterFn(item) {
+				return false
+			}
+		}
+
+		return true
 	})
 }

@@ -8,7 +8,6 @@ import (
 	"github.com/4rchr4y/bpm/pkg/bundle"
 	"github.com/4rchr4y/bpm/pkg/bundle/bundlefile"
 	"github.com/4rchr4y/bpm/pkg/bundle/lockfile"
-	"github.com/4rchr4y/bpm/pkg/bundleutil/bundlebuild"
 	"github.com/4rchr4y/godevkit/v3/syswrap/ioiface"
 	"github.com/4rchr4y/godevkit/v3/syswrap/osiface"
 )
@@ -21,7 +20,7 @@ type storageHCLEncoder interface {
 	EncodeBundleFile(bundlefile *bundlefile.File) []byte
 	EncodeLockFile(lockfile *lockfile.File) []byte
 	DecodeIgnoreFile(content []byte) (*bundle.IgnoreFile, error)
-	Fileify(files map[string][]byte, options ...bundlebuild.BundleOptFn) (*bundle.Bundle, error)
+	Fileify(files map[string][]byte) (*bundle.BundleRaw, error)
 }
 
 type Storage struct {
@@ -35,6 +34,7 @@ type Storage struct {
 }
 
 func (s *Storage) Lookup(repo string, version string) bool {
+	fmt.Println(s.MakeBundleSourcePath(repo, version))
 	ok, _ := s.OSWrap.Exists(s.MakeBundleSourcePath(repo, version))
 	return ok
 }

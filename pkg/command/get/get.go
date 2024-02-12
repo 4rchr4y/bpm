@@ -60,7 +60,7 @@ type getOptions struct {
 }
 
 func getRun(ctx context.Context, opts *getOptions) error {
-	target, err := opts.Storage.LoadFromAbs(opts.WorkDir)
+	dest, err := opts.Storage.LoadFromAbs(opts.WorkDir, nil)
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func getRun(ctx context.Context, opts *getOptions) error {
 		return err
 	}
 
-	if target.BundleFile.IsRequirementListed(opts.URL, v.String()) {
+	if dest.BundleFile.SomeRequirement(opts.URL, v.String()) {
 		opts.io.PrintfOk("bundle '%s+%s' is already installed", opts.URL, v.String())
 		return nil
 	}
@@ -84,21 +84,23 @@ func getRun(ctx context.Context, opts *getOptions) error {
 		return err
 	}
 
-	updateInput := &manifest.UpdateInput{
-		Target:    target,
+	updateInput := &manifest.AppendInput{
+		Parent:    dest,
 		Rdirect:   append([]*bundle.Bundle(nil), result.Target),
 		Rindirect: append(result.Rdirect, result.Rindirect...),
 	}
 
-	if err := opts.Manifester.Update(updateInput); err != nil {
+	if err := opts.Manifester.AppendBundle(updateInput); err != nil {
 		return err
 	}
 
-	if err := opts.Manifester.Upgrade(opts.WorkDir, target); err != nil {
+	if err := opts.Manifester.Upgrade(opts.WorkDir, dest); err != nil {
 		return err
 	}
 
-	opts.io.PrintfOk("bundle '%s+%s' was successfully added", result.Target.Repository(), result.Target.Version)
+	// if output.WasChanged() {
+	// 	opts.io.PrintfOk("bundle %s has been successfully %s", bundleutil.FormatVersionFromBundle(result.Target), output.ActionToStr())
+	// }
 
 	return nil
 }

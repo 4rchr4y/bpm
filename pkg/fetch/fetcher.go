@@ -8,7 +8,7 @@ import (
 	"github.com/4rchr4y/bpm/constant"
 	"github.com/4rchr4y/bpm/core"
 	"github.com/4rchr4y/bpm/pkg/bundle"
-	"github.com/4rchr4y/bpm/pkg/bundleutil/bundlebuild"
+	"github.com/4rchr4y/godevkit/v3/must"
 	"github.com/4rchr4y/godevkit/v3/syswrap/ioiface"
 	"github.com/4rchr4y/godevkit/v3/syswrap/osiface"
 	"github.com/go-git/go-git/v5"
@@ -27,13 +27,13 @@ type fetcherInspector interface {
 
 type fetcherEncoder interface {
 	DecodeIgnoreFile(content []byte) (*bundle.IgnoreFile, error)
-	Fileify(files map[string][]byte, options ...bundlebuild.BundleOptFn) (*bundle.Bundle, error)
+	Fileify(files map[string][]byte) (*bundle.BundleRaw, error)
 }
 
 type fetcherStorage interface {
-	Lookup(repo string, version string) bool
-	Load(repo string, version *bundle.VersionExpr) (*bundle.Bundle, error)
-	MakeBundleSourcePath(repo string, version string) string
+	Lookup(source string, version string) bool
+	Load(source string, version *bundle.VersionExpr) (*bundle.Bundle, error)
+	MakeBundleSourcePath(source string, version string) string
 }
 
 type Fetcher struct {
@@ -73,15 +73,15 @@ func (fres *FetchResult) Merge() []*bundle.Bundle {
 	return result
 }
 
-func (d *Fetcher) Fetch(ctx context.Context, url string, version *bundle.VersionExpr) (*FetchResult, error) {
-	target, err := d.PlainFetch(ctx, url, version)
+func (d *Fetcher) Fetch(ctx context.Context, source string, version *bundle.VersionExpr) (*FetchResult, error) {
+	target, err := d.PlainFetch(ctx, source, version)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch %s: %v", url, err)
+		return nil, fmt.Errorf("failed to fetch %s: %v", source, err)
 	}
 
-	if err := d.Inspector.Inspect(target); err != nil {
-		return nil, err
-	}
+	// if err := d.Inspector.Inspect(target); err != nil {
+	// 	return nil, err
+	// }
 
 	if target.BundleFile.Require == nil {
 		return &FetchResult{Target: target}, nil
@@ -111,12 +111,12 @@ func (d *Fetcher) Fetch(ctx context.Context, url string, version *bundle.Version
 	}, nil
 }
 
-func (f *Fetcher) PlainFetch(ctx context.Context, repo string, version *bundle.VersionExpr) (*bundle.Bundle, error) {
-	if b, _ := f.FetchLocal(ctx, repo, version); b != nil {
+func (f *Fetcher) PlainFetch(ctx context.Context, source string, version *bundle.VersionExpr) (*bundle.Bundle, error) {
+	if b, _ := f.FetchLocal(ctx, source, version); b != nil {
 		return b, nil
 	}
 
-	b, err := f.FetchRemote(ctx, repo, version)
+	b, err := f.FetchRemote(ctx, source, version)
 	if err != nil {
 		return nil, err
 	}
@@ -124,14 +124,15 @@ func (f *Fetcher) PlainFetch(ctx context.Context, repo string, version *bundle.V
 	return b, nil
 }
 
-func (f *Fetcher) FetchLocal(ctx context.Context, repo string, version *bundle.VersionExpr) (*bundle.Bundle, error) {
-	if ok := f.Storage.Lookup(repo, version.String()); !ok {
+func (f *Fetcher) FetchLocal(ctx context.Context, source string, version *bundle.VersionExpr) (*bundle.Bundle, error) {
+	ok := f.Storage.Lookup(source, version.String())
+	if !ok {
 		return nil, nil
 	}
-
-	b, err := f.Storage.Load(repo, version)
+	fmt.Println(ok)
+	b, err := f.Storage.Load(source, version)
 	if err != nil {
-		f.IO.PrintfErr("failed to load bundle %s from local storage: %v", f.Storage.MakeBundleSourcePath(repo, version.String()), err)
+		f.IO.PrintfErr("failed to load bundle %s from local storage: %v", f.Storage.MakeBundleSourcePath(source, version.String()), err)
 		return nil, err
 	}
 
@@ -139,15 +140,15 @@ func (f *Fetcher) FetchLocal(ctx context.Context, repo string, version *bundle.V
 
 }
 
-func (f *Fetcher) FetchRemote(ctx context.Context, repo string, version *bundle.VersionExpr) (*bundle.Bundle, error) {
-	return f.Download(ctx, repo, version)
+func (f *Fetcher) FetchRemote(ctx context.Context, source string, version *bundle.VersionExpr) (*bundle.Bundle, error) {
+	return f.Download(ctx, source, version)
 }
 
-func (d *Fetcher) Download(ctx context.Context, url string, tag *bundle.VersionExpr) (*bundle.Bundle, error) {
-	d.IO.PrintfInfo("downloading %s@%s", url, tag.String())
+func (d *Fetcher) Download(ctx context.Context, source string, tag *bundle.VersionExpr) (*bundle.Bundle, error) {
+	d.IO.PrintfInfo("downloading %s@%s", source, tag.String())
 
 	options := &git.CloneOptions{
-		URL: fmt.Sprintf("https://%s.git", url),
+		URL: fmt.Sprintf("https://%s.git", source),
 	}
 
 	repo, err := d.GitFacade.CloneWithContext(ctx, options)
@@ -160,21 +161,17 @@ func (d *Fetcher) Download(ctx context.Context, url string, tag *bundle.VersionE
 		return nil, err
 	}
 
-	files, err := d.getFilesFromCommit(commit)
+	files, ignoreFile, err := d.getFilesFromCommit(commit)
 	if err != nil {
 		return nil, err
 	}
 
-	b, err := d.Encoder.Fileify(files)
+	bundleRaw, err := d.Encoder.Fileify(files)
 	if err != nil {
 		return nil, err
 	}
 
-	b.Version = v
-	// TODO: probably don't need this operation
-	b.BundleFile.Package.Repository = url
-
-	return b, nil
+	return bundleRaw.ToBundle(v, ignoreFile)
 }
 
 func fetchCommitByTag(repo *git.Repository, v *bundle.VersionExpr) (*object.Commit, *bundle.VersionExpr, error) {
@@ -213,7 +210,7 @@ func getPseudoVersionCommit(repo *git.Repository, v *bundle.VersionExpr) (*objec
 
 	var commit *object.Commit
 	err = iter.ForEach(func(c *object.Commit) error {
-		if strings.HasPrefix(c.Hash.String(), v.Hash) && v.Timestamp == c.Committer.When.UTC().Format(bundle.VersionDateFormat) {
+		if strings.HasPrefix(c.Hash.String(), v.Hash) && v.Timestamp == c.Committer.When.UTC() {
 			commit = c
 			return nil
 		}
@@ -237,14 +234,14 @@ func getLatestVersionCommit(repo *git.Repository) (*object.Commit, *bundle.Versi
 		return nil, nil, err
 	}
 
-	v, ref := findLatestVersion(tags)
+	v, ref := mustFindLatestVersion(tags)
 	if v == nil || ref == nil {
 		commit, err := getLatestCommit(repo)
 		if err != nil {
 			return nil, nil, err
 		}
 
-		return commit, bundle.NewVersionExpr(commit, v), nil
+		return commit, bundle.NewVersionExprFromCommit(commit, v), nil
 	}
 
 	commit, err := repo.CommitObject(ref.Hash())
@@ -252,7 +249,7 @@ func getLatestVersionCommit(repo *git.Repository) (*object.Commit, *bundle.Versi
 		return nil, nil, err
 	}
 
-	return commit, bundle.NewVersionExpr(commit, v), nil
+	return commit, bundle.NewVersionExprFromCommit(commit, v), nil
 }
 
 func collectTagList(repo *git.Repository) (map[*version.Version]*plumbing.Reference, error) {
@@ -283,9 +280,12 @@ func collectTagList(repo *git.Repository) (map[*version.Version]*plumbing.Refere
 	return tags, nil
 }
 
-func findLatestVersion(tags map[*version.Version]*plumbing.Reference) (v *version.Version, ref *plumbing.Reference) {
+func mustFindLatestVersion(tags map[*version.Version]*plumbing.Reference) (v *version.Version, ref *plumbing.Reference) {
+	// use MUST here because the constant version should always be correct
+	v = must.Must(version.NewSemver(constant.BundlePseudoVersion))
+
 	for version, reference := range tags {
-		if v == nil || version.GreaterThan(v) {
+		if version.GreaterThan(v) {
 			v = version
 			ref = reference
 		}
@@ -331,20 +331,20 @@ func getCurrentVersionCommit(repo *git.Repository, tag string) (*object.Commit, 
 	return repo.CommitObject(ref.Hash())
 }
 
-func (d *Fetcher) getFilesFromCommit(commit *object.Commit) (map[string][]byte, error) {
+func (d *Fetcher) getFilesFromCommit(commit *object.Commit) (map[string][]byte, *bundle.IgnoreFile, error) {
 	filesIter, err := commit.Files()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	ignoreList, err := d.fetchIgnoreListFromGitCommit(commit)
+	ignoreFile, err := d.fetchIgnoreListFromGitCommit(commit)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	files := make(map[string][]byte)
 	err = filesIter.ForEach(func(f *object.File) error {
-		if ignoreList.Lookup(f.Name) {
+		if ignoreFile.Some(f.Name) {
 			return nil
 		}
 
@@ -357,10 +357,10 @@ func (d *Fetcher) getFilesFromCommit(commit *object.Commit) (map[string][]byte, 
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return files, nil
+	return files, ignoreFile, nil
 }
 
 func (d *Fetcher) fetchIgnoreListFromGitCommit(commit *object.Commit) (*bundle.IgnoreFile, error) {

@@ -4,21 +4,28 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/4rchr4y/bpm/constant"
 	"github.com/4rchr4y/bpm/pkg/bundle"
-	"github.com/4rchr4y/bpm/pkg/bundleutil/bundlebuild"
 )
 
 type ErrNotExist struct{}
 
 func (ErrNotExist) Error() string { return "bundle does not exist" }
 
-func (s *Storage) Load(repo string, version *bundle.VersionExpr) (*bundle.Bundle, error) {
-	return s.LoadFromAbs(s.MakeBundleSourcePath(repo, version.String()))
+func (s *Storage) Load(source string, version *bundle.VersionExpr) (*bundle.Bundle, error) {
+	if strings.TrimSpace(source) == "" || version == nil {
+		return nil, ErrNotExist{}
+	}
+
+	return s.LoadFromAbs(
+		s.MakeBundleSourcePath(source, version.String()),
+		version,
+	)
 }
 
-func (s *Storage) LoadFromAbs(dir string) (*bundle.Bundle, error) {
+func (s *Storage) LoadFromAbs(dir string, v *bundle.VersionExpr) (*bundle.Bundle, error) {
 	ok, err := s.OSWrap.Exists(dir)
 	if err != nil {
 		return nil, err
@@ -44,12 +51,12 @@ func (s *Storage) LoadFromAbs(dir string) (*bundle.Bundle, error) {
 		return nil, err
 	}
 
-	bundle, err := s.Encoder.Fileify(files, bundlebuild.WithIgnoreList(ignoreList))
+	bundle, err := s.Encoder.Fileify(files)
 	if err != nil {
 		return nil, err
 	}
 
-	return bundle, nil
+	return bundle.ToBundle(v, ignoreList)
 }
 
 func (fetcher *Storage) readBundleDir(abs string, ignoreFile *bundle.IgnoreFile) (map[string][]byte, error) {
@@ -64,7 +71,7 @@ func (fetcher *Storage) readBundleDir(abs string, ignoreFile *bundle.IgnoreFile)
 			return fmt.Errorf("error getting relative path for %s from %s: %v", path, abs, err)
 		}
 
-		if ignoreFile != nil && ignoreFile.Lookup(relativePath) {
+		if ignoreFile != nil && ignoreFile.Some(relativePath) {
 			if info.IsDir() {
 				return filepath.SkipDir
 			}

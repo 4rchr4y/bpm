@@ -28,6 +28,7 @@
         "hclsimple",
         "hclsyntax",
         "hclwrite",
+        "ignorefile",
         "ioiface",
         "iostream",
         "Manifester",

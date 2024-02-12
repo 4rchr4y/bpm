@@ -3,15 +3,18 @@ package bundle
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"path/filepath"
 	"sort"
 	"strings"
 
+	"github.com/4rchr4y/bpm/constant"
 	"github.com/4rchr4y/bpm/pkg/bundle/bundlefile"
 	"github.com/4rchr4y/bpm/pkg/bundle/lockfile"
 	"github.com/4rchr4y/bpm/pkg/bundle/regofile"
 )
 
+// TODO: move to ignorefile folder
 type IgnoreFile struct {
 	List map[string]struct{}
 }
@@ -29,7 +32,7 @@ func (f *IgnoreFile) Store(fileName string) {
 	}
 }
 
-func (f *IgnoreFile) Lookup(path string) bool {
+func (f *IgnoreFile) Some(path string) bool {
 	if path == "" || len(f.List) == 0 {
 		return false
 	}
@@ -42,6 +45,64 @@ func (f *IgnoreFile) Lookup(path string) bool {
 	topLevelDir := strings.Split(dir, string(filepath.Separator))[0]
 	_, found := f.List[topLevelDir]
 	return found
+}
+
+type BundleRaw struct {
+	BundleFile *bundlefile.File
+	LockFile   *lockfile.File
+	RegoFiles  map[string]*regofile.File
+	OtherFiles map[string][]byte
+}
+
+type BundleOptFn func(*Bundle)
+
+func WithIgnoreList(ignoreFile *IgnoreFile) BundleOptFn {
+	return func(b *Bundle) {
+		b.IgnoreFile = ignoreFile
+	}
+}
+
+func WithVersion(v *VersionExpr) BundleOptFn {
+	return func(b *Bundle) {
+		b.Version = v
+	}
+}
+
+func (br *BundleRaw) ToBundle(v *VersionExpr, ignoreFile *IgnoreFile) (*Bundle, error) {
+	if br.BundleFile == nil {
+		return nil, fmt.Errorf("can't find '%s' file", constant.BundleFileName)
+	}
+
+	b := &Bundle{
+		Version:    v,
+		BundleFile: br.BundleFile,
+		LockFile:   br.LockFile,
+		RegoFiles:  br.RegoFiles,
+		IgnoreFile: ignoreFile,
+		OtherFiles: br.OtherFiles,
+	}
+
+	if b.LockFile == nil {
+		b.LockFile = lockfile.Init()
+	}
+
+	modules := make([]*lockfile.ModDecl, len(b.RegoFiles))
+	var i int
+	for filePath, f := range b.RegoFiles {
+		modules[i] = &lockfile.ModDecl{
+			Package: f.Package(),
+			Source:  filePath,
+			Sum:     f.Sum(),
+		}
+
+		i++
+	}
+
+	sort.Slice(modules, func(i, j int) bool { return modules[i].Package < modules[j].Package })
+	b.LockFile.Modules = &lockfile.ModulesBlock{List: modules}
+	b.LockFile.Sum = b.Sum()
+
+	return b, nil
 }
 
 type Bundle struct {
