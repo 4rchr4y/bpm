@@ -41,7 +41,7 @@ func (s *Storage) Store(b *bundle.Bundle) error {
 	return nil
 }
 
-func (s *Storage) processBundleLockFile(lockFile *lockfile.File, dir string) error {
+func (s *Storage) processBundleLockFile(lockFile *lockfile.Schema, dir string) error {
 	bytes := s.Encoder.EncodeLockFile(lockFile)
 	path := filepath.Join(dir, lockFile.Filename())
 	if err := s.OSWrap.WriteFile(path, bytes, 0644); err != nil {
@@ -51,7 +51,7 @@ func (s *Storage) processBundleLockFile(lockFile *lockfile.File, dir string) err
 	return nil
 }
 
-func (s *Storage) processBundleFile(bundleFile *bundlefile.File, dir string) error {
+func (s *Storage) processBundleFile(bundleFile *bundlefile.Schema, dir string) error {
 	bytes := s.Encoder.EncodeBundleFile(bundleFile)
 	path := filepath.Join(dir, bundleFile.Filename())
 	if err := s.OSWrap.WriteFile(path, bytes, 0644); err != nil {

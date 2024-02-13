@@ -11,7 +11,7 @@ import (
 
 func bundleFileContent(encoder *encode.Encoder, repo string, author *bundlefile.AuthorExpr) []byte {
 	repoName := path.Base(repo)
-	bundlefile := &bundlefile.File{
+	bundlefile := &bundlefile.Schema{
 		Package: &bundlefile.PackageDecl{
 			Name:        repoName,
 			Author:      []string{author.String()},
@@ -24,7 +24,7 @@ func bundleFileContent(encoder *encode.Encoder, repo string, author *bundlefile.
 }
 
 func lockfileContent(encoder *encode.Encoder, sum string, edition string) []byte {
-	lockfile := &lockfile.File{
+	lockfile := &lockfile.Schema{
 		Sum:     sum,
 		Edition: edition,
 	}

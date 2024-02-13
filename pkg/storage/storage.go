@@ -17,8 +17,8 @@ type storageFetcher interface {
 }
 
 type storageHCLEncoder interface {
-	EncodeBundleFile(bundlefile *bundlefile.File) []byte
-	EncodeLockFile(lockfile *lockfile.File) []byte
+	EncodeBundleFile(bundlefile *bundlefile.Schema) []byte
+	EncodeLockFile(lockfile *lockfile.Schema) []byte
 	DecodeIgnoreFile(content []byte) (*bundle.IgnoreFile, error)
 	Fileify(files map[string][]byte) (*bundle.BundleRaw, error)
 }

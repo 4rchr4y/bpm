@@ -55,20 +55,20 @@ type (
 	}
 )
 
-type File struct {
+type Schema struct {
 	Sum     string        `hcl:"sum"`           // bundle file checksum				e.g. 'd973b71fd6dd925...'
 	Edition string        `hcl:"edition"`       // lock file edition 				e.g. '2024'
 	Modules *ModulesBlock `hcl:"modules,block"` // list of nested modules			e.g. '{...}'
 	Require *RequireBlock `hcl:"require,block"` // list of declared dependencies		e.g. '{...}'
 }
 
-func Init() *File {
-	return &File{
+func Init() *Schema {
+	return &Schema{
 		Edition: "2024",
 	}
 }
 
-func (*File) Filename() string { return constant.LockFileName }
+func (*Schema) Filename() string { return constant.LockFileName }
 
 type FilterFn func(r *RequirementDecl) bool
 
@@ -78,7 +78,7 @@ func FilterByVersion(version string) FilterFn {
 	}
 }
 
-func (bf *File) SomeRequirement(source string, filters ...FilterFn) bool {
+func (bf *Schema) SomeRequirement(source string, filters ...FilterFn) bool {
 	if bf.Require == nil {
 		return false
 	}
@@ -98,7 +98,7 @@ func (bf *File) SomeRequirement(source string, filters ...FilterFn) bool {
 	})
 }
 
-func (f *File) FindIndexOfRequirement(source string, filters ...FilterFn) (*RequirementDecl, int, bool) {
+func (f *Schema) FindIndexOfRequirement(source string, filters ...FilterFn) (*RequirementDecl, int, bool) {
 	if f.Require == nil {
 		return nil, -1, false
 	}

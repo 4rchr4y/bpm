@@ -33,8 +33,8 @@ func NewLockfileRequirementDecl(b *bundle.Bundle, direction lockfile.DirectionTy
 }
 
 type manifesterEncoder interface {
-	EncodeBundleFile(bundlefile *bundlefile.File) []byte
-	EncodeLockFile(lockfile *lockfile.File) []byte
+	EncodeBundleFile(bundlefile *bundlefile.Schema) []byte
+	EncodeLockFile(lockfile *lockfile.Schema) []byte
 }
 
 type Manifester struct {

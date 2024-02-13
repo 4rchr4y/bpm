@@ -48,8 +48,8 @@ func (f *IgnoreFile) Some(path string) bool {
 }
 
 type BundleRaw struct {
-	BundleFile *bundlefile.File
-	LockFile   *lockfile.File
+	BundleFile *bundlefile.Schema
+	LockFile   *lockfile.Schema
 	RegoFiles  map[string]*regofile.File
 	OtherFiles map[string][]byte
 }
@@ -107,8 +107,8 @@ func (br *BundleRaw) ToBundle(v *VersionExpr, ignoreFile *IgnoreFile) (*Bundle, 
 
 type Bundle struct {
 	Version    *VersionExpr
-	BundleFile *bundlefile.File
-	LockFile   *lockfile.File
+	BundleFile *bundlefile.Schema
+	LockFile   *lockfile.Schema
 	IgnoreFile *IgnoreFile
 	RegoFiles  map[string]*regofile.File
 	OtherFiles map[string][]byte

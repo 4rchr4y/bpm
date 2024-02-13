@@ -37,14 +37,14 @@ type RequireBlock struct {
 	List []*RequirementDecl `hcl:"bundle,block"`
 }
 
-type File struct {
+type Schema struct {
 	Package *PackageDecl  `hcl:"package,block"`
 	Require *RequireBlock `hcl:"require,block"`
 }
 
-func (*File) Filename() string { return constant.BundleFileName }
+func (*Schema) Filename() string { return constant.BundleFileName }
 
-func (bf *File) Sum() string {
+func (bf *Schema) Sum() string {
 	f := hclwrite.NewEmptyFile()
 	gohcl.EncodeIntoBody(bf, f.Body())
 	return util.ChecksumSHA256(sha256.New(), f.Bytes())
@@ -58,7 +58,7 @@ func FilterByVersion(version string) FilterFn {
 	}
 }
 
-func (bf *File) SomeRequirement(source string, filters ...FilterFn) bool {
+func (bf *Schema) SomeRequirement(source string, filters ...FilterFn) bool {
 	if bf.Require == nil {
 		return false
 	}
@@ -78,7 +78,7 @@ func (bf *File) SomeRequirement(source string, filters ...FilterFn) bool {
 	})
 }
 
-func (bf *File) FindIndexOfRequirement(source string, filters ...FilterFn) (*RequirementDecl, int, bool) {
+func (bf *Schema) FindIndexOfRequirement(source string, filters ...FilterFn) (*RequirementDecl, int, bool) {
 	if bf.Require == nil {
 		return nil, -1, false
 	}
