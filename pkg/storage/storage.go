@@ -33,8 +33,7 @@ type Storage struct {
 	Encoder storageHCLEncoder
 }
 
-func (s *Storage) Lookup(repo string, version string) bool {
-	fmt.Println(s.MakeBundleSourcePath(repo, version))
+func (s *Storage) Some(repo string, version string) bool {
 	ok, _ := s.OSWrap.Exists(s.MakeBundleSourcePath(repo, version))
 	return ok
 }

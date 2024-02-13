@@ -31,7 +31,7 @@ type fetcherEncoder interface {
 }
 
 type fetcherStorage interface {
-	Lookup(source string, version string) bool
+	Some(source string, version string) bool
 	Load(source string, version *bundle.VersionExpr) (*bundle.Bundle, error)
 	MakeBundleSourcePath(source string, version string) string
 }
@@ -79,9 +79,9 @@ func (d *Fetcher) Fetch(ctx context.Context, source string, version *bundle.Vers
 		return nil, fmt.Errorf("failed to fetch %s: %v", source, err)
 	}
 
-	// if err := d.Inspector.Inspect(target); err != nil {
-	// 	return nil, err
-	// }
+	if err := d.Inspector.Inspect(target); err != nil {
+		return nil, err
+	}
 
 	if target.BundleFile.Require == nil {
 		return &FetchResult{Target: target}, nil
@@ -125,11 +125,11 @@ func (f *Fetcher) PlainFetch(ctx context.Context, source string, version *bundle
 }
 
 func (f *Fetcher) FetchLocal(ctx context.Context, source string, version *bundle.VersionExpr) (*bundle.Bundle, error) {
-	ok := f.Storage.Lookup(source, version.String())
+	ok := f.Storage.Some(source, version.String())
 	if !ok {
 		return nil, nil
 	}
-	fmt.Println(ok)
+
 	b, err := f.Storage.Load(source, version)
 	if err != nil {
 		f.IO.PrintfErr("failed to load bundle %s from local storage: %v", f.Storage.MakeBundleSourcePath(source, version.String()), err)
