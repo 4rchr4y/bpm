@@ -94,82 +94,58 @@ func (m *Manifester) CreateRequirement(input *CreateRequirementInput) error {
 	return nil
 }
 
+var compOp = map[bool]string{true: "=>", false: "<="}
+
 func (m *Manifester) createRdirect(parent *bundle.Bundle, comingRequirement *bundle.Bundle) error {
-	existingRequirement, idx, ok := parent.BundleFile.FindIndexOfRequirement(comingRequirement.Repository())
-	if ok && existingRequirement.Version == comingRequirement.Version.String() {
+	ebr, ebrIdx, ebrOk := parent.BundleFile.FindIndexOfRequirement(
+		comingRequirement.Repository(),
+		bundlefile.FilterByVersion(comingRequirement.Version.String()),
+	)
+	_, _, elrOk := parent.LockFile.FindIndexOfRequirement(
+		comingRequirement.Repository(),
+		lockfile.FilterByVersion(comingRequirement.Version.String()),
+	)
+
+	if ebrOk && elrOk {
 		m.io.PrintfOk("bundle %s is already updated", bundleutil.FormatVersionFromBundle(comingRequirement))
 		return nil
 	}
 
-	if existingRequirement != nil {
-		input := &replaceInput{
-			Parent:      parent,
-			Actual:      existingRequirement,
-			ActualIndex: idx,
-			Coming:      comingRequirement,
-		}
-
-		if err := m.replaceBundleFileRequirement(input); err != nil {
-			return err
-		}
-
-		return nil
-	}
-
-	parent.BundleFile.Require.List = append(
-		parent.BundleFile.Require.List,
-		NewBundlefileRequirementDecl(comingRequirement),
-	)
-
-	if exists := parent.LockFile.SomeRequirement(
-		comingRequirement.Repository(),
-		lockfile.FilterByVersion(comingRequirement.Version.String()),
-	); !exists {
+	if !elrOk {
 		parent.LockFile.Require.List = append(
 			parent.LockFile.Require.List,
 			NewLockfileRequirementDecl(comingRequirement, lockfile.Direct),
 		)
 	}
 
+	if !ebrOk {
+		parent.BundleFile.Require.List = append(
+			parent.BundleFile.Require.List,
+			NewBundlefileRequirementDecl(comingRequirement),
+		)
+	}
+
+	if ebr != nil {
+		actualVersion, err := bundle.ParseVersionExpr(ebr.Version)
+		if err != nil {
+			return nil
+		}
+
+		isGreater := actualVersion.GreaterThan(comingRequirement.Version)
+		if !isGreater {
+			m.io.PrintfWarn("installing an older bundle %s version", ebr.Repository)
+		}
+
+		m.io.PrintfInfo("upgrading %s %s %s",
+			bundleutil.FormatVersion(ebr.Repository, ebr.Version),
+			compOp[isGreater],
+			bundleutil.FormatVersionFromBundle(comingRequirement),
+		)
+
+		parent.BundleFile.Require.List[ebrIdx] = NewBundlefileRequirementDecl(comingRequirement)
+	}
+
 	m.io.PrintfOk("bundle %s has been successfully added", bundleutil.FormatVersionFromBundle(comingRequirement))
-	return nil
-}
-
-type replaceInput struct {
-	Parent      *bundle.Bundle
-	Actual      *bundlefile.RequirementDecl
-	ActualIndex int // index in the require list of the bundle file
-	Coming      *bundle.Bundle
-}
-
-var compOp = map[bool]string{true: "=>", false: "<="}
-
-func (m *Manifester) replaceBundleFileRequirement(input *replaceInput) error {
-	actualVersion, err := bundle.ParseVersionExpr(input.Actual.Version)
-	if err != nil {
-		return nil
-	}
-
-	isGreater := actualVersion.GreaterThan(input.Coming.Version)
-	if !isGreater {
-		m.io.PrintfWarn("installing an older bundle %s version", input.Actual.Repository)
-	}
-
-	m.io.PrintfInfo("upgrading %s %s %s",
-		bundleutil.FormatVersion(input.Actual.Repository, input.Actual.Version),
-		compOp[isGreater],
-		bundleutil.FormatVersionFromBundle(input.Coming),
-	)
-
-	input.Parent.BundleFile.Require.List[input.ActualIndex] = NewBundlefileRequirementDecl(input.Coming)
-
-	if _, idx, ok := input.Parent.LockFile.FindIndexOfRequirement(
-		input.Actual.Repository,
-		lockfile.FilterByVersion(input.Actual.Version),
-	); ok {
-		input.Parent.LockFile.Require.List[idx] = NewLockfileRequirementDecl(input.Coming, lockfile.Direct)
-	}
-
 	return nil
 }
 
