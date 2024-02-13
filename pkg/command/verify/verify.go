@@ -45,7 +45,7 @@ func verifyRun(ctx context.Context, opts *verifyOptions) error {
 		return err
 	}
 
-	if err := opts.manifester.AppendBundle(&manifest.AppendInput{Parent: b}); err != nil {
+	if err := opts.manifester.CreateRequirement(&manifest.CreateRequirementInput{Parent: b}); err != nil {
 		return err
 	}
 

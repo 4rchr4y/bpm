@@ -58,17 +58,23 @@ func FilterByVersion(version string) FilterFn {
 	}
 }
 
-func (bf *File) SomeRequirement(source string, version string) bool {
+func (bf *File) SomeRequirement(source string, filters ...FilterFn) bool {
 	if bf.Require == nil {
 		return false
 	}
 
 	return lo.SomeBy(bf.Require.List, func(item *RequirementDecl) bool {
-		if item.Repository == source {
-			return item.Version == version
+		if item.Repository != source {
+			return false
 		}
 
-		return false
+		for _, filterFn := range filters {
+			if !filterFn(item) {
+				return false
+			}
+		}
+
+		return true
 	})
 }
 

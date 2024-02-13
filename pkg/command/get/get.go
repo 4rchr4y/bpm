@@ -6,6 +6,7 @@ import (
 
 	"github.com/4rchr4y/bpm/core"
 	"github.com/4rchr4y/bpm/pkg/bundle"
+	"github.com/4rchr4y/bpm/pkg/bundle/bundlefile"
 	"github.com/4rchr4y/bpm/pkg/bundleutil/encode"
 	"github.com/4rchr4y/bpm/pkg/bundleutil/manifest"
 	"github.com/4rchr4y/bpm/pkg/cmdutil/factory"
@@ -70,7 +71,7 @@ func getRun(ctx context.Context, opts *getOptions) error {
 		return err
 	}
 
-	if dest.BundleFile.SomeRequirement(opts.URL, v.String()) {
+	if dest.BundleFile.SomeRequirement(opts.URL, bundlefile.FilterByVersion(v.String())) {
 		opts.io.PrintfOk("bundle '%s+%s' is already installed", opts.URL, v.String())
 		return nil
 	}
@@ -84,13 +85,13 @@ func getRun(ctx context.Context, opts *getOptions) error {
 		return err
 	}
 
-	updateInput := &manifest.AppendInput{
+	updateInput := &manifest.CreateRequirementInput{
 		Parent:    dest,
 		Rdirect:   append([]*bundle.Bundle(nil), result.Target),
 		Rindirect: append(result.Rdirect, result.Rindirect...),
 	}
 
-	if err := opts.Manifester.AppendBundle(updateInput); err != nil {
+	if err := opts.Manifester.CreateRequirement(updateInput); err != nil {
 		return err
 	}
 
