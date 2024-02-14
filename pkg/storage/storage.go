@@ -24,12 +24,10 @@ type storageHCLEncoder interface {
 }
 
 type Storage struct {
-	Dir string
-
-	IO     core.IO
-	OSWrap osiface.OSWrapper
-	IOWrap ioiface.IOWrapper
-
+	Dir     string
+	IO      core.IO
+	OSWrap  osiface.OSWrapper
+	IOWrap  ioiface.IOWrapper
 	Encoder storageHCLEncoder
 }
 

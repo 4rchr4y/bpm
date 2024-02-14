@@ -2,7 +2,7 @@ package factory
 
 import (
 	"github.com/4rchr4y/bpm/core"
-	"github.com/4rchr4y/bpm/internal/gitfacade"
+	"github.com/4rchr4y/bpm/internal/service/github"
 	"github.com/4rchr4y/bpm/pkg/bundleutil/encode"
 	"github.com/4rchr4y/bpm/pkg/bundleutil/inspect"
 	"github.com/4rchr4y/bpm/pkg/bundleutil/manifest"
@@ -22,7 +22,8 @@ type Factory struct {
 	Inspector *inspect.Inspector
 	Encoder   *encode.Encoder
 	// OsLoader   *osload.OsLoader       // bundle file loader from file system
-	GitFacade *gitfacade.GitFacade // facade for interaction with both the CLI and the API
+	GitHubClient *github.GitClient
+	GitCLI       *github.GitCLI
 	// GitLoader  *gitload.GitLoader     // bundle file loader from the git repo
 	Fetcher    *fetch.Fetcher
 	Manifester *manifest.Manifester // bundle manifest file control operator

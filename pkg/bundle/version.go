@@ -6,58 +6,52 @@ import (
 	"strings"
 	"time"
 
-	"github.com/4rchr4y/bpm/constant"
+	"github.com/4rchr4y/godevkit/v3/must"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/hashicorp/go-version"
 )
 
 const (
+	PseudoSemTagStr     = "v0.0.0"
 	versionLatestStr    = "latest"
 	VersionDateFormat   = "20060102150405"
 	VersionShortHashLen = 12
-)
-
-const (
-	versionRegexStr = `^(v\d+\.\d+\.\d+)\+(\d{14})-(\w+)$`
+	VersionRegexStr     = `^(v\d+\.\d+\.\d+)\+(\d{14})-(\w+)$`
 )
 
 var (
-	versionRegex = regexp.MustCompile(`^(v\d+\.\d+\.\d+)\+(\d{14})-(\w+)$`)
+	PseudoSemTag = must.Must(version.NewSemver(PseudoSemTagStr))
+	VersionRegex = regexp.MustCompile(`^(v\d+\.\d+\.\d+)\+(\d{14})-(\w+)$`)
 )
 
 type VersionExpr struct {
-	// TODO: create Tag type
-	Tag       *version.Version // semantic tag if available, or pseudo version
+	SemTag    *version.Version // semantic tag if available, or pseudo semantic tag
 	Timestamp time.Time        // commit timestamp
 	Hash      string           // commit hash
 }
 
 func NewVersionExprFromCommit(commit *object.Commit, tag *version.Version) *VersionExpr {
 	return &VersionExpr{
-		Tag:       tag,
+		SemTag:    tag,
 		Timestamp: commit.Committer.When.UTC(),
 		Hash:      commit.Hash.String()[:VersionShortHashLen],
 	}
 }
 
 func (v *VersionExpr) IsPseudo() bool {
-	return v.Tag.Original() == constant.BundlePseudoVersion && v.Hash != "" && !v.Timestamp.IsZero()
+	return v.SemTag.Original() == PseudoSemTagStr && v.Hash != "" && !v.Timestamp.IsZero()
 }
 
-// func (v *VersionExpr) IsLatest() bool {
-// return v.Tag.S
-// }
-
-func (v *VersionExpr) Major() int { return v.Tag.Segments()[0] }
-func (v *VersionExpr) Minor() int { return v.Tag.Segments()[1] }
-func (v *VersionExpr) Path() int  { return v.Tag.Segments()[2] }
+func (v *VersionExpr) Major() int { return v.SemTag.Segments()[0] }
+func (v *VersionExpr) Minor() int { return v.SemTag.Segments()[1] }
+func (v *VersionExpr) Path() int  { return v.SemTag.Segments()[2] }
 
 func (v *VersionExpr) Equal(o *VersionExpr) bool {
 	if v.IsPseudo() && o.IsPseudo() {
 		return v.String() == o.String()
 	}
 
-	return v.Tag.Equal(o.Tag)
+	return v.SemTag.Equal(o.SemTag)
 }
 
 func (v *VersionExpr) GreaterThan(o *VersionExpr) bool {
@@ -65,7 +59,7 @@ func (v *VersionExpr) GreaterThan(o *VersionExpr) bool {
 		return v.Timestamp.After(o.Timestamp)
 	}
 
-	return v.Tag.GreaterThan(o.Tag)
+	return v.SemTag.GreaterThan(o.SemTag)
 }
 
 func (v *VersionExpr) String() string {
@@ -73,12 +67,12 @@ func (v *VersionExpr) String() string {
 		return versionLatestStr
 	}
 
-	if v.Tag != nil && v.Tag.Original() != constant.BundlePseudoVersion {
-		return v.Tag.Original()
+	if v.SemTag != nil && v.SemTag.Original() != PseudoSemTagStr {
+		return v.SemTag.Original()
 	}
 
 	return fmt.Sprintf("%s+%s-%s",
-		constant.BundlePseudoVersion,
+		PseudoSemTagStr,
 		v.Timestamp.Format(VersionDateFormat),
 		v.Hash,
 	)
@@ -95,10 +89,10 @@ func ParseVersionExpr(versionStr string) (*VersionExpr, error) {
 			return nil, err
 		}
 
-		return &VersionExpr{Tag: v}, nil
+		return &VersionExpr{SemTag: v}, nil
 
 	default:
-		matches := versionRegex.FindStringSubmatch(versionStr)
+		matches := VersionRegex.FindStringSubmatch(versionStr)
 		if matches == nil || len(matches) != 4 {
 			return nil, fmt.Errorf("invalid version format")
 		}
@@ -114,7 +108,7 @@ func ParseVersionExpr(versionStr string) (*VersionExpr, error) {
 		}
 
 		return &VersionExpr{
-			Tag:       v,
+			SemTag:    v,
 			Timestamp: timestamp,
 			Hash:      matches[3],
 		}, nil

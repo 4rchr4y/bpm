@@ -54,20 +54,6 @@ type BundleRaw struct {
 	OtherFiles map[string][]byte
 }
 
-type BundleOptFn func(*Bundle)
-
-func WithIgnoreList(ignoreFile *IgnoreFile) BundleOptFn {
-	return func(b *Bundle) {
-		b.IgnoreFile = ignoreFile
-	}
-}
-
-func WithVersion(v *VersionExpr) BundleOptFn {
-	return func(b *Bundle) {
-		b.Version = v
-	}
-}
-
 func (br *BundleRaw) ToBundle(v *VersionExpr, ignoreFile *IgnoreFile) (*Bundle, error) {
 	if br.BundleFile == nil {
 		return nil, fmt.Errorf("can't find '%s' file", constant.BundleFileName)

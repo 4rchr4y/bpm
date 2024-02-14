@@ -56,7 +56,7 @@ func NewCmdInit(f *factory.Factory) *cobra.Command {
 			return initRun(&initOptions{
 				Repository: args[0],
 				Author: func() *bundlefile.AuthorExpr {
-					user, err := f.GitFacade.User()
+					user, err := f.GitCLI.User()
 					if err != nil {
 						return nil
 					}

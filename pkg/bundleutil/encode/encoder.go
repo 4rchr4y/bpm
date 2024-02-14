@@ -24,10 +24,6 @@ type Encoder struct {
 	IO core.IO
 }
 
-func NewEncoder() *Encoder {
-	return &Encoder{}
-}
-
 func (e *Encoder) DecodeIgnoreFile(content []byte) (*bundle.IgnoreFile, error) {
 	ignoreFile := bundle.NewIgnoreFile()
 	scanner := bufio.NewScanner(bytes.NewReader(content))

@@ -8,16 +8,13 @@ import (
 	"github.com/4rchr4y/bpm/constant"
 	"github.com/4rchr4y/bpm/core"
 	"github.com/4rchr4y/bpm/pkg/bundle"
-	"github.com/4rchr4y/godevkit/v3/must"
-	"github.com/4rchr4y/godevkit/v3/syswrap/ioiface"
-	"github.com/4rchr4y/godevkit/v3/syswrap/osiface"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/hashicorp/go-version"
 )
 
-type fetcherGitFacade interface {
+type fetcherGitHubClient interface {
 	CloneWithContext(ctx context.Context, opts *git.CloneOptions) (*git.Repository, error)
 }
 
@@ -37,14 +34,11 @@ type fetcherStorage interface {
 }
 
 type Fetcher struct {
-	IO     core.IO
-	OSWrap osiface.OSWrapper
-	IOWrap ioiface.IOWrapper
-
-	Storage   fetcherStorage
-	Inspector fetcherInspector
-	GitFacade fetcherGitFacade
-	Encoder   fetcherEncoder
+	IO           core.IO
+	Storage      fetcherStorage
+	Inspector    fetcherInspector
+	GitHubClient fetcherGitHubClient
+	Encoder      fetcherEncoder
 }
 
 type FetchResult struct {
@@ -151,7 +145,7 @@ func (d *Fetcher) Download(ctx context.Context, source string, tag *bundle.Versi
 		URL: fmt.Sprintf("https://%s.git", source),
 	}
 
-	repo, err := d.GitFacade.CloneWithContext(ctx, options)
+	repo, err := d.GitHubClient.CloneWithContext(ctx, options)
 	if err != nil {
 		return nil, err
 	}
@@ -188,7 +182,7 @@ func fetchCommitByTag(repo *git.Repository, v *bundle.VersionExpr) (*object.Comm
 		return commit, v, nil
 	}
 
-	commit, err := getCurrentVersionCommit(repo, v.Tag.Original())
+	commit, err := getCurrentVersionCommit(repo, v.SemTag.Original())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -281,8 +275,7 @@ func collectTagList(repo *git.Repository) (map[*version.Version]*plumbing.Refere
 }
 
 func mustFindLatestVersion(tags map[*version.Version]*plumbing.Reference) (v *version.Version, ref *plumbing.Reference) {
-	// use MUST here because the constant version should always be correct
-	v = must.Must(version.NewSemver(constant.BundlePseudoVersion))
+	v = bundle.PseudoSemTag
 
 	for version, reference := range tags {
 		if version.GreaterThan(v) {

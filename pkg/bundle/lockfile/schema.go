@@ -47,7 +47,6 @@ type (
 		Version    string `hcl:"version"`          // bundle version							e.g. 'v0.0.0+20240128102927-ab4647768668'
 		H1         string `hcl:"h1"`               // bundle file checksum						e.g. 'd973b71fd6dd925...'
 		H2         string `hcl:"h2"`               // bundle files + other files checksum		e.g. 'd973b71fd6dd925...'
-		// Why        []string `hcl:"why"`
 	}
 
 	RequireBlock struct {

@@ -1,7 +1,7 @@
 package factory
 
 import (
-	"github.com/4rchr4y/bpm/internal/gitfacade"
+	"github.com/4rchr4y/bpm/internal/service/github"
 	"github.com/4rchr4y/bpm/pkg/bundleutil/encode"
 	"github.com/4rchr4y/bpm/pkg/bundleutil/inspect"
 	"github.com/4rchr4y/bpm/pkg/bundleutil/manifest"
@@ -20,14 +20,17 @@ func New() *Factory {
 
 	osWrap := new(syswrap.OSWrap)
 	ioWrap := new(syswrap.IOWrap)
-	encoder := encode.NewEncoder()
+	encoder := &encode.Encoder{
+		IO: io,
+	}
 
 	manifester := manifest.NewManifester(io, osWrap, encoder)
 	inspector := &inspect.Inspector{
 		IO: io,
 	}
 
-	gitFacade := gitfacade.NewGitFacade()
+	githubClient := &github.GitClient{}
+	githubCLI := &github.GitCLI{}
 
 	storage := &storage.Storage{
 		Dir:     dir,
@@ -38,27 +41,26 @@ func New() *Factory {
 	}
 
 	fetcher := &fetch.Fetcher{
-		IO:        io,
-		OSWrap:    osWrap,
-		IOWrap:    ioWrap,
-		Storage:   storage,
-		Inspector: inspector,
-		GitFacade: gitFacade,
-		Encoder:   encoder,
+		IO:           io,
+		Storage:      storage,
+		Inspector:    inspector,
+		GitHubClient: githubClient,
+		Encoder:      encoder,
 	}
 
 	f := &Factory{
-		Name:       "bpm",
-		Version:    version,
-		IOStream:   io,
-		Encoder:    encoder,
-		Inspector:  inspector,
-		Fetcher:    fetcher,
-		Storage:    storage,
-		GitFacade:  gitFacade,
-		Manifester: manifester,
-		IO:         ioWrap,
-		OS:         osWrap,
+		Name:         "bpm",
+		Version:      version,
+		IOStream:     io,
+		Encoder:      encoder,
+		Inspector:    inspector,
+		Fetcher:      fetcher,
+		Storage:      storage,
+		GitHubClient: githubClient,
+		GitCLI:       githubCLI,
+		Manifester:   manifester,
+		IO:           ioWrap,
+		OS:           osWrap,
 	}
 
 	return f
