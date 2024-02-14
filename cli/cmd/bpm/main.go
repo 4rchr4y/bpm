@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/4rchr4y/bpm/internal/build"
+	_ "github.com/4rchr4y/bpm/internal/goversion"
 	"github.com/4rchr4y/bpm/pkg/cmdutil/factory"
 	"github.com/4rchr4y/bpm/pkg/command/root"
 )
