@@ -1,4 +1,4 @@
-package util
+package bundleutil
 
 import (
 	"crypto/sha256"

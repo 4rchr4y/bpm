@@ -4,7 +4,7 @@ import (
 	"crypto/sha256"
 	"strings"
 
-	"github.com/4rchr4y/bpm/pkg/util"
+	"github.com/4rchr4y/bpm/pkg/bundleutil"
 	"github.com/open-policy-agent/opa/ast"
 )
 
@@ -21,5 +21,5 @@ func (f *File) Package() string {
 }
 
 func (f *File) Sum() string {
-	return util.ChecksumSHA256(sha256.New(), f.Parsed.String())
+	return bundleutil.ChecksumSHA256(sha256.New(), f.Parsed.String())
 }

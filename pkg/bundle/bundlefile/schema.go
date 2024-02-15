@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/4rchr4y/bpm/constant"
-	"github.com/4rchr4y/bpm/pkg/util"
+	"github.com/4rchr4y/bpm/pkg/bundleutil"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclwrite"
 	"github.com/samber/lo"
@@ -47,7 +47,7 @@ func (*Schema) Filename() string { return constant.BundleFileName }
 func (bf *Schema) Sum() string {
 	f := hclwrite.NewEmptyFile()
 	gohcl.EncodeIntoBody(bf, f.Body())
-	return util.ChecksumSHA256(sha256.New(), f.Bytes())
+	return bundleutil.ChecksumSHA256(sha256.New(), f.Bytes())
 }
 
 type FilterFn func(r *RequirementDecl) bool
