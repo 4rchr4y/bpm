@@ -17,14 +17,11 @@ type Factory struct {
 	Version string // app version
 	Dir     string
 
-	IOStream  core.IO
-	Storage   *storage.Storage
-	Inspector *inspect.Inspector
-	Encoder   *encode.Encoder
-	// OsLoader   *osload.OsLoader       // bundle file loader from file system
-	GitHubClient *github.GitClient
-	GitCLI       *github.GitCLI
-	// GitLoader  *gitload.GitLoader     // bundle file loader from the git repo
+	IOStream   core.IO
+	Storage    *storage.Storage
+	Inspector  *inspect.Inspector
+	Encoder    *encode.Encoder
+	GitCLI     *github.GitCLI
 	Fetcher    *fetch.Fetcher
 	Manifester *manifest.Manifester // bundle manifest file control operator
 	OS         osiface.OSWrapper    // set of functions for working with the OS

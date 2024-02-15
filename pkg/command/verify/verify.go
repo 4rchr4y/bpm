@@ -53,7 +53,7 @@ func verifyRun(ctx context.Context, opts *verifyOptions) error {
 		return err
 	}
 
-	if err := opts.inspector.Verify(b); err != nil {
+	if err := opts.inspector.Inspect(b); err != nil {
 		return err
 	}
 

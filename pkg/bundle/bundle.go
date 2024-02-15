@@ -72,31 +72,67 @@ func (br *BundleRaw) ToBundle(v *VersionExpr, ignoreFile *IgnoreFile) (*Bundle, 
 		b.LockFile = lockfile.Init()
 	}
 
-	modules := make([]*lockfile.ModDecl, len(b.RegoFiles))
-	var i int
-	for filePath, f := range b.RegoFiles {
-		modules[i] = &lockfile.ModDecl{
-			Package: f.Package(),
-			Source:  filePath,
-			Sum:     f.Sum(),
-		}
-
-		i++
+	modules, err := parseModuleList(br)
+	if err != nil {
+		return nil, err
 	}
 
-	sort.Slice(modules, func(i, j int) bool { return modules[i].Package < modules[j].Package })
 	b.LockFile.Modules = &lockfile.ModulesBlock{List: modules}
 	b.LockFile.Sum = b.Sum()
 
 	return b, nil
 }
 
+func parseModuleList(br *BundleRaw) ([]*lockfile.ModDecl, error) {
+	result := make([]*lockfile.ModDecl, len(br.RegoFiles))
+
+	var i int
+	for filePath, f := range br.RegoFiles {
+		requireList, err := parseRequireList(br.BundleFile, f)
+		if err != nil {
+			return nil, err
+		}
+
+		result[i] = &lockfile.ModDecl{
+			Package: fmt.Sprintf("%s.%s", br.BundleFile.Package.Name, f.Package()),
+			Source:  filePath,
+			Sum:     f.Sum(),
+			Require: requireList,
+		}
+
+		i++
+	}
+
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Package < result[j].Package
+	})
+
+	return result, nil
+}
+
+func parseRequireList(require *bundlefile.Schema, f *regofile.File) ([]string, error) {
+	result := make([]string, len(f.Parsed.Imports))
+
+	for i, v := range f.Parsed.Imports {
+		importPath := strings.TrimPrefix(v.Path.String(), regofile.ImportPathPrefix)
+		segments := strings.Split(importPath, ".")
+		p, _, ok := require.FindIndexOfRequirement(bundlefile.FilterByName(segments[0]))
+		if !ok {
+			return nil, fmt.Errorf("undefined import '%s' in %s", v.Path.String(), f.Path)
+		}
+
+		result[i] = FormatVersion(p.Repository, p.Version)
+	}
+
+	return result, nil
+}
+
 type Bundle struct {
 	Version    *VersionExpr
-	BundleFile *bundlefile.Schema
-	LockFile   *lockfile.Schema
+	BundleFile *bundlefile.Schema        `validate:"required"`
+	LockFile   *lockfile.Schema          `validate:"required"`
+	RegoFiles  map[string]*regofile.File `validate:"required"`
 	IgnoreFile *IgnoreFile
-	RegoFiles  map[string]*regofile.File
 	OtherFiles map[string][]byte
 }
 

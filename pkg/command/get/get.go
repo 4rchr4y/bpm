@@ -71,7 +71,7 @@ func getRun(ctx context.Context, opts *getOptions) error {
 		return err
 	}
 
-	if dest.BundleFile.SomeRequirement(opts.URL, bundlefile.FilterByVersion(v.String())) {
+	if dest.BundleFile.SomeRequirement(bundlefile.FilterBySource(opts.URL), bundlefile.FilterByVersion(v.String())) {
 		opts.io.PrintfOk("bundle '%s+%s' is already installed", opts.URL, v.String())
 		return nil
 	}

@@ -29,9 +29,6 @@ func New() *Factory {
 		IO: io,
 	}
 
-	githubClient := &github.GitClient{}
-	githubCLI := &github.GitCLI{}
-
 	storage := &storage.Storage{
 		Dir:     dir,
 		IO:      io,
@@ -41,26 +38,28 @@ func New() *Factory {
 	}
 
 	fetcher := &fetch.Fetcher{
-		IO:           io,
-		Storage:      storage,
-		Inspector:    inspector,
-		GitHubClient: githubClient,
-		Encoder:      encoder,
+		IO:        io,
+		Storage:   storage,
+		Inspector: inspector,
+		GitHub: &fetch.GithubFetcher{
+			IO:      io,
+			Client:  &github.GitClient{},
+			Encoder: encoder,
+		},
 	}
 
 	f := &Factory{
-		Name:         "bpm",
-		Version:      version,
-		IOStream:     io,
-		Encoder:      encoder,
-		Inspector:    inspector,
-		Fetcher:      fetcher,
-		Storage:      storage,
-		GitHubClient: githubClient,
-		GitCLI:       githubCLI,
-		Manifester:   manifester,
-		IO:           ioWrap,
-		OS:           osWrap,
+		Name:       "bpm",
+		Version:    version,
+		IOStream:   io,
+		Encoder:    encoder,
+		Inspector:  inspector,
+		Fetcher:    fetcher,
+		Storage:    storage,
+		GitCLI:     &github.GitCLI{},
+		Manifester: manifester,
+		IO:         ioWrap,
+		OS:         osWrap,
 	}
 
 	return f

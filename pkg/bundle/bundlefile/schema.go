@@ -58,16 +58,24 @@ func FilterByVersion(version string) FilterFn {
 	}
 }
 
-func (bf *Schema) SomeRequirement(source string, filters ...FilterFn) bool {
+func FilterBySource(source string) FilterFn {
+	return func(r *RequirementDecl) bool {
+		return r.Repository == source
+	}
+}
+
+func FilterByName(name string) FilterFn {
+	return func(r *RequirementDecl) bool {
+		return r.Name == name
+	}
+}
+
+func (bf *Schema) SomeRequirement(filters ...FilterFn) bool {
 	if bf.Require == nil {
 		return false
 	}
 
 	return lo.SomeBy(bf.Require.List, func(item *RequirementDecl) bool {
-		if item.Repository != source {
-			return false
-		}
-
 		for _, filterFn := range filters {
 			if !filterFn(item) {
 				return false
@@ -78,16 +86,12 @@ func (bf *Schema) SomeRequirement(source string, filters ...FilterFn) bool {
 	})
 }
 
-func (bf *Schema) FindIndexOfRequirement(source string, filters ...FilterFn) (*RequirementDecl, int, bool) {
+func (bf *Schema) FindIndexOfRequirement(filters ...FilterFn) (*RequirementDecl, int, bool) {
 	if bf.Require == nil {
 		return nil, -1, false
 	}
 
 	return lo.FindIndexOf(bf.Require.List, func(item *RequirementDecl) bool {
-		if item.Repository != source {
-			return false
-		}
-
 		for _, filterFn := range filters {
 			if !filterFn(item) {
 				return false

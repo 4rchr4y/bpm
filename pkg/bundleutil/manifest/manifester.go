@@ -9,7 +9,6 @@ import (
 	"github.com/4rchr4y/bpm/pkg/bundle"
 	"github.com/4rchr4y/bpm/pkg/bundle/bundlefile"
 	"github.com/4rchr4y/bpm/pkg/bundle/lockfile"
-	"github.com/4rchr4y/bpm/pkg/bundleutil"
 	"github.com/4rchr4y/godevkit/v3/syswrap/osiface"
 )
 
@@ -79,7 +78,7 @@ func (m *Manifester) CreateRequirement(input *CreateRequirementInput) error {
 
 	for _, requirement := range input.Rindirect {
 		if exists := input.Parent.LockFile.SomeRequirement(
-			requirement.Repository(),
+			lockfile.FilterBySource(requirement.Repository()),
 			lockfile.FilterByVersion(requirement.Version.String()),
 		); !exists {
 			input.Parent.LockFile.Require.List = append(
@@ -98,16 +97,16 @@ var compOp = map[bool]string{true: "=>", false: "<="}
 
 func (m *Manifester) createRdirect(parent *bundle.Bundle, comingRequirement *bundle.Bundle) error {
 	ebr, ebrIdx, ebrOk := parent.BundleFile.FindIndexOfRequirement(
-		comingRequirement.Repository(),
+		bundlefile.FilterBySource(comingRequirement.Repository()),
 		bundlefile.FilterByVersion(comingRequirement.Version.String()),
 	)
 	_, _, elrOk := parent.LockFile.FindIndexOfRequirement(
-		comingRequirement.Repository(),
+		lockfile.FilterBySource(comingRequirement.Repository()),
 		lockfile.FilterByVersion(comingRequirement.Version.String()),
 	)
 
 	if ebrOk && elrOk {
-		m.io.PrintfOk("bundle %s is already updated", bundleutil.FormatVersionFromBundle(comingRequirement))
+		m.io.PrintfOk("bundle %s is already updated", bundle.FormatVersionFromBundle(comingRequirement))
 		return nil
 	}
 
@@ -137,17 +136,21 @@ func (m *Manifester) createRdirect(parent *bundle.Bundle, comingRequirement *bun
 		}
 
 		m.io.PrintfInfo("upgrading %s %s %s",
-			bundleutil.FormatVersion(ebr.Repository, ebr.Version),
+			bundle.FormatVersion(ebr.Repository, ebr.Version),
 			compOp[isGreater],
-			bundleutil.FormatVersionFromBundle(comingRequirement),
+			bundle.FormatVersionFromBundle(comingRequirement),
 		)
 
 		parent.BundleFile.Require.List[ebrIdx] = NewBundlefileRequirementDecl(comingRequirement)
 	}
 
-	m.io.PrintfOk("bundle %s has been successfully added", bundleutil.FormatVersionFromBundle(comingRequirement))
+	m.io.PrintfOk("bundle %s has been successfully added", bundle.FormatVersionFromBundle(comingRequirement))
 	return nil
 }
+
+// func (m *Manifester) SyncLockfile(b *bundle.Bundle) *lockfile.Schema {
+
+// }
 
 func (m *Manifester) Upgrade(workDir string, b *bundle.Bundle) error {
 	if err := m.upgradeBundleFile(workDir, b); err != nil {
