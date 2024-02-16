@@ -148,10 +148,6 @@ func (m *Manifester) createRdirect(parent *bundle.Bundle, comingRequirement *bun
 	return nil
 }
 
-// func (m *Manifester) SyncLockfile(b *bundle.Bundle) *lockfile.Schema {
-
-// }
-
 func (m *Manifester) Upgrade(workDir string, b *bundle.Bundle) error {
 	if err := m.upgradeBundleFile(workDir, b); err != nil {
 		return err
