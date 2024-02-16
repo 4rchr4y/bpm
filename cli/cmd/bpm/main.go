@@ -5,10 +5,10 @@ import (
 	"log"
 	"os"
 
+	"github.com/4rchr4y/bpm/cmdutil/factory"
+	"github.com/4rchr4y/bpm/command/root"
 	"github.com/4rchr4y/bpm/internal/build"
 	_ "github.com/4rchr4y/bpm/internal/goversion"
-	"github.com/4rchr4y/bpm/pkg/cmdutil/factory"
-	"github.com/4rchr4y/bpm/pkg/command/root"
 )
 
 type exitCode = int
