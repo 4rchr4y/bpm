@@ -15,21 +15,24 @@ type Inspector struct {
 	IO core.IO
 }
 
+type VerificationError struct{ error }
+type ValidationError struct{ error }
+
 func (insp *Inspector) Inspect(b *bundle.Bundle) error {
 	if err := insp.Verify(b); err != nil {
-		return fmt.Errorf("failed to process %s verification: %v", b.Repository(), err)
+		return VerificationError{
+			fmt.Errorf("failed to process %s verification: %v", b.Repository(), err),
+		}
 	}
 
 	if err := insp.Validate(b); err != nil {
-		return fmt.Errorf("failed to process %s validation: %v", b.Repository(), err)
+		return ValidationError{
+			fmt.Errorf("failed to process %s validation: %v", b.Repository(), err),
+		}
 	}
 
 	return nil
 }
-
-type VerificationError struct{ error }
-
-func (e VerificationError) Error() string { return e.Error() }
 
 func (insp *Inspector) Verify(b *bundle.Bundle) (err error) {
 	if b.LockFile.Sum != b.Sum() {
@@ -39,35 +42,29 @@ func (insp *Inspector) Verify(b *bundle.Bundle) (err error) {
 	return err
 }
 
-type ValidationError struct{ error }
-
-func (e ValidationError) Error() string { return e.Error() }
-
 func (insp *Inspector) Validate(b *bundle.Bundle) (err error) {
 	if b.BundleFile == nil {
-		err = multierror.Append(ValidationError{
+		err = multierror.Append(
 			fmt.Errorf("file %s is undefined", constant.BundleFileName),
-		})
+		)
 	}
 
 	if b.LockFile == nil {
-		err = multierror.Append(err, ValidationError{
+		err = multierror.Append(err,
 			fmt.Errorf("file %s is undefined", constant.LockFileName),
-		})
+		)
 	}
 
 	for _, f := range b.RegoFiles {
 		packagePath := strings.ReplaceAll(f.Package(), ".", "/")
 		sourcePath := strings.TrimSuffix(f.Path, constant.RegoFileExt)
 		if packagePath != sourcePath {
-			err = multierror.Append(err, ValidationError{
-				fmt.Errorf(
-					"invalid %s package definition\n\t> expected: %s,\n\t> actual: %s",
-					f.Path,
-					strings.ReplaceAll(sourcePath, "/", "."),
-					f.Package(),
-				),
-			})
+			err = multierror.Append(err, fmt.Errorf(
+				"invalid %s package definition\n\t> expected: %s,\n\t> actual: %s",
+				f.Path,
+				strings.ReplaceAll(sourcePath, "/", "."),
+				f.Package(),
+			))
 		}
 	}
 
