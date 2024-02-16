@@ -1,4 +1,4 @@
-package verify
+package check
 
 import (
 	"context"
@@ -12,13 +12,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewCmdVerify(f *factory.Factory) *cobra.Command {
+func NewCmdCheck(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "verify PATH",
-		Short: "Verify specified bundle",
+		Use:   "check PATH",
+		Short: "Check specified bundle",
 		Args:  require.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return verifyRun(cmd.Context(), &verifyOptions{
+			return checkRun(cmd.Context(), &checkOptions{
 				dir:        args[0],
 				io:         f.IOStream,
 				Storage:    f.Storage,
@@ -31,7 +31,7 @@ func NewCmdVerify(f *factory.Factory) *cobra.Command {
 	return cmd
 }
 
-type verifyOptions struct {
+type checkOptions struct {
 	dir        string // specified bundle folder that should be verified
 	io         core.IO
 	Storage    *storage.Storage
@@ -39,7 +39,7 @@ type verifyOptions struct {
 	manifester *manifest.Manifester
 }
 
-func verifyRun(ctx context.Context, opts *verifyOptions) error {
+func checkRun(ctx context.Context, opts *checkOptions) error {
 	b, err := opts.Storage.LoadFromAbs(opts.dir, nil)
 	if err != nil {
 		return err
@@ -57,6 +57,6 @@ func verifyRun(ctx context.Context, opts *verifyOptions) error {
 		return err
 	}
 
-	opts.io.PrintfOk("bundle '%s' is verified", b.Repository())
+	opts.io.PrintfOk("bundle '%s' is checked", b.Repository())
 	return nil
 }
