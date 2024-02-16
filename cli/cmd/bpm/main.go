@@ -5,8 +5,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/4rchr4y/bpm/cmdutil/factory"
-	"github.com/4rchr4y/bpm/command/root"
+	"github.com/4rchr4y/bpm/cli/cmd/bpm/root"
+	"github.com/4rchr4y/bpm/cli/cmdutil/factory"
 	"github.com/4rchr4y/bpm/internal/build"
 	_ "github.com/4rchr4y/bpm/internal/goversion"
 )

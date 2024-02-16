@@ -5,8 +5,8 @@ import (
 
 	"github.com/4rchr4y/bpm/bundleutil/inspect"
 	"github.com/4rchr4y/bpm/bundleutil/manifest"
-	"github.com/4rchr4y/bpm/cmdutil/factory"
-	"github.com/4rchr4y/bpm/cmdutil/require"
+	"github.com/4rchr4y/bpm/cli/cmdutil/factory"
+	"github.com/4rchr4y/bpm/cli/cmdutil/require"
 	"github.com/4rchr4y/bpm/core"
 	"github.com/4rchr4y/bpm/storage"
 	"github.com/spf13/cobra"

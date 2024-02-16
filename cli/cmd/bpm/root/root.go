@@ -6,15 +6,15 @@ import (
 	"io"
 	"strings"
 
-	"github.com/4rchr4y/bpm/cmdutil/factory"
+	"github.com/4rchr4y/bpm/cli/cmdutil/factory"
 	"github.com/4rchr4y/bpm/core"
 	"github.com/spf13/cobra"
 
-	cmdCheck "github.com/4rchr4y/bpm/command/check"
-	cmdGet "github.com/4rchr4y/bpm/command/get"
-	cmdInit "github.com/4rchr4y/bpm/command/init"
-	cmdInstall "github.com/4rchr4y/bpm/command/install"
-	cmdVersion "github.com/4rchr4y/bpm/command/version"
+	cmdCheck "github.com/4rchr4y/bpm/cli/cmd/bpm/check"
+	cmdGet "github.com/4rchr4y/bpm/cli/cmd/bpm/get"
+	cmdInit "github.com/4rchr4y/bpm/cli/cmd/bpm/init"
+	cmdInstall "github.com/4rchr4y/bpm/cli/cmd/bpm/install"
+	cmdVersion "github.com/4rchr4y/bpm/cli/cmd/bpm/version"
 )
 
 func NewCmdRoot(f *factory.Factory, version string) (*cobra.Command, error) {
