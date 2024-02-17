@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/4rchr4y/bpm/bundle"
-	"github.com/4rchr4y/bpm/bundle/bundlefile"
 	"github.com/4rchr4y/bpm/bundleutil/encode"
 	"github.com/4rchr4y/bpm/bundleutil/manifest"
 	"github.com/4rchr4y/bpm/cli/cmdutil/factory"
@@ -34,8 +33,8 @@ func NewCmdGet(f *factory.Factory) *cobra.Command {
 
 			return getRun(cmd.Context(), &getOptions{
 				io:         f.IOStream,
-				WorkDir:    wd,
-				URL:        args[0],
+				workDir:    wd,
+				url:        args[0],
 				Version:    version,
 				Fetcher:    f.Fetcher,
 				Storage:    f.Storage,
@@ -51,8 +50,8 @@ func NewCmdGet(f *factory.Factory) *cobra.Command {
 
 type getOptions struct {
 	io         core.IO
-	WorkDir    string // bundle working directory
-	URL        string // bundle repository that needs to be installed
+	workDir    string // bundle working directory
+	url        string // bundle repository that needs to be installed
 	Version    string // specified bundle version
 	Fetcher    *fetch.Fetcher
 	Storage    *storage.Storage
@@ -61,7 +60,7 @@ type getOptions struct {
 }
 
 func getRun(ctx context.Context, opts *getOptions) error {
-	dest, err := opts.Storage.LoadFromAbs(opts.WorkDir, nil)
+	dest, err := opts.Storage.LoadFromAbs(opts.workDir, nil)
 	if err != nil {
 		return err
 	}
@@ -71,37 +70,19 @@ func getRun(ctx context.Context, opts *getOptions) error {
 		return err
 	}
 
-	if dest.BundleFile.SomeRequirement(bundlefile.FilterBySource(opts.URL), bundlefile.FilterByVersion(v.String())) {
-		opts.io.PrintfOk("bundle '%s+%s' is already installed", opts.URL, v.String())
-		return nil
+	input := &manifest.InsertRequirementInput{
+		Parent:  dest,
+		Source:  opts.url,
+		Version: v,
 	}
 
-	result, err := opts.Fetcher.Fetch(ctx, opts.URL, v)
-	if err != nil {
+	if err := opts.Manifester.InsertRequirement(ctx, input); err != nil {
 		return err
 	}
 
-	if err := opts.Storage.StoreMultiple(result.Merge()); err != nil {
+	if err := opts.Manifester.Upgrade(opts.workDir, dest); err != nil {
 		return err
 	}
-
-	updateInput := &manifest.CreateRequirementInput{
-		Parent:    dest,
-		Rdirect:   append([]*bundle.Bundle(nil), result.Target),
-		Rindirect: append(result.Rdirect, result.Rindirect...),
-	}
-
-	if err := opts.Manifester.CreateRequirement(updateInput); err != nil {
-		return err
-	}
-
-	if err := opts.Manifester.Upgrade(opts.WorkDir, dest); err != nil {
-		return err
-	}
-
-	// if output.WasChanged() {
-	// 	opts.io.PrintfOk("bundle %s has been successfully %s", bundleutil.FormatVersionFromBundle(result.Target), output.ActionToStr())
-	// }
 
 	return nil
 }

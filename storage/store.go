@@ -11,14 +11,12 @@ import (
 	"github.com/4rchr4y/bpm/bundle/regofile"
 )
 
-func (s *Storage) StoreMultiple(bundleset []*bundle.Bundle) error {
-	for _, b := range bundleset {
-		if err := s.Store(b); err != nil {
-			return err
-		}
+func (s *Storage) StoreSome(b *bundle.Bundle) error {
+	if exists := s.Some(b.Repository(), b.Version.String()); exists {
+		return nil
 	}
 
-	return nil
+	return s.Store(b)
 }
 
 func (s *Storage) Store(b *bundle.Bundle) error {

@@ -42,6 +42,16 @@ type Schema struct {
 	Require *RequireBlock `hcl:"require,block"`
 }
 
+func PrepareSchema(existing *Schema) *Schema {
+	if existing.Require == nil {
+		existing.Require = &RequireBlock{
+			List: make([]*RequirementDecl, 0),
+		}
+	}
+
+	return existing
+}
+
 func (*Schema) Filename() string { return constant.BundleFileName }
 
 func (bf *Schema) Sum() string {

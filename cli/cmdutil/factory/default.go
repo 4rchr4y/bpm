@@ -24,17 +24,16 @@ func New() *Factory {
 		IO: io,
 	}
 
-	manifester := manifest.NewManifester(io, osWrap, encoder)
-	inspector := &inspect.Inspector{
-		IO: io,
-	}
-
 	storage := &storage.Storage{
 		Dir:     dir,
 		IO:      io,
 		OSWrap:  osWrap,
 		IOWrap:  ioWrap,
 		Encoder: encoder,
+	}
+
+	inspector := &inspect.Inspector{
+		IO: io,
 	}
 
 	fetcher := &fetch.Fetcher{
@@ -46,6 +45,14 @@ func New() *Factory {
 			Client:  &github.GitClient{},
 			Encoder: encoder,
 		},
+	}
+
+	manifester := &manifest.Manifester{
+		IO:      io,
+		OSWrap:  osWrap,
+		Storage: storage,
+		Encoder: encoder,
+		Fetcher: fetcher,
 	}
 
 	f := &Factory{

@@ -10,8 +10,8 @@ import (
 type DirectionType string
 
 const (
-	Direct   = "direct"
-	Indirect = "indirect"
+	Direct   DirectionType = "direct"
+	Indirect DirectionType = "indirect"
 )
 
 func (dt DirectionType) String() string {
@@ -61,10 +61,32 @@ type Schema struct {
 	Require *RequireBlock `hcl:"require,block"` // list of declared dependencies		e.g. '{...}'
 }
 
-func Init() *Schema {
-	return &Schema{
-		Edition: "2024",
+func PrepareSchema(existing *Schema) *Schema {
+	if existing == nil {
+		return &Schema{
+			Edition: "2024",
+			Modules: &ModulesBlock{
+				List: make([]*ModDecl, 0),
+			},
+			Require: &RequireBlock{
+				List: make([]*RequirementDecl, 0),
+			},
+		}
 	}
+
+	if existing.Modules == nil {
+		existing.Modules = &ModulesBlock{
+			List: make([]*ModDecl, 0),
+		}
+	}
+
+	if existing.Require == nil {
+		existing.Require = &RequireBlock{
+			List: make([]*RequirementDecl, 0),
+		}
+	}
+
+	return existing
 }
 
 func (*Schema) Filename() string { return constant.LockFileName }

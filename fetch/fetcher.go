@@ -13,6 +13,7 @@ type fetcherInspector interface {
 }
 
 type fetcherStorage interface {
+	Store(b *bundle.Bundle) error
 	Some(source string, version string) bool
 	Load(source string, version *bundle.VersionExpr) (*bundle.Bundle, error)
 	MakeBundleSourcePath(source string, version string) string

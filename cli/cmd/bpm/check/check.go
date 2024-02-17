@@ -21,7 +21,7 @@ func NewCmdCheck(f *factory.Factory) *cobra.Command {
 			return checkRun(cmd.Context(), &checkOptions{
 				dir:        args[0],
 				io:         f.IOStream,
-				Storage:    f.Storage,
+				storage:    f.Storage,
 				inspector:  f.Inspector,
 				manifester: f.Manifester,
 			})
@@ -34,26 +34,32 @@ func NewCmdCheck(f *factory.Factory) *cobra.Command {
 type checkOptions struct {
 	dir        string // specified bundle folder that should be verified
 	io         core.IO
-	Storage    *storage.Storage
+	storage    *storage.Storage
 	inspector  *inspect.Inspector
 	manifester *manifest.Manifester
 }
 
 func checkRun(ctx context.Context, opts *checkOptions) error {
-	b, err := opts.Storage.LoadFromAbs(opts.dir, nil)
+	b, err := opts.storage.LoadFromAbs(opts.dir, nil)
 	if err != nil {
 		return err
 	}
 
-	if err := opts.manifester.CreateRequirement(&manifest.CreateRequirementInput{Parent: b}); err != nil {
-		return err
-	}
+	// TODO: some issue here with execution logic
+	//
+	// if err := opts.manifester.CreateRequirement(&manifest.CreateRequirementInput{Parent: b}); err != nil {
+	// 	return err
+	// }
 
-	if err := opts.manifester.Upgrade(opts.dir, b); err != nil {
+	if err := opts.manifester.SyncLockfile(ctx, b); err != nil {
 		return err
 	}
 
 	if err := opts.inspector.Inspect(b); err != nil {
+		return err
+	}
+
+	if err := opts.manifester.Upgrade(opts.dir, b); err != nil {
 		return err
 	}
 
