@@ -61,15 +61,11 @@ func (br *BundleRaw) ToBundle(v *VersionExpr, ignoreFile *IgnoreFile) (*Bundle, 
 
 	b := &Bundle{
 		Version:    v,
-		BundleFile: br.BundleFile,
-		LockFile:   br.LockFile,
+		BundleFile: bundlefile.PrepareSchema(br.BundleFile),
+		LockFile:   lockfile.PrepareSchema(br.LockFile),
 		RegoFiles:  br.RegoFiles,
 		IgnoreFile: ignoreFile,
 		OtherFiles: br.OtherFiles,
-	}
-
-	if b.LockFile == nil {
-		b.LockFile = lockfile.Init()
 	}
 
 	modules, err := parseModuleList(br)
@@ -84,23 +80,20 @@ func (br *BundleRaw) ToBundle(v *VersionExpr, ignoreFile *IgnoreFile) (*Bundle, 
 }
 
 func parseModuleList(br *BundleRaw) ([]*lockfile.ModDecl, error) {
-	result := make([]*lockfile.ModDecl, len(br.RegoFiles))
+	result := make([]*lockfile.ModDecl, 0, len(br.RegoFiles))
 
-	var i int
 	for filePath, f := range br.RegoFiles {
 		requireList, err := parseRequireList(br.BundleFile, f)
 		if err != nil {
 			return nil, err
 		}
 
-		result[i] = &lockfile.ModDecl{
-			Package: fmt.Sprintf("%s.%s", br.BundleFile.Package.Name, f.Package()),
+		result = append(result, &lockfile.ModDecl{
+			Package: br.BundleFile.Package.Name + "." + f.Package(),
 			Source:  filePath,
 			Sum:     f.Sum(),
 			Require: requireList,
-		}
-
-		i++
+		})
 	}
 
 	sort.Slice(result, func(i, j int) bool {
@@ -121,7 +114,7 @@ func parseRequireList(require *bundlefile.Schema, f *regofile.File) ([]string, e
 			return nil, fmt.Errorf("undefined import '%s' in %s", v.Path.String(), f.Path)
 		}
 
-		result[i] = FormatVersion(p.Repository, p.Version)
+		result[i] = FormatSourceVersion(p.Repository, p.Version)
 	}
 
 	return result, nil

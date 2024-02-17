@@ -115,10 +115,10 @@ func ParseVersionExpr(versionStr string) (*VersionExpr, error) {
 	}
 }
 
-func FormatVersion(source string, version string) string {
+func FormatSourceVersion(source, version string) string {
 	return source + "@" + version
 }
 
-func FormatVersionFromBundle(b *Bundle) string {
-	return FormatVersion(b.Repository(), b.Version.String())
+func FormatSourceVersionFromBundle(b *Bundle) string {
+	return FormatSourceVersion(b.Repository(), b.Version.String())
 }
