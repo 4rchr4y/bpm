@@ -7,7 +7,7 @@ import (
 	"github.com/4rchr4y/bpm/bundleutil/manifest"
 	"github.com/4rchr4y/bpm/cli/cmdutil/factory"
 	"github.com/4rchr4y/bpm/cli/cmdutil/require"
-	"github.com/4rchr4y/bpm/core"
+	"github.com/4rchr4y/bpm/iostream/iostreamiface"
 	"github.com/4rchr4y/bpm/storage"
 	"github.com/spf13/cobra"
 )
@@ -33,7 +33,7 @@ func NewCmdCheck(f *factory.Factory) *cobra.Command {
 
 type checkOptions struct {
 	dir        string // specified bundle folder that should be verified
-	io         core.IO
+	io         iostreamiface.IO
 	storage    *storage.Storage
 	inspector  *inspect.Inspector
 	manifester *manifest.Manifester

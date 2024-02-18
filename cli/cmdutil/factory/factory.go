@@ -4,9 +4,9 @@ import (
 	"github.com/4rchr4y/bpm/bundleutil/encode"
 	"github.com/4rchr4y/bpm/bundleutil/inspect"
 	"github.com/4rchr4y/bpm/bundleutil/manifest"
-	"github.com/4rchr4y/bpm/core"
 	"github.com/4rchr4y/bpm/fetch"
 	"github.com/4rchr4y/bpm/internal/service/github"
+	"github.com/4rchr4y/bpm/iostream/iostreamiface"
 	"github.com/4rchr4y/bpm/storage"
 	"github.com/4rchr4y/godevkit/v3/syswrap/ioiface"
 	"github.com/4rchr4y/godevkit/v3/syswrap/osiface"
@@ -17,7 +17,7 @@ type Factory struct {
 	Version string // app version
 	Dir     string
 
-	IOStream   core.IO
+	IOStream   iostreamiface.IO
 	Storage    *storage.Storage
 	Inspector  *inspect.Inspector
 	Encoder    *encode.Encoder

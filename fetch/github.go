@@ -8,7 +8,7 @@ import (
 	"github.com/4rchr4y/bpm/bundle"
 	"github.com/4rchr4y/bpm/bundleutil"
 	"github.com/4rchr4y/bpm/constant"
-	"github.com/4rchr4y/bpm/core"
+	"github.com/4rchr4y/bpm/iostream/iostreamiface"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -25,7 +25,7 @@ type githubFetcherClient interface {
 }
 
 type GithubFetcher struct {
-	IO      core.IO
+	IO      iostreamiface.IO
 	Client  githubFetcherClient
 	Encoder githubFetcherEncoder
 }

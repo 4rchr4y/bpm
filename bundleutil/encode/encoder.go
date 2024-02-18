@@ -14,7 +14,7 @@ import (
 	"github.com/4rchr4y/bpm/bundle/regofile"
 	"github.com/4rchr4y/bpm/bundleutil"
 	"github.com/4rchr4y/bpm/constant"
-	"github.com/4rchr4y/bpm/core"
+	"github.com/4rchr4y/bpm/iostream/iostreamiface"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsimple"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
@@ -23,7 +23,7 @@ import (
 )
 
 type Encoder struct {
-	IO core.IO
+	IO iostreamiface.IO
 }
 
 func (e *Encoder) DecodeIgnoreFile(content []byte) (*bundle.IgnoreFile, error) {

@@ -24,8 +24,10 @@ func (s *Storage) Store(b *bundle.Bundle) error {
 
 	s.IO.PrintfInfo("saving to %s", dirPath)
 
-	if err := s.processRegoFiles(b.RegoFiles, dirPath); err != nil {
-		return fmt.Errorf("error occurred rego files processing: %v", err)
+	for _, file := range b.RegoFiles {
+		if err := s.processRegoFile(file, dirPath); err != nil {
+			return err
+		}
 	}
 
 	if err := s.processLockFile(b.LockFile, dirPath); err != nil {
@@ -64,22 +66,20 @@ func (s *Storage) processBundleFile(bundleFile *bundlefile.Schema, dir string) e
 	return s.OSWrap.WriteFile(path, bytes, 0644)
 }
 
-func (s *Storage) processRegoFiles(files map[string]*regofile.File, dir string) error {
-	for filePath, file := range files {
-		pathToSave := filepath.Join(dir, filePath)
-		dirToSave := filepath.Dir(pathToSave)
+func (s *Storage) processRegoFile(file *regofile.File, dir string) error {
+	pathToSave := filepath.Join(dir, file.Path)
+	dirToSave := filepath.Dir(pathToSave)
 
-		if _, err := os.Stat(dirToSave); os.IsNotExist(err) {
-			if err := os.MkdirAll(dirToSave, 0755); err != nil {
-				return fmt.Errorf("failed to create directory '%s': %v", dirToSave, err)
-			}
-		} else if err != nil {
-			return fmt.Errorf("error checking directory '%s': %v", dirToSave, err)
+	if _, err := os.Stat(dirToSave); os.IsNotExist(err) {
+		if err := os.MkdirAll(dirToSave, 0755); err != nil {
+			return fmt.Errorf("failed to create directory '%s': %v", dirToSave, err)
 		}
+	} else if err != nil {
+		return fmt.Errorf("error checking directory '%s': %v", dirToSave, err)
+	}
 
-		if err := s.OSWrap.WriteFile(pathToSave, file.Raw, 0644); err != nil {
-			return fmt.Errorf("failed to write file '%s': %v", pathToSave, err)
-		}
+	if err := s.OSWrap.WriteFile(pathToSave, file.Raw, 0644); err != nil {
+		return fmt.Errorf("failed to write file '%s': %v", pathToSave, err)
 	}
 
 	return nil

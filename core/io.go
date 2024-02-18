@@ -1,7 +1,5 @@
 package core
 
-import "io"
-
 type StdoutMode int
 
 const (
@@ -10,21 +8,3 @@ const (
 )
 
 const StdoutTimeFormat = "15:04:05"
-
-type IO interface {
-	Println(a ...any)
-	Printf(format string, a ...any)
-
-	PrintfWarn(format string, a ...any)
-	PrintfErr(format string, a ...any)
-	PrintfDebug(format string, a ...any)
-	PrintfOk(format string, a ...any)
-	PrintfInfo(format string, a ...any)
-
-	GetStdin() io.Reader
-	GetStdout() io.Writer
-	GetStdoutErr() io.Writer
-	GetStdoutMode(mode StdoutMode) StdoutMode
-
-	SetStdoutMode(mode StdoutMode)
-}

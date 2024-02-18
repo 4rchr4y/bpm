@@ -7,7 +7,7 @@ import (
 	"github.com/4rchr4y/bpm/bundle/bundlefile"
 	"github.com/4rchr4y/bpm/bundle/lockfile"
 	"github.com/4rchr4y/bpm/bundleutil"
-	"github.com/4rchr4y/bpm/core"
+	"github.com/4rchr4y/bpm/iostream/iostreamiface"
 	"github.com/4rchr4y/godevkit/v3/syswrap/ioiface"
 	"github.com/4rchr4y/godevkit/v3/syswrap/osiface"
 )
@@ -22,7 +22,7 @@ type storageHCLEncoder interface {
 
 type Storage struct {
 	Dir     string
-	IO      core.IO
+	IO      iostreamiface.IO
 	OSWrap  osiface.OSWrapper
 	IOWrap  ioiface.IOWrapper
 	Encoder storageHCLEncoder

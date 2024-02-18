@@ -5,12 +5,10 @@ import (
 	"os"
 
 	"github.com/4rchr4y/bpm/bundle"
-	"github.com/4rchr4y/bpm/bundleutil/encode"
 	"github.com/4rchr4y/bpm/bundleutil/manifest"
 	"github.com/4rchr4y/bpm/cli/cmdutil/factory"
 	"github.com/4rchr4y/bpm/cli/cmdutil/require"
-	"github.com/4rchr4y/bpm/core"
-	"github.com/4rchr4y/bpm/fetch"
+	"github.com/4rchr4y/bpm/iostream/iostreamiface"
 	"github.com/4rchr4y/bpm/storage"
 	"github.com/spf13/cobra"
 )
@@ -35,11 +33,9 @@ func NewCmdGet(f *factory.Factory) *cobra.Command {
 				io:         f.IOStream,
 				workDir:    wd,
 				url:        args[0],
-				Version:    version,
-				Fetcher:    f.Fetcher,
-				Storage:    f.Storage,
-				Encoder:    f.Encoder,
-				Manifester: f.Manifester,
+				version:    version,
+				storage:    f.Storage,
+				manifester: f.Manifester,
 			})
 		},
 	}
@@ -49,23 +45,21 @@ func NewCmdGet(f *factory.Factory) *cobra.Command {
 }
 
 type getOptions struct {
-	io         core.IO
+	io         iostreamiface.IO
 	workDir    string // bundle working directory
 	url        string // bundle repository that needs to be installed
-	Version    string // specified bundle version
-	Fetcher    *fetch.Fetcher
-	Storage    *storage.Storage
-	Encoder    *encode.Encoder      // decoder of bundle component files
-	Manifester *manifest.Manifester // bundle manifest file control operator
+	version    string // specified bundle version
+	storage    *storage.Storage
+	manifester *manifest.Manifester // bundle manifest file control operator
 }
 
 func getRun(ctx context.Context, opts *getOptions) error {
-	dest, err := opts.Storage.LoadFromAbs(opts.workDir, nil)
+	dest, err := opts.storage.LoadFromAbs(opts.workDir, nil)
 	if err != nil {
 		return err
 	}
 
-	v, err := bundle.ParseVersionExpr(opts.Version)
+	v, err := bundle.ParseVersionExpr(opts.version)
 	if err != nil {
 		return err
 	}
@@ -76,11 +70,11 @@ func getRun(ctx context.Context, opts *getOptions) error {
 		Version: v,
 	}
 
-	if err := opts.Manifester.InsertRequirement(ctx, input); err != nil {
+	if err := opts.manifester.InsertRequirement(ctx, input); err != nil {
 		return err
 	}
 
-	if err := opts.Manifester.Upgrade(opts.workDir, dest); err != nil {
+	if err := opts.manifester.Upgrade(opts.workDir, dest); err != nil {
 		return err
 	}
 
