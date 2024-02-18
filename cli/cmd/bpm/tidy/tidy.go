@@ -6,20 +6,23 @@ import (
 	"github.com/4rchr4y/bpm/bundleutil/inspect"
 	"github.com/4rchr4y/bpm/bundleutil/manifest"
 	"github.com/4rchr4y/bpm/cli/cmdutil/factory"
-	"github.com/4rchr4y/bpm/cli/cmdutil/require"
 	"github.com/4rchr4y/bpm/iostream/iostreamiface"
 	"github.com/4rchr4y/bpm/storage"
 	"github.com/spf13/cobra"
 )
 
-func NewCmdCheck(f *factory.Factory) *cobra.Command {
+func NewCmdTidy(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "check PATH",
-		Short: "Check specified bundle",
-		Args:  require.ExactArgs(1),
+		Use:   "tidy [PATH]",
+		Short: "Clean and inspect specified bundle",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return checkRun(cmd.Context(), &checkOptions{
-				dir:        args[0],
+			dir := "."
+			if len(args) > 0 {
+				dir = args[0]
+			}
+
+			return tidyRun(cmd.Context(), &tidyOptions{
+				dir:        dir,
 				io:         f.IOStream,
 				storage:    f.Storage,
 				inspector:  f.Inspector,
@@ -31,7 +34,7 @@ func NewCmdCheck(f *factory.Factory) *cobra.Command {
 	return cmd
 }
 
-type checkOptions struct {
+type tidyOptions struct {
 	dir        string // specified bundle folder that should be verified
 	io         iostreamiface.IO
 	storage    *storage.Storage
@@ -39,7 +42,7 @@ type checkOptions struct {
 	manifester *manifest.Manifester
 }
 
-func checkRun(ctx context.Context, opts *checkOptions) error {
+func tidyRun(ctx context.Context, opts *tidyOptions) error {
 	b, err := opts.storage.LoadFromAbs(opts.dir, nil)
 	if err != nil {
 		return err
@@ -57,6 +60,6 @@ func checkRun(ctx context.Context, opts *checkOptions) error {
 		return err
 	}
 
-	opts.io.PrintfOk("bundle '%s' is checked", b.Repository())
+	opts.io.PrintfOk("bundle %s", b.Repository())
 	return nil
 }
