@@ -11,6 +11,7 @@ import (
 	"github.com/4rchr4y/bpm/bundle/bundlefile"
 	"github.com/4rchr4y/bpm/bundle/lockfile"
 	"github.com/4rchr4y/bpm/bundle/regofile"
+	"github.com/4rchr4y/bpm/bundleutil"
 	"github.com/4rchr4y/bpm/constant"
 	"github.com/4rchr4y/bpm/core"
 	"github.com/4rchr4y/bpm/fetch"
@@ -74,7 +75,10 @@ func (m *Manifester) InsertRequirement(ctx context.Context, input *InsertRequire
 	)
 
 	if ok && existingRequirement.Version == input.Version.String() {
-		m.IO.PrintfOk("bundle '%s@%s' is already installed", input.Source, input.Version.String())
+		m.IO.PrintfOk(
+			"bundle %s is already installed",
+			bundleutil.FormatSourceVersion(input.Source, input.Version.String()),
+		)
 		return m.SyncLockfile(ctx, input.Parent) // such requirement is already installed, then just synchronize
 	}
 
@@ -90,19 +94,25 @@ func (m *Manifester) InsertRequirement(ctx context.Context, input *InsertRequire
 		}
 
 		if result.Target.Version.String() == existingVersion.String() {
-			m.IO.PrintfOk("bundle '%s@%s' is already installed", result.Target.Repository(), result.Target.Version.String())
+			m.IO.PrintfOk(
+				"bundle %s is already installed",
+				bundleutil.FormatSourceVersion(result.Target.Repository(), result.Target.Version.String()),
+			)
 			return m.SyncLockfile(ctx, input.Parent)
 		}
 
 		isGreater := result.Target.Version.GreaterThan(existingVersion)
 		if !isGreater {
-			m.IO.PrintfWarn("installing an older bundle %s@%s version", result.Target.Repository(), result.Target.Version.String())
+			m.IO.PrintfWarn(
+				"installing an older bundle %s version",
+				bundleutil.FormatSourceVersion(result.Target.Repository(), result.Target.Version.String()),
+			)
 		}
 
 		m.IO.PrintfInfo("upgrading %s %s %s",
-			bundle.FormatSourceVersion(input.Source, input.Version.String()),
+			bundleutil.FormatSourceVersion(input.Source, input.Version.String()),
 			compOp[isGreater],
-			bundle.FormatSourceVersionFromBundle(result.Target),
+			bundleutil.FormatSourceVersion(result.Target.Repository(), result.Target.Version.String()),
 		)
 
 		input.Parent.BundleFile.Require.List[idx] = NewBundlefileRequirementDecl(result.Target)
@@ -134,7 +144,7 @@ func (f *Manifester) SyncLockfile(ctx context.Context, parent *bundle.Bundle) er
 		}
 
 		// creating a cache of lock requirements
-		formattedVersion := bundle.FormatSourceVersion(req.Repository, req.Version)
+		formattedVersion := bundleutil.FormatSourceVersion(req.Repository, req.Version)
 		requireCache[formattedVersion] = struct{}{}
 
 	}
@@ -157,7 +167,8 @@ func (f *Manifester) SyncLockfile(ctx context.Context, parent *bundle.Bundle) er
 				return err
 			}
 
-			if _, exists := requireCache[bundle.FormatSourceVersionFromBundle(b)]; !exists {
+			key := bundleutil.FormatSourceVersion(b.Repository(), b.Version.String())
+			if _, exists := requireCache[key]; !exists {
 				parent.LockFile.Require.List = append(
 					parent.LockFile.Require.List,
 					NewLockfileRequirementDecl(b, defineDirection(result.Target, b)),
@@ -227,7 +238,7 @@ func parseRequireList(require *bundlefile.Schema, f *regofile.File) ([]string, e
 			return nil, fmt.Errorf("undefined import '%s' in %s", pathStr, f.Path)
 		}
 
-		result[i] = bundle.FormatSourceVersion(p.Repository, p.Version)
+		result[i] = bundleutil.FormatSourceVersion(p.Repository, p.Version)
 	}
 
 	return result, nil

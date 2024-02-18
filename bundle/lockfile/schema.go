@@ -14,6 +14,11 @@ const (
 	Indirect DirectionType = "indirect"
 )
 
+var Keywords = [...]string{
+	Direct.String(),
+	Indirect.String(),
+}
+
 func (dt DirectionType) String() string {
 	return string(dt)
 }

@@ -1,7 +1,6 @@
 package bundlefile
 
 import (
-	"bytes"
 	"crypto/sha256"
 	"fmt"
 
@@ -59,15 +58,18 @@ func PrepareSchema(existing *Schema) *Schema {
 
 func (*Schema) Filename() string { return constant.BundleFileName }
 
-func (bf *Schema) Sum() string {
+func (s *Schema) Sum() string {
 	f := hclwrite.NewEmptyFile()
-	gohcl.EncodeIntoBody(bf, f.Body())
+	gohcl.EncodeIntoBody(s, f.Body())
 
-	result := bytes.TrimSpace(f.Bytes())
-	result = bytes.Replace(result, []byte("{\n\n"), []byte("{\n"), -1)
-	result = bytes.Replace(result, []byte("{\n}"), []byte("{}"), -1)
+	// result := bytes.TrimSpace(f.Bytes())
+	// result = bytes.Replace(result, []byte("{\n\n"), []byte("{\n"), -1)
+	// result = bytes.Replace(result, []byte("{\n}"), []byte("{}"), -1)
 
-	return bundleutil.ChecksumSHA256(sha256.New(), result)
+	return bundleutil.ChecksumSHA256(
+		sha256.New(),
+		bundleutil.FormatBundleFile(f.Bytes()),
+	)
 }
 
 type FilterFn func(r *RequirementDecl) bool

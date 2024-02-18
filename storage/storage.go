@@ -1,12 +1,12 @@
 package storage
 
 import (
-	"fmt"
 	"path/filepath"
 
 	"github.com/4rchr4y/bpm/bundle"
 	"github.com/4rchr4y/bpm/bundle/bundlefile"
 	"github.com/4rchr4y/bpm/bundle/lockfile"
+	"github.com/4rchr4y/bpm/bundleutil"
 	"github.com/4rchr4y/bpm/core"
 	"github.com/4rchr4y/godevkit/v3/syswrap/ioiface"
 	"github.com/4rchr4y/godevkit/v3/syswrap/osiface"
@@ -34,5 +34,5 @@ func (s *Storage) Some(repo string, version string) bool {
 }
 
 func (s *Storage) MakeBundleSourcePath(repo string, version string) string {
-	return filepath.Join(s.Dir, fmt.Sprintf("%s@%s", repo, version))
+	return filepath.Join(s.Dir, bundleutil.FormatSourceVersion(repo, version))
 }

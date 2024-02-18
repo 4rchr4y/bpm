@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/4rchr4y/bpm/bundle"
+	"github.com/4rchr4y/bpm/bundleutil"
 	"github.com/4rchr4y/bpm/constant"
 	"github.com/4rchr4y/bpm/core"
 	"github.com/go-git/go-git/v5"
@@ -30,7 +31,7 @@ type GithubFetcher struct {
 }
 
 func (gh *GithubFetcher) Download(ctx context.Context, source string, tag *bundle.VersionExpr) (*bundle.Bundle, error) {
-	gh.IO.PrintfInfo("downloading %s@%s", source, tag.String())
+	gh.IO.PrintfInfo("downloading %s", bundleutil.FormatSourceVersion(source, tag.String()))
 
 	options := &git.CloneOptions{
 		URL: fmt.Sprintf("https://%s.git", source),

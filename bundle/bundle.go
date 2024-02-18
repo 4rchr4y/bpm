@@ -32,9 +32,9 @@ func (br *BundleRaw) ToBundle(v *VersionExpr, ignoreFile *IgnoreFile) (*Bundle, 
 
 type Bundle struct {
 	Version    *VersionExpr
-	BundleFile *bundlefile.Schema        `validate:"required"`
-	LockFile   *lockfile.Schema          `validate:"required"`
-	RegoFiles  map[string]*regofile.File `validate:"required"`
+	BundleFile *bundlefile.Schema
+	LockFile   *lockfile.Schema
+	RegoFiles  map[string]*regofile.File
 	IgnoreFile *IgnoreFile
 	OtherFiles map[string][]byte
 }
