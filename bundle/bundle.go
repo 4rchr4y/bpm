@@ -3,7 +3,6 @@ package bundle
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -24,6 +23,8 @@ func NewIgnoreFile() *IgnoreFile {
 		List: make(map[string]struct{}),
 	}
 }
+
+func (*IgnoreFile) Filename() string { return constant.IgnoreFileName }
 
 func (f *IgnoreFile) Store(fileName string) {
 	if fileName != "" {
@@ -55,70 +56,76 @@ type BundleRaw struct {
 }
 
 func (br *BundleRaw) ToBundle(v *VersionExpr, ignoreFile *IgnoreFile) (*Bundle, error) {
-	if br.BundleFile == nil {
-		return nil, fmt.Errorf("can't find '%s' file", constant.BundleFileName)
-	}
-
 	b := &Bundle{
 		Version:    v,
 		BundleFile: bundlefile.PrepareSchema(br.BundleFile),
 		LockFile:   lockfile.PrepareSchema(br.LockFile),
+		// BundleFile: br.BundleFile,
+		// LockFile:   br.LockFile,
 		RegoFiles:  br.RegoFiles,
 		IgnoreFile: ignoreFile,
 		OtherFiles: br.OtherFiles,
 	}
 
-	modules, err := parseModuleList(br)
-	if err != nil {
-		return nil, err
-	}
+	// modules, err := parseModuleList(br)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	b.LockFile.Modules = &lockfile.ModulesBlock{List: modules}
-	b.LockFile.Sum = b.Sum()
+	// b.LockFile.Modules = &lockfile.ModulesBlock{List: modules}
+	// b.LockFile.Sum = b.Sum()
 
 	return b, nil
 }
 
-func parseModuleList(br *BundleRaw) ([]*lockfile.ModDecl, error) {
-	result := make([]*lockfile.ModDecl, 0, len(br.RegoFiles))
+// func parseModuleList(br *BundleRaw) ([]*lockfile.ModDecl, error) {
+// 	result := make([]*lockfile.ModDecl, 0, len(br.RegoFiles))
 
-	for filePath, f := range br.RegoFiles {
-		requireList, err := parseRequireList(br.BundleFile, f)
-		if err != nil {
-			return nil, err
-		}
+// 	for filePath, f := range br.RegoFiles {
+// 		requireList, err := parseRequireList(br.BundleFile, f)
+// 		if err != nil {
+// 			return nil, err
+// 		}
 
-		result = append(result, &lockfile.ModDecl{
-			Package: br.BundleFile.Package.Name + "." + f.Package(),
-			Source:  filePath,
-			Sum:     f.Sum(),
-			Require: requireList,
-		})
-	}
+// 		result = append(result, &lockfile.ModDecl{
+// 			Package: br.BundleFile.Package.Name + "." + f.Package(),
+// 			Source:  filePath,
+// 			Sum:     f.Sum(),
+// 			Require: requireList,
+// 		})
+// 	}
 
-	sort.Slice(result, func(i, j int) bool {
-		return result[i].Package < result[j].Package
-	})
+// 	sort.Slice(result, func(i, j int) bool {
+// 		return result[i].Package < result[j].Package
+// 	})
 
-	return result, nil
-}
+// 	return result, nil
+// }
 
-func parseRequireList(require *bundlefile.Schema, f *regofile.File) ([]string, error) {
-	result := make([]string, len(f.Parsed.Imports))
+// func parseRequireList(require *bundlefile.Schema, f *regofile.File) ([]string, error) {
+// 	if len(f.Parsed.Imports) == 0 {
+// 		return nil, nil
+// 	}
 
-	for i, v := range f.Parsed.Imports {
-		importPath := strings.TrimPrefix(v.Path.String(), regofile.ImportPathPrefix)
-		segments := strings.Split(importPath, ".")
-		p, _, ok := require.FindIndexOfRequirement(bundlefile.FilterByName(segments[0]))
-		if !ok {
-			return nil, fmt.Errorf("undefined import '%s' in %s", v.Path.String(), f.Path)
-		}
+// 	result := make([]string, len(f.Parsed.Imports))
+// 	for i, v := range f.Parsed.Imports {
+// 		pathStr := v.Path.String()
+// 		importPath := strings.TrimPrefix(pathStr, regofile.ImportPathPrefix)
+// 		dotIndex := strings.Index(importPath, ".")
+// 		if dotIndex != -1 {
+// 			importPath = importPath[:dotIndex]
+// 		}
 
-		result[i] = FormatSourceVersion(p.Repository, p.Version)
-	}
+// 		p, _, ok := require.FindIndexOfRequirement(bundlefile.FilterByName(importPath))
+// 		if !ok {
+// 			return nil, fmt.Errorf("undefined import '%s' in %s", pathStr, f.Path)
+// 		}
 
-	return result, nil
-}
+// 		result[i] = FormatSourceVersion(p.Repository, p.Version)
+// 	}
+
+// 	return result, nil
+// }
 
 type Bundle struct {
 	Version    *VersionExpr

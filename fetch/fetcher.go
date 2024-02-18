@@ -91,11 +91,15 @@ func (d *Fetcher) Fetch(ctx context.Context, source string, version *bundle.Vers
 }
 
 func (f *Fetcher) PlainFetch(ctx context.Context, source string, version *bundle.VersionExpr) (*bundle.Bundle, error) {
-	if b, _ := f.FetchLocal(ctx, source, version); b != nil {
+	b, err := f.FetchLocal(ctx, source, version)
+	if err != nil {
+		f.IO.PrintfErr(err.Error())
+	}
+	if b != nil {
 		return b, nil
 	}
 
-	b, err := f.FetchRemote(ctx, source, version)
+	b, err = f.FetchRemote(ctx, source, version)
 	if err != nil {
 		return nil, err
 	}

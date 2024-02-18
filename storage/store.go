@@ -22,13 +22,13 @@ func (s *Storage) StoreSome(b *bundle.Bundle) error {
 func (s *Storage) Store(b *bundle.Bundle) error {
 	dirPath := s.MakeBundleSourcePath(b.Repository(), b.Version.String())
 
-	s.IO.PrintfDebug("saving to %s", dirPath)
+	s.IO.PrintfInfo("saving to %s", dirPath)
 
 	if err := s.processRegoFiles(b.RegoFiles, dirPath); err != nil {
 		return fmt.Errorf("error occurred rego files processing: %v", err)
 	}
 
-	if err := s.processBundleLockFile(b.LockFile, dirPath); err != nil {
+	if err := s.processLockFile(b.LockFile, dirPath); err != nil {
 		return fmt.Errorf("failed to encode %s file: %v", b.LockFile.Filename(), err)
 	}
 
@@ -36,10 +36,21 @@ func (s *Storage) Store(b *bundle.Bundle) error {
 		return fmt.Errorf("failed to encode %s file: %v", b.BundleFile.Filename(), err)
 	}
 
+	if err := s.processIgnoreFile(b.IgnoreFile, dirPath); err != nil {
+		return fmt.Errorf("failed to encode %s file: %v", b.BundleFile.Filename(), err)
+	}
+
 	return nil
 }
 
-func (s *Storage) processBundleLockFile(lockFile *lockfile.Schema, dir string) error {
+func (s *Storage) processIgnoreFile(ignorefile *bundle.IgnoreFile, dir string) error {
+	bytes := s.Encoder.EncodeIgnoreFile(ignorefile)
+	path := filepath.Join(dir, ignorefile.Filename())
+
+	return s.OSWrap.WriteFile(path, bytes, 0644)
+}
+
+func (s *Storage) processLockFile(lockFile *lockfile.Schema, dir string) error {
 	bytes := s.Encoder.EncodeLockFile(lockFile)
 	path := filepath.Join(dir, lockFile.Filename())
 	if err := s.OSWrap.WriteFile(path, bytes, 0644); err != nil {

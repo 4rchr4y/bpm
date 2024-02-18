@@ -12,11 +12,8 @@ import (
 	"github.com/4rchr4y/godevkit/v3/syswrap/osiface"
 )
 
-type storageFetcher interface {
-	FetchLocal(dirPath string) (*bundle.Bundle, error)
-}
-
 type storageHCLEncoder interface {
+	EncodeIgnoreFile(ignorefile *bundle.IgnoreFile) []byte
 	EncodeBundleFile(bundlefile *bundlefile.Schema) []byte
 	EncodeLockFile(lockfile *lockfile.Schema) []byte
 	DecodeIgnoreFile(content []byte) (*bundle.IgnoreFile, error)

@@ -45,12 +45,6 @@ func checkRun(ctx context.Context, opts *checkOptions) error {
 		return err
 	}
 
-	// TODO: some issue here with execution logic
-	//
-	// if err := opts.manifester.CreateRequirement(&manifest.CreateRequirementInput{Parent: b}); err != nil {
-	// 	return err
-	// }
-
 	if err := opts.manifester.SyncLockfile(ctx, b); err != nil {
 		return err
 	}
