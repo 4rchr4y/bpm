@@ -96,21 +96,28 @@ func PrepareSchema(existing *Schema) *Schema {
 
 func (*Schema) Filename() string { return constant.LockFileName }
 
-type FilterFn func(r *RequirementDecl) bool
+type RequireFilterFn func(r *RequirementDecl) bool
+type ModulesFilterFn func(r *ModDecl) bool
 
-func FilterByVersion(version string) FilterFn {
+func ModulesFilterByPackage(pname string) ModulesFilterFn {
+	return func(m *ModDecl) bool {
+		return m.Package == pname
+	}
+}
+
+func RequireFilterByVersion(version string) RequireFilterFn {
 	return func(r *RequirementDecl) bool {
 		return r.Version == version
 	}
 }
 
-func FilterBySource(source string) FilterFn {
+func RequireFilterBySource(source string) RequireFilterFn {
 	return func(r *RequirementDecl) bool {
 		return r.Repository == source
 	}
 }
 
-func (bf *Schema) SomeRequirement(filters ...FilterFn) bool {
+func (bf *Schema) SomeRequirement(filters ...RequireFilterFn) bool {
 	if bf.Require == nil {
 		return false
 	}
@@ -126,12 +133,28 @@ func (bf *Schema) SomeRequirement(filters ...FilterFn) bool {
 	})
 }
 
-func (f *Schema) FindIndexOfRequirement(filters ...FilterFn) (*RequirementDecl, int, bool) {
+func (f *Schema) FindIndexOfRequirement(filters ...RequireFilterFn) (*RequirementDecl, int, bool) {
 	if f.Require == nil {
 		return nil, -1, false
 	}
 
 	return lo.FindIndexOf(f.Require.List, func(item *RequirementDecl) bool {
+		for _, filterFn := range filters {
+			if !filterFn(item) {
+				return false
+			}
+		}
+
+		return true
+	})
+}
+
+func (s *Schema) SomeModule(filters ...ModulesFilterFn) bool {
+	if s.Require == nil {
+		return false
+	}
+
+	return lo.SomeBy(s.Modules.List, func(item *ModDecl) bool {
 		for _, filterFn := range filters {
 			if !filterFn(item) {
 				return false

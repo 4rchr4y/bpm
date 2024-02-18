@@ -149,6 +149,8 @@ func (f *Manifester) SyncLockfile(ctx context.Context, parent *bundle.Bundle) er
 
 	}
 
+	requireList := make(map[string]*bundle.Bundle, 0)
+
 	// go through all direct requirements to ensure that the
 	// lock file is up to date
 	for _, r := range parent.BundleFile.Require.List {
@@ -161,6 +163,9 @@ func (f *Manifester) SyncLockfile(ctx context.Context, parent *bundle.Bundle) er
 		if err != nil {
 			return err
 		}
+
+		// key := bundleutil.FormatSourceWithVersion(result.Target.Repository(), result.Target.Version.String())
+		requireList[result.Target.Name()] = result.Target
 
 		for _, b := range result.Merge() {
 			if err := f.Storage.StoreSome(b); err != nil {
@@ -177,7 +182,7 @@ func (f *Manifester) SyncLockfile(ctx context.Context, parent *bundle.Bundle) er
 		}
 	}
 
-	modules, err := parseModuleList(parent)
+	modules, err := parseModuleList(parent, requireList)
 	if err != nil {
 		return err
 	}
@@ -195,11 +200,11 @@ func defineDirection(target, actual *bundle.Bundle) lockfile.DirectionType {
 	return lockfile.Indirect
 }
 
-func parseModuleList(b *bundle.Bundle) ([]*lockfile.ModDecl, error) {
+func parseModuleList(b *bundle.Bundle, requireList map[string]*bundle.Bundle) ([]*lockfile.ModDecl, error) {
 	result := make([]*lockfile.ModDecl, 0, len(b.RegoFiles))
 
 	for filePath, f := range b.RegoFiles {
-		requireList, err := parseRequireList(b.BundleFile, f)
+		requireList, err := parseRequireList(requireList, f)
 		if err != nil {
 			return nil, err
 		}
@@ -219,7 +224,7 @@ func parseModuleList(b *bundle.Bundle) ([]*lockfile.ModDecl, error) {
 	return result, nil
 }
 
-func parseRequireList(require *bundlefile.Schema, f *regofile.File) ([]string, error) {
+func parseRequireList(requireList map[string]*bundle.Bundle, f *regofile.File) ([]string, error) {
 	if len(f.Parsed.Imports) == 0 {
 		return nil, nil
 	}
@@ -228,17 +233,27 @@ func parseRequireList(require *bundlefile.Schema, f *regofile.File) ([]string, e
 	for i, v := range f.Parsed.Imports {
 		pathStr := v.Path.String()
 		importPath := strings.TrimPrefix(pathStr, regofile.ImportPathPrefix)
+		packageName := importPath
 		dotIndex := strings.Index(importPath, ".")
 		if dotIndex != -1 {
-			importPath = importPath[:dotIndex]
+			packageName = importPath[:dotIndex]
 		}
 
-		p, _, ok := require.FindIndexOfRequirement(bundlefile.FilterByName(importPath))
-		if !ok {
+		// check that the package used really exists for this bundle
+		required, exists := requireList[packageName]
+		if !exists {
 			return nil, fmt.Errorf("undefined import '%s' in %s", pathStr, f.Path)
 		}
 
-		result[i] = bundleutil.FormatSourceWithVersion(p.Repository, p.Version)
+		// check that the module used exists in the specified package
+		if exists := required.LockFile.SomeModule(
+			lockfile.ModulesFilterByPackage(importPath),
+		); !exists {
+			return nil, fmt.Errorf("undefined import '%s' in %s", pathStr, f.Path)
+		}
+
+		// save information that this file requires a bundle of a specific version
+		result[i] = bundleutil.FormatSourceWithVersion(required.Repository(), required.Version.String())
 	}
 
 	return result, nil
