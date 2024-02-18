@@ -21,7 +21,7 @@ const (
 
 var (
 	PseudoSemTag = must.Must(version.NewSemver(PseudoSemTagStr))
-	VersionRegex = regexp.MustCompile(`^(v\d+\.\d+\.\d+)\+(\d{14})-(\w+)$`)
+	VersionRegex = regexp.MustCompile(VersionRegexStr)
 )
 
 type VersionExpr struct {
@@ -39,7 +39,10 @@ func NewVersionExprFromCommit(commit *object.Commit, tag *version.Version) *Vers
 }
 
 func (v *VersionExpr) IsPseudo() bool {
-	return v.SemTag.Original() == PseudoSemTagStr && v.Hash != "" && !v.Timestamp.IsZero()
+	return v.SemTag != nil &&
+		v.SemTag.Original() == PseudoSemTagStr &&
+		v.Hash != "" &&
+		!v.Timestamp.IsZero()
 }
 
 func (v *VersionExpr) Major() int { return v.SemTag.Segments()[0] }

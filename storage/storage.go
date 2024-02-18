@@ -34,5 +34,5 @@ func (s *Storage) Some(repo string, version string) bool {
 }
 
 func (s *Storage) MakeBundleSourcePath(repo string, version string) string {
-	return filepath.Join(s.Dir, bundleutil.FormatSourceVersion(repo, version))
+	return filepath.Join(s.Dir, bundleutil.FormatSourceWithVersion(repo, version))
 }

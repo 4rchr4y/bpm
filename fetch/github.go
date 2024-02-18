@@ -31,7 +31,7 @@ type GithubFetcher struct {
 }
 
 func (gh *GithubFetcher) Download(ctx context.Context, source string, tag *bundle.VersionExpr) (*bundle.Bundle, error) {
-	gh.IO.PrintfInfo("downloading %s", bundleutil.FormatSourceVersion(source, tag.String()))
+	gh.IO.PrintfInfo("downloading %s", bundleutil.FormatSourceWithVersion(source, tag.String()))
 
 	options := &git.CloneOptions{
 		URL: fmt.Sprintf("https://%s.git", source),

@@ -77,7 +77,7 @@ func (m *Manifester) InsertRequirement(ctx context.Context, input *InsertRequire
 	if ok && existingRequirement.Version == input.Version.String() {
 		m.IO.PrintfOk(
 			"bundle %s is already installed",
-			bundleutil.FormatSourceVersion(input.Source, input.Version.String()),
+			bundleutil.FormatSourceWithVersion(input.Source, input.Version.String()),
 		)
 		return m.SyncLockfile(ctx, input.Parent) // such requirement is already installed, then just synchronize
 	}
@@ -96,7 +96,7 @@ func (m *Manifester) InsertRequirement(ctx context.Context, input *InsertRequire
 		if result.Target.Version.String() == existingVersion.String() {
 			m.IO.PrintfOk(
 				"bundle %s is already installed",
-				bundleutil.FormatSourceVersion(result.Target.Repository(), result.Target.Version.String()),
+				bundleutil.FormatSourceWithVersion(result.Target.Repository(), result.Target.Version.String()),
 			)
 			return m.SyncLockfile(ctx, input.Parent)
 		}
@@ -105,14 +105,14 @@ func (m *Manifester) InsertRequirement(ctx context.Context, input *InsertRequire
 		if !isGreater {
 			m.IO.PrintfWarn(
 				"installing an older bundle %s version",
-				bundleutil.FormatSourceVersion(result.Target.Repository(), result.Target.Version.String()),
+				bundleutil.FormatSourceWithVersion(result.Target.Repository(), result.Target.Version.String()),
 			)
 		}
 
 		m.IO.PrintfInfo("upgrading %s %s %s",
-			bundleutil.FormatSourceVersion(input.Source, input.Version.String()),
+			bundleutil.FormatSourceWithVersion(input.Source, input.Version.String()),
 			compOp[isGreater],
-			bundleutil.FormatSourceVersion(result.Target.Repository(), result.Target.Version.String()),
+			bundleutil.FormatSourceWithVersion(result.Target.Repository(), result.Target.Version.String()),
 		)
 
 		input.Parent.BundleFile.Require.List[idx] = NewBundlefileRequirementDecl(result.Target)
@@ -144,7 +144,7 @@ func (f *Manifester) SyncLockfile(ctx context.Context, parent *bundle.Bundle) er
 		}
 
 		// creating a cache of lock requirements
-		formattedVersion := bundleutil.FormatSourceVersion(req.Repository, req.Version)
+		formattedVersion := bundleutil.FormatSourceWithVersion(req.Repository, req.Version)
 		requireCache[formattedVersion] = struct{}{}
 
 	}
@@ -167,7 +167,7 @@ func (f *Manifester) SyncLockfile(ctx context.Context, parent *bundle.Bundle) er
 				return err
 			}
 
-			key := bundleutil.FormatSourceVersion(b.Repository(), b.Version.String())
+			key := bundleutil.FormatSourceWithVersion(b.Repository(), b.Version.String())
 			if _, exists := requireCache[key]; !exists {
 				parent.LockFile.Require.List = append(
 					parent.LockFile.Require.List,
@@ -238,7 +238,7 @@ func parseRequireList(require *bundlefile.Schema, f *regofile.File) ([]string, e
 			return nil, fmt.Errorf("undefined import '%s' in %s", pathStr, f.Path)
 		}
 
-		result[i] = bundleutil.FormatSourceVersion(p.Repository, p.Version)
+		result[i] = bundleutil.FormatSourceWithVersion(p.Repository, p.Version)
 	}
 
 	return result, nil

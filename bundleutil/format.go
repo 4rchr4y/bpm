@@ -41,7 +41,7 @@ func FormatLockFile(content []byte) []byte {
 
 // FormatBundleFile designed to create a single place for forming a string
 // representing the repository and the bundle version
-func FormatSourceVersion(source, version string) string {
+func FormatSourceWithVersion(source, version string) string {
 	return source + "@" + version
 }
 

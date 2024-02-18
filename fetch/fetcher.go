@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/4rchr4y/bpm/bundle"
+	"github.com/4rchr4y/bpm/bundleutil"
 	"github.com/4rchr4y/bpm/core"
 )
 
@@ -16,7 +17,6 @@ type fetcherStorage interface {
 	Store(b *bundle.Bundle) error
 	Some(source string, version string) bool
 	Load(source string, version *bundle.VersionExpr) (*bundle.Bundle, error)
-	MakeBundleSourcePath(source string, version string) string
 }
 
 type fetcherGitHub interface {
@@ -115,7 +115,11 @@ func (f *Fetcher) FetchLocal(ctx context.Context, source string, version *bundle
 
 	b, err := f.Storage.Load(source, version)
 	if err != nil {
-		f.IO.PrintfErr("failed to load bundle %s from local storage: %v", f.Storage.MakeBundleSourcePath(source, version.String()), err)
+		f.IO.PrintfErr(
+			"failed to load bundle %s from local storage: %v",
+			bundleutil.FormatSourceWithVersion(source, version.String()),
+			err,
+		)
 		return nil, err
 	}
 
