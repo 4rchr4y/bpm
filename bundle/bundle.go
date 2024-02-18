@@ -3,50 +3,12 @@ package bundle
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"path/filepath"
 	"sort"
-	"strings"
 
 	"github.com/4rchr4y/bpm/bundle/bundlefile"
 	"github.com/4rchr4y/bpm/bundle/lockfile"
 	"github.com/4rchr4y/bpm/bundle/regofile"
-	"github.com/4rchr4y/bpm/constant"
 )
-
-// TODO: move to ignorefile folder
-type IgnoreFile struct {
-	List map[string]struct{}
-}
-
-func NewIgnoreFile() *IgnoreFile {
-	return &IgnoreFile{
-		List: make(map[string]struct{}),
-	}
-}
-
-func (*IgnoreFile) Filename() string { return constant.IgnoreFileName }
-
-func (f *IgnoreFile) Store(fileName string) {
-	if fileName != "" {
-		f.List[fileName] = struct{}{}
-		return
-	}
-}
-
-func (f *IgnoreFile) Some(path string) bool {
-	if path == "" || len(f.List) == 0 {
-		return false
-	}
-
-	dir := filepath.Dir(path)
-	if dir == "." {
-		return false
-	}
-
-	topLevelDir := strings.Split(dir, string(filepath.Separator))[0]
-	_, found := f.List[topLevelDir]
-	return found
-}
 
 type BundleRaw struct {
 	BundleFile *bundlefile.Schema
@@ -58,74 +20,15 @@ type BundleRaw struct {
 func (br *BundleRaw) ToBundle(v *VersionExpr, ignoreFile *IgnoreFile) (*Bundle, error) {
 	b := &Bundle{
 		Version:    v,
-		BundleFile: bundlefile.PrepareSchema(br.BundleFile),
-		LockFile:   lockfile.PrepareSchema(br.LockFile),
-		// BundleFile: br.BundleFile,
-		// LockFile:   br.LockFile,
+		BundleFile: br.BundleFile,
+		LockFile:   br.LockFile,
 		RegoFiles:  br.RegoFiles,
 		IgnoreFile: ignoreFile,
 		OtherFiles: br.OtherFiles,
 	}
 
-	// modules, err := parseModuleList(br)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// b.LockFile.Modules = &lockfile.ModulesBlock{List: modules}
-	// b.LockFile.Sum = b.Sum()
-
 	return b, nil
 }
-
-// func parseModuleList(br *BundleRaw) ([]*lockfile.ModDecl, error) {
-// 	result := make([]*lockfile.ModDecl, 0, len(br.RegoFiles))
-
-// 	for filePath, f := range br.RegoFiles {
-// 		requireList, err := parseRequireList(br.BundleFile, f)
-// 		if err != nil {
-// 			return nil, err
-// 		}
-
-// 		result = append(result, &lockfile.ModDecl{
-// 			Package: br.BundleFile.Package.Name + "." + f.Package(),
-// 			Source:  filePath,
-// 			Sum:     f.Sum(),
-// 			Require: requireList,
-// 		})
-// 	}
-
-// 	sort.Slice(result, func(i, j int) bool {
-// 		return result[i].Package < result[j].Package
-// 	})
-
-// 	return result, nil
-// }
-
-// func parseRequireList(require *bundlefile.Schema, f *regofile.File) ([]string, error) {
-// 	if len(f.Parsed.Imports) == 0 {
-// 		return nil, nil
-// 	}
-
-// 	result := make([]string, len(f.Parsed.Imports))
-// 	for i, v := range f.Parsed.Imports {
-// 		pathStr := v.Path.String()
-// 		importPath := strings.TrimPrefix(pathStr, regofile.ImportPathPrefix)
-// 		dotIndex := strings.Index(importPath, ".")
-// 		if dotIndex != -1 {
-// 			importPath = importPath[:dotIndex]
-// 		}
-
-// 		p, _, ok := require.FindIndexOfRequirement(bundlefile.FilterByName(importPath))
-// 		if !ok {
-// 			return nil, fmt.Errorf("undefined import '%s' in %s", pathStr, f.Path)
-// 		}
-
-// 		result[i] = FormatSourceVersion(p.Repository, p.Version)
-// 	}
-
-// 	return result, nil
-// }
 
 type Bundle struct {
 	Version    *VersionExpr
