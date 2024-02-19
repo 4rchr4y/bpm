@@ -194,7 +194,7 @@ func (m *Manifester) SyncLockfile(ctx context.Context, parent *bundle.Bundle) er
 	}
 
 	parent.LockFile.Sum = parent.Sum()
-	parent.LockFile.Modules = &lockfile.ModulesBlock{List: modules}
+	parent.LockFile.Consist = &lockfile.ConsistBlock{List: modules}
 	return nil
 }
 
@@ -206,8 +206,8 @@ func defineDirection(target, actual *bundle.Bundle) lockfile.DirectionType {
 	return lockfile.Indirect
 }
 
-func (m *Manifester) parseModuleList(b *bundle.Bundle, requireList map[string]*bundle.Bundle) ([]*lockfile.ModDecl, error) {
-	result := make([]*lockfile.ModDecl, 0, len(b.RegoFiles))
+func (m *Manifester) parseModuleList(b *bundle.Bundle, requireList map[string]*bundle.Bundle) ([]*lockfile.ModuleDecl, error) {
+	result := make([]*lockfile.ModuleDecl, 0, len(b.RegoFiles))
 
 	for filePath, f := range b.RegoFiles {
 		requireList, err := m.parseRequireList(requireList, f)
@@ -215,7 +215,7 @@ func (m *Manifester) parseModuleList(b *bundle.Bundle, requireList map[string]*b
 			return nil, err
 		}
 
-		result = append(result, &lockfile.ModDecl{
+		result = append(result, &lockfile.ModuleDecl{
 			Package: b.BundleFile.Package.Name + "." + f.Package(),
 			Source:  filePath,
 			Sum:     f.Sum(),

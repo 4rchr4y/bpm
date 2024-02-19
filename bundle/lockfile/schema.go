@@ -43,19 +43,19 @@ func NewModRequireSpec(line int, source, module string) ModRequireSpec {
 }
 
 type (
-	ModDecl struct {
+	ModuleDecl struct {
 		Package string   `hcl:"package,label"` // rego file package name, 		e.g. 'data.example'
 		Source  string   `hcl:"source"`        // file source path, 			e.g. 'example/file.rego'
 		Sum     string   `hcl:"sum"`           // calculated file checksum		e.g. 'd973b71fd6dd925...'
 		Require []string `hcl:"require"`       // direct module dependencies 	e.g. '{...}'
 	}
 
-	ModulesBlock struct {
-		List []*ModDecl `hcl:"mod,block"` // e.g. '{...}'
+	ConsistBlock struct {
+		List []*ModuleDecl `hcl:"module,block"` // e.g. '{...}'
 	}
 )
 
-func (md *ModulesBlock) Sort() *ModulesBlock {
+func (md *ConsistBlock) Sort() *ConsistBlock {
 	sort.Slice(md.List, func(i, j int) bool {
 		return md.List[i].Package < md.List[j].Package
 	})
@@ -81,7 +81,7 @@ type (
 type Schema struct {
 	Sum     string        `hcl:"sum"`           // bundle file checksum				e.g. 'd973b71fd6dd925...'
 	Edition string        `hcl:"edition"`       // lock file edition 				e.g. '2024'
-	Modules *ModulesBlock `hcl:"modules,block"` // list of nested modules			e.g. '{...}'
+	Consist *ConsistBlock `hcl:"consist,block"` // list of nested modules			e.g. '{...}'
 	Require *RequireBlock `hcl:"require,block"` // list of declared dependencies		e.g. '{...}'
 }
 
@@ -89,8 +89,8 @@ func PrepareSchema(existing *Schema) *Schema {
 	if existing == nil {
 		return &Schema{
 			Edition: "2024",
-			Modules: &ModulesBlock{
-				List: make([]*ModDecl, 0),
+			Consist: &ConsistBlock{
+				List: make([]*ModuleDecl, 0),
 			},
 			Require: &RequireBlock{
 				List: make([]*RequirementDecl, 0),
@@ -98,9 +98,9 @@ func PrepareSchema(existing *Schema) *Schema {
 		}
 	}
 
-	if existing.Modules == nil {
-		existing.Modules = &ModulesBlock{
-			List: make([]*ModDecl, 0),
+	if existing.Consist == nil {
+		existing.Consist = &ConsistBlock{
+			List: make([]*ModuleDecl, 0),
 		}
 	}
 
@@ -116,10 +116,10 @@ func PrepareSchema(existing *Schema) *Schema {
 func (*Schema) Filename() string { return constant.LockFileName }
 
 type RequireFilterFn func(r *RequirementDecl) bool
-type ModulesFilterFn func(r *ModDecl) bool
+type ModulesFilterFn func(r *ModuleDecl) bool
 
 func ModulesFilterByPackage(pname string) ModulesFilterFn {
-	return func(m *ModDecl) bool {
+	return func(m *ModuleDecl) bool {
 		return m.Package == pname
 	}
 }
@@ -173,7 +173,7 @@ func (s *Schema) SomeModule(filters ...ModulesFilterFn) bool {
 		return false
 	}
 
-	return lo.SomeBy(s.Modules.List, func(item *ModDecl) bool {
+	return lo.SomeBy(s.Consist.List, func(item *ModuleDecl) bool {
 		for _, filterFn := range filters {
 			if !filterFn(item) {
 				return false
