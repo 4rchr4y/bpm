@@ -2,6 +2,7 @@ package manifest
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"sort"
@@ -70,6 +71,10 @@ type InsertRequirementInput struct {
 }
 
 func (m *Manifester) InsertRequirement(ctx context.Context, input *InsertRequirementInput) error {
+	if input.Parent.Repository() == input.Source {
+		return errors.New("installing a bundle into itself is not allowed")
+	}
+
 	existingRequirement, idx, ok := input.Parent.BundleFile.FindIndexOfRequirement(
 		bundlefile.FilterBySource(input.Source),
 	)
