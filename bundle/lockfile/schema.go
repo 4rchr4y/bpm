@@ -1,6 +1,7 @@
 package lockfile
 
 import (
+	"fmt"
 	"sort"
 
 	"github.com/4rchr4y/bpm/constant"
@@ -21,6 +22,24 @@ var Keywords = [...]string{
 
 func (dt DirectionType) String() string {
 	return string(dt)
+}
+
+type ModRequireSpec struct {
+	Line   int
+	Source string
+	Module string
+}
+
+func (mre ModRequireSpec) String() string {
+	return fmt.Sprintf("%d:%s:%s", mre.Line, mre.Source, mre.Module)
+}
+
+func NewModRequireSpec(line int, source, module string) ModRequireSpec {
+	return ModRequireSpec{
+		Line:   line,
+		Source: source,
+		Module: module,
+	}
 }
 
 type (
