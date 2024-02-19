@@ -167,6 +167,8 @@ func (e *Encoder) Fileify(files map[string][]byte) (*bundle.BundleRaw, error) {
 		}
 	}
 
+	bundleRaw.LockFile = lockfile.PrepareSchema(bundleRaw.LockFile)
+
 	return bundleRaw, nil
 }
 
