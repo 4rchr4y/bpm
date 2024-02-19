@@ -14,7 +14,7 @@ type ErrNotExist struct{}
 
 func (ErrNotExist) Error() string { return "bundle does not exist" }
 
-func (s *Storage) Load(source string, version *bundle.VersionExpr) (*bundle.Bundle, error) {
+func (s *Storage) Load(source string, version *bundle.VersionSpec) (*bundle.Bundle, error) {
 	if strings.TrimSpace(source) == "" || version == nil {
 		return nil, ErrNotExist{}
 	}
@@ -25,7 +25,7 @@ func (s *Storage) Load(source string, version *bundle.VersionExpr) (*bundle.Bund
 	)
 }
 
-func (s *Storage) LoadFromAbs(dir string, v *bundle.VersionExpr) (*bundle.Bundle, error) {
+func (s *Storage) LoadFromAbs(dir string, v *bundle.VersionSpec) (*bundle.Bundle, error) {
 	ok, err := s.OSWrap.Exists(dir)
 	if err != nil {
 		return nil, err

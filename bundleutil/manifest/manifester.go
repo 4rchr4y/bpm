@@ -48,11 +48,11 @@ type manifesterStorage interface {
 	Store(b *bundle.Bundle) error
 	Some(repo string, version string) bool
 	StoreSome(b *bundle.Bundle) error
-	Load(source string, version *bundle.VersionExpr) (*bundle.Bundle, error)
+	Load(source string, version *bundle.VersionSpec) (*bundle.Bundle, error)
 }
 
 type manifesterFetcher interface {
-	Fetch(ctx context.Context, source string, version *bundle.VersionExpr) (*fetch.FetchResult, error)
+	Fetch(ctx context.Context, source string, version *bundle.VersionSpec) (*fetch.FetchResult, error)
 }
 
 type Manifester struct {
@@ -66,7 +66,7 @@ type Manifester struct {
 type InsertRequirementInput struct {
 	Parent  *bundle.Bundle
 	Source  string
-	Version *bundle.VersionExpr
+	Version *bundle.VersionSpec
 }
 
 func (m *Manifester) InsertRequirement(ctx context.Context, input *InsertRequirementInput) error {

@@ -30,7 +30,7 @@ type GithubFetcher struct {
 	Encoder githubFetcherEncoder
 }
 
-func (gh *GithubFetcher) Download(ctx context.Context, source string, tag *bundle.VersionExpr) (*bundle.Bundle, error) {
+func (gh *GithubFetcher) Download(ctx context.Context, source string, tag *bundle.VersionSpec) (*bundle.Bundle, error) {
 	gh.IO.PrintfInfo("downloading %s", bundleutil.FormatSourceWithVersion(source, tag.String()))
 
 	options := &git.CloneOptions{
@@ -108,7 +108,7 @@ func (gh *GithubFetcher) fetchIgnoreListFromGitCommit(commit *object.Commit) (*b
 	return gh.Encoder.DecodeIgnoreFile([]byte(ignoreFileContent))
 }
 
-func (gh *GithubFetcher) fetchCommitByTag(repo *git.Repository, v *bundle.VersionExpr) (*object.Commit, *bundle.VersionExpr, error) {
+func (gh *GithubFetcher) fetchCommitByTag(repo *git.Repository, v *bundle.VersionSpec) (*object.Commit, *bundle.VersionSpec, error) {
 	if v == nil {
 		return gh.getLatestVersionCommit(repo)
 	}
@@ -131,7 +131,7 @@ func (gh *GithubFetcher) fetchCommitByTag(repo *git.Repository, v *bundle.Versio
 
 }
 
-func (gh *GithubFetcher) getPseudoVersionCommit(repo *git.Repository, v *bundle.VersionExpr) (*object.Commit, error) {
+func (gh *GithubFetcher) getPseudoVersionCommit(repo *git.Repository, v *bundle.VersionSpec) (*object.Commit, error) {
 	if len(v.Hash) != bundle.VersionShortHashLen {
 		return nil, fmt.Errorf("short hash must be %d characters long", bundle.VersionShortHashLen)
 	}
@@ -162,7 +162,7 @@ func (gh *GithubFetcher) getPseudoVersionCommit(repo *git.Repository, v *bundle.
 	return commit, nil
 }
 
-func (gh *GithubFetcher) getLatestVersionCommit(repo *git.Repository) (*object.Commit, *bundle.VersionExpr, error) {
+func (gh *GithubFetcher) getLatestVersionCommit(repo *git.Repository) (*object.Commit, *bundle.VersionSpec, error) {
 	tags, err := gh.collectTagList(repo)
 	if err != nil {
 		return nil, nil, err
@@ -175,7 +175,7 @@ func (gh *GithubFetcher) getLatestVersionCommit(repo *git.Repository) (*object.C
 			return nil, nil, err
 		}
 
-		return commit, bundle.NewVersionExprFromCommit(commit, v), nil
+		return commit, bundle.NewVersionSpecFromCommit(commit, v), nil
 	}
 
 	commit, err := repo.CommitObject(ref.Hash())
@@ -183,7 +183,7 @@ func (gh *GithubFetcher) getLatestVersionCommit(repo *git.Repository) (*object.C
 		return nil, nil, err
 	}
 
-	return commit, bundle.NewVersionExprFromCommit(commit, v), nil
+	return commit, bundle.NewVersionSpecFromCommit(commit, v), nil
 }
 
 func (gh *GithubFetcher) collectTagList(repo *git.Repository) (map[*version.Version]*plumbing.Reference, error) {

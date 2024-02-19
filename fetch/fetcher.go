@@ -16,11 +16,11 @@ type fetcherInspector interface {
 type fetcherStorage interface {
 	Store(b *bundle.Bundle) error
 	Some(source string, version string) bool
-	Load(source string, version *bundle.VersionExpr) (*bundle.Bundle, error)
+	Load(source string, version *bundle.VersionSpec) (*bundle.Bundle, error)
 }
 
 type fetcherGitHub interface {
-	Download(ctx context.Context, source string, tag *bundle.VersionExpr) (*bundle.Bundle, error)
+	Download(ctx context.Context, source string, tag *bundle.VersionSpec) (*bundle.Bundle, error)
 }
 
 type Fetcher struct {
@@ -56,7 +56,7 @@ func (fres *FetchResult) Merge() []*bundle.Bundle {
 	return result
 }
 
-func (d *Fetcher) Fetch(ctx context.Context, source string, version *bundle.VersionExpr) (*FetchResult, error) {
+func (d *Fetcher) Fetch(ctx context.Context, source string, version *bundle.VersionSpec) (*FetchResult, error) {
 	target, err := d.PlainFetch(ctx, source, version)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch %s: %v", source, err)
@@ -90,7 +90,7 @@ func (d *Fetcher) Fetch(ctx context.Context, source string, version *bundle.Vers
 	}, nil
 }
 
-func (f *Fetcher) PlainFetch(ctx context.Context, source string, version *bundle.VersionExpr) (*bundle.Bundle, error) {
+func (f *Fetcher) PlainFetch(ctx context.Context, source string, version *bundle.VersionSpec) (*bundle.Bundle, error) {
 	b, err := f.FetchLocal(ctx, source, version)
 	if err != nil {
 		f.IO.PrintfErr(err.Error())
@@ -107,7 +107,7 @@ func (f *Fetcher) PlainFetch(ctx context.Context, source string, version *bundle
 	return b, nil
 }
 
-func (f *Fetcher) FetchLocal(ctx context.Context, source string, version *bundle.VersionExpr) (*bundle.Bundle, error) {
+func (f *Fetcher) FetchLocal(ctx context.Context, source string, version *bundle.VersionSpec) (*bundle.Bundle, error) {
 	ok := f.Storage.Some(source, version.String())
 	if !ok {
 		return nil, nil
@@ -130,7 +130,7 @@ func (f *Fetcher) FetchLocal(ctx context.Context, source string, version *bundle
 	return b, nil
 }
 
-func (f *Fetcher) FetchRemote(ctx context.Context, source string, version *bundle.VersionExpr) (*bundle.Bundle, error) {
+func (f *Fetcher) FetchRemote(ctx context.Context, source string, version *bundle.VersionSpec) (*bundle.Bundle, error) {
 	b, err := f.GitHub.Download(ctx, source, version)
 	if err != nil {
 		return nil, err

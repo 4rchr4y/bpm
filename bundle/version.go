@@ -24,32 +24,32 @@ var (
 	VersionRegex = regexp.MustCompile(VersionRegexStr)
 )
 
-type VersionExpr struct {
+type VersionSpec struct {
 	SemTag    *version.Version // semantic tag if available, or pseudo semantic tag
 	Timestamp time.Time        // commit timestamp
 	Hash      string           // commit hash
 }
 
-func NewVersionExprFromCommit(commit *object.Commit, tag *version.Version) *VersionExpr {
-	return &VersionExpr{
+func NewVersionSpecFromCommit(commit *object.Commit, tag *version.Version) *VersionSpec {
+	return &VersionSpec{
 		SemTag:    tag,
 		Timestamp: commit.Committer.When.UTC(),
 		Hash:      commit.Hash.String()[:VersionShortHashLen],
 	}
 }
 
-func (v *VersionExpr) IsPseudo() bool {
+func (v *VersionSpec) IsPseudo() bool {
 	return v.SemTag != nil &&
 		v.SemTag.Original() == PseudoSemTagStr &&
 		v.Hash != "" &&
 		!v.Timestamp.IsZero()
 }
 
-func (v *VersionExpr) Major() int { return v.SemTag.Segments()[0] }
-func (v *VersionExpr) Minor() int { return v.SemTag.Segments()[1] }
-func (v *VersionExpr) Path() int  { return v.SemTag.Segments()[2] }
+func (v *VersionSpec) Major() int { return v.SemTag.Segments()[0] }
+func (v *VersionSpec) Minor() int { return v.SemTag.Segments()[1] }
+func (v *VersionSpec) Path() int  { return v.SemTag.Segments()[2] }
 
-func (v *VersionExpr) Equal(o *VersionExpr) bool {
+func (v *VersionSpec) Equal(o *VersionSpec) bool {
 	if v.IsPseudo() && o.IsPseudo() {
 		return v.String() == o.String()
 	}
@@ -57,7 +57,7 @@ func (v *VersionExpr) Equal(o *VersionExpr) bool {
 	return v.SemTag.Equal(o.SemTag)
 }
 
-func (v *VersionExpr) GreaterThan(o *VersionExpr) bool {
+func (v *VersionSpec) GreaterThan(o *VersionSpec) bool {
 	if v.IsPseudo() && o.IsPseudo() {
 		return v.Timestamp.After(o.Timestamp)
 	}
@@ -65,7 +65,7 @@ func (v *VersionExpr) GreaterThan(o *VersionExpr) bool {
 	return v.SemTag.GreaterThan(o.SemTag)
 }
 
-func (v *VersionExpr) String() string {
+func (v *VersionSpec) String() string {
 	if v == nil {
 		return versionLatestStr
 	}
@@ -81,7 +81,7 @@ func (v *VersionExpr) String() string {
 	)
 }
 
-func ParseVersionExpr(versionStr string) (*VersionExpr, error) {
+func ParseVersionExpr(versionStr string) (*VersionSpec, error) {
 	switch {
 	case versionStr == "":
 		return nil, nil
@@ -92,7 +92,7 @@ func ParseVersionExpr(versionStr string) (*VersionExpr, error) {
 			return nil, err
 		}
 
-		return &VersionExpr{SemTag: v}, nil
+		return &VersionSpec{SemTag: v}, nil
 
 	default:
 		matches := VersionRegex.FindStringSubmatch(versionStr)
@@ -110,7 +110,7 @@ func ParseVersionExpr(versionStr string) (*VersionExpr, error) {
 			return nil, err
 		}
 
-		return &VersionExpr{
+		return &VersionSpec{
 			SemTag:    v,
 			Timestamp: timestamp,
 			Hash:      matches[3],

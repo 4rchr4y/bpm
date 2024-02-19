@@ -17,7 +17,7 @@ type BundleRaw struct {
 	OtherFiles map[string][]byte
 }
 
-func (br *BundleRaw) ToBundle(v *VersionExpr, ignoreFile *IgnoreFile) (*Bundle, error) {
+func (br *BundleRaw) ToBundle(v *VersionSpec, ignoreFile *IgnoreFile) (*Bundle, error) {
 	b := &Bundle{
 		Version:    v,
 		BundleFile: br.BundleFile,
@@ -31,7 +31,7 @@ func (br *BundleRaw) ToBundle(v *VersionExpr, ignoreFile *IgnoreFile) (*Bundle, 
 }
 
 type Bundle struct {
-	Version    *VersionExpr
+	Version    *VersionSpec
 	BundleFile *bundlefile.Schema
 	LockFile   *lockfile.Schema
 	RegoFiles  map[string]*regofile.File
