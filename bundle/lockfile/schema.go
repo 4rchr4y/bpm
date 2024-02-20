@@ -8,20 +8,28 @@ import (
 	"github.com/samber/lo"
 )
 
-type DirectionType string
+type (
+	DirectionType  string
+	VisibilityType string
+)
 
 const (
 	Direct   DirectionType = "direct"
 	Indirect DirectionType = "indirect"
+
+	Public  VisibilityType = "public"
+	Private VisibilityType = "private"
 )
+
+func (t DirectionType) String() string  { return string(t) }
+func (t VisibilityType) String() string { return string(t) }
 
 var Keywords = [...]string{
 	Direct.String(),
 	Indirect.String(),
-}
 
-func (dt DirectionType) String() string {
-	return string(dt)
+	Private.String(),
+	Public.String(),
 }
 
 type ModRequireSpec struct {
@@ -44,10 +52,11 @@ func NewModRequireSpec(line int, source, module string) ModRequireSpec {
 
 type (
 	ModuleDecl struct {
-		Package string   `hcl:"package,label"` // rego file package name, 		e.g. 'data.example'
-		Source  string   `hcl:"source"`        // file source path, 			e.g. 'example/file.rego'
-		Sum     string   `hcl:"sum"`           // calculated file checksum		e.g. 'd973b71fd6dd925...'
-		Require []string `hcl:"require"`       // direct module dependencies 	e.g. '{...}'
+		Package    string   `hcl:"package,label"`    // rego file package name, 		e.g. 'data.example'
+		Visibility string   `hcl:"visibility,label"` //
+		Source     string   `hcl:"source"`           // file source path, 			e.g. 'example/file.rego'
+		Sum        string   `hcl:"sum"`              // calculated file checksum		e.g. 'd973b71fd6dd925...'
+		Require    []string `hcl:"require,optional"` // direct module dependencies 	e.g. '{...}'
 	}
 
 	ConsistBlock struct {

@@ -38,8 +38,9 @@ type RequireBlock struct {
 }
 
 type Schema struct {
-	Package *PackageDecl  `hcl:"package,block"`
-	Require *RequireBlock `hcl:"require,block"`
+	Package  *PackageDecl  `hcl:"package,block"`
+	Require  *RequireBlock `hcl:"require,block"`
+	Internal []string      `hcl:"internal,optional"`
 }
 
 func PrepareSchema(existing *Schema) *Schema {
@@ -61,10 +62,6 @@ func (*Schema) Filename() string { return constant.BundleFileName }
 func (s *Schema) Sum() string {
 	f := hclwrite.NewEmptyFile()
 	gohcl.EncodeIntoBody(s, f.Body())
-
-	// result := bytes.TrimSpace(f.Bytes())
-	// result = bytes.Replace(result, []byte("{\n\n"), []byte("{\n"), -1)
-	// result = bytes.Replace(result, []byte("{\n}"), []byte("{}"), -1)
 
 	return bundleutil.ChecksumSHA256(
 		sha256.New(),
