@@ -210,16 +210,17 @@ func (m *Manifester) parseModuleList(b *bundle.Bundle, requireList map[string]*b
 	result := make([]*lockfile.ModuleDecl, 0, len(b.RegoFiles))
 
 	for filePath, f := range b.RegoFiles {
-		requireList, err := m.parseRequireList(requireList, f)
+		requireList, err := m.parseRequireList(f, b.RegoFiles, requireList)
 		if err != nil {
 			return nil, err
 		}
 
 		result = append(result, &lockfile.ModuleDecl{
-			Package: b.BundleFile.Package.Name + "." + f.Package(),
-			Source:  filePath,
-			Sum:     f.Sum(),
-			Require: requireList,
+			Package:    b.BundleFile.Package.Name + "." + f.Package(),
+			Visibility: checkModVisibility(b.BundleFile, f.Package()),
+			Source:     filePath,
+			Sum:        f.Sum(),
+			Require:    requireList,
 		})
 	}
 
@@ -230,7 +231,7 @@ func (m *Manifester) parseModuleList(b *bundle.Bundle, requireList map[string]*b
 	return result, nil
 }
 
-func (m *Manifester) parseRequireList(requireList map[string]*bundle.Bundle, f *regofile.File) ([]string, error) {
+func (m *Manifester) parseRequireList(f *regofile.File, files map[string]*regofile.File, requireList map[string]*bundle.Bundle) ([]string, error) {
 	if len(f.Parsed.Imports) == 0 {
 		return nil, nil
 	}
@@ -246,6 +247,7 @@ func (m *Manifester) parseRequireList(requireList map[string]*bundle.Bundle, f *
 			m.IO.PrintfWarn("duplicated import '%s' detected in %s:%d", pathStr, f.Path, v.Location.Row)
 			continue
 		}
+		knownImports[importPath] = struct{}{} // mark this import as already identified
 
 		packageName := importPath
 		dotIndex := strings.Index(importPath, ".")
@@ -253,9 +255,15 @@ func (m *Manifester) parseRequireList(requireList map[string]*bundle.Bundle, f *
 			packageName = importPath[:dotIndex]
 		}
 
-		// check that the package used really exists for this bundle
-		required, exists := requireList[packageName]
-		if !exists {
+		// checking whether the specified import is a link to a file that exists locally within the bundle
+		_, existsAsFile := files[strings.Replace(importPath, ".", "/", -1)+constant.RegoFileExt]
+		if existsAsFile {
+			continue
+		}
+
+		// checking that the package used really existsAsBundle for this bundle
+		required, existsAsBundle := requireList[packageName]
+		if !existsAsBundle && !existsAsFile {
 			return nil, fmt.Errorf("undefined import '%s' in %s", pathStr, f.Path)
 		}
 
@@ -272,9 +280,6 @@ func (m *Manifester) parseRequireList(requireList map[string]*bundle.Bundle, f *
 			result,
 			lockfile.NewModRequireSpec(v.Location.Row, source, importPath).String(),
 		)
-
-		// mark this import as already identified
-		knownImports[importPath] = struct{}{}
 	}
 
 	return result, nil
@@ -313,4 +318,18 @@ func (m *Manifester) upgradeLockFile(workDir string, b *bundle.Bundle) error {
 	}
 
 	return nil
+}
+
+func checkModVisibility(bundleFile *bundlefile.Schema, source string) string {
+	if bundleFile.Internal == nil {
+		return lockfile.Public.String()
+	}
+
+	for _, item := range bundleFile.Internal {
+		if item == source {
+			return lockfile.Private.String()
+		}
+	}
+
+	return lockfile.Public.String()
 }

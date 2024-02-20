@@ -1,3 +1,5 @@
+// TODO: rewrite formatting based on AST rather than regular expressions
+
 package bundleutil
 
 import (
