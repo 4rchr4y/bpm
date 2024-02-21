@@ -261,6 +261,11 @@ func (m *Manifester) parseRequireList(f *regofile.File, files map[string]*regofi
 			continue
 		}
 
+		// TODO: create more flexible way of builtin imports checking
+		if packageName == "rego" {
+			continue
+		}
+
 		// checking that the package used really existsAsBundle for this bundle
 		required, existsAsBundle := requireList[packageName]
 		if !existsAsBundle && !existsAsFile {
