@@ -290,10 +290,8 @@ func (m *Manifester) parseRequireList(f *regofile.File, files map[string]*regofi
 
 		// save information that this file requires a bundle of a specific version
 		source := bundleutil.FormatSourceWithVersion(required.Repository(), required.Version.String())
-		result = append(
-			result,
-			lockfile.NewModRequireSpec(v.Location.Row, source, importPath).String(),
-		)
+		spec := lockfile.NewModRequireSpec(v.Location.Row, source, importPath).String()
+		result = append(result, spec)
 	}
 
 	return result, nil
