@@ -80,8 +80,7 @@ func (m *Manifester) InsertRequirement(ctx context.Context, input *InsertRequire
 	)
 
 	if ok && existingRequirement.Version == input.Version.String() {
-		m.IO.PrintfOk(
-			"bundle %s is already installed",
+		m.IO.PrintfOk("bundle %s is already installed",
 			bundleutil.FormatSourceWithVersion(input.Source, input.Version.String()),
 		)
 		return m.SyncLockfile(ctx, input.Parent) // such requirement is already installed, then just synchronize
@@ -99,8 +98,7 @@ func (m *Manifester) InsertRequirement(ctx context.Context, input *InsertRequire
 		}
 
 		if result.Target.Version.String() == existingVersion.String() {
-			m.IO.PrintfOk(
-				"bundle %s is already installed",
+			m.IO.PrintfOk("bundle %s is already installed",
 				bundleutil.FormatSourceWithVersion(result.Target.Repository(), result.Target.Version.String()),
 			)
 			return m.SyncLockfile(ctx, input.Parent)
@@ -108,8 +106,7 @@ func (m *Manifester) InsertRequirement(ctx context.Context, input *InsertRequire
 
 		isGreater := result.Target.Version.GreaterThan(existingVersion)
 		if !isGreater {
-			m.IO.PrintfWarn(
-				"installing an older bundle %s version",
+			m.IO.PrintfWarn("installing an older bundle %s version",
 				bundleutil.FormatSourceWithVersion(result.Target.Repository(), result.Target.Version.String()),
 			)
 		}
@@ -196,6 +193,14 @@ func (m *Manifester) SyncLockfile(ctx context.Context, parent *bundle.Bundle) er
 
 		requireList[result.Target.Name()] = result.Target
 
+		directionFn := func(b *bundle.Bundle) lockfile.DirectionType {
+			if b.Repository() == result.Target.Repository() {
+				return lockfile.Direct
+			} else {
+				return lockfile.Indirect
+			}
+		}
+
 		for _, b := range result.Merge() {
 			if err := m.Storage.StoreSome(b); err != nil {
 				return err
@@ -203,20 +208,13 @@ func (m *Manifester) SyncLockfile(ctx context.Context, parent *bundle.Bundle) er
 
 			key := bundleutil.FormatSourceWithVersion(b.Repository(), b.Version.String())
 			if _, exists := requireCache[key]; !exists {
-				decl := NewLockfileRequirementDecl(b, func() lockfile.DirectionType {
-					if b.Repository() == result.Target.Repository() {
-						return lockfile.Direct
-					} else {
-						return lockfile.Indirect
-					}
-				}())
-
+				decl := NewLockfileRequirementDecl(b, directionFn(b))
 				parent.LockFile.Require.List = append(parent.LockFile.Require.List, decl)
 			}
 		}
 	}
 
-	modules, err := m.parseModuleList(parent, requireList)
+	modules, err := m.prepareModuleList(parent, requireList)
 	if err != nil {
 		return err
 	}
@@ -226,7 +224,8 @@ func (m *Manifester) SyncLockfile(ctx context.Context, parent *bundle.Bundle) er
 	return nil
 }
 
-func (m *Manifester) parseModuleList(b *bundle.Bundle, requireList map[string]*bundle.Bundle) ([]*lockfile.ModuleDecl, error) {
+// prepareRequireList prepares the value of block `modules` in lockfile
+func (m *Manifester) prepareModuleList(b *bundle.Bundle, requireList map[string]*bundle.Bundle) ([]*lockfile.ModuleDecl, error) {
 	result := make([]*lockfile.ModuleDecl, 0, len(b.RegoFiles))
 
 	// make a map of all private modules
@@ -235,8 +234,8 @@ func (m *Manifester) parseModuleList(b *bundle.Bundle, requireList map[string]*b
 		internalModules[b.BundleFile.Config.Internal[i]] = struct{}{}
 	}
 
-	// preparing general data for parsing each file
-	parseInput := &parseRequireListInput{
+	// preparing general data for preparing of each file require list
+	prepareInput := &prepareRequireListInput{
 		FileSet:     b.RegoFiles,
 		RequireList: requireList,
 		Builtin: func() map[string]struct{} {
@@ -250,25 +249,27 @@ func (m *Manifester) parseModuleList(b *bundle.Bundle, requireList map[string]*b
 		}(),
 	}
 
+	visibilityFn := func(f *regofile.File) string {
+		if _, exists := internalModules[f.Package()]; exists {
+			return lockfile.Private.String()
+		} else {
+			return lockfile.Public.String()
+		}
+	}
+
 	for filePath, f := range b.RegoFiles {
-		parseInput.File = f // update the values of the file that is currently being parsed
-		requireList, err := m.parseRequireList(parseInput)
+		prepareInput.File = f // update the values of the file that is currently being prepared
+		requireList, err := m.prepareRequireList(prepareInput)
 		if err != nil {
 			return nil, err
 		}
 
 		result = append(result, &lockfile.ModuleDecl{
-			Package: f.Package(),
-			Visibility: func() string {
-				if _, exists := internalModules[f.Package()]; exists {
-					return lockfile.Private.String()
-				} else {
-					return lockfile.Public.String()
-				}
-			}(),
-			Source:  filePath,
-			Sum:     f.Sum(),
-			Require: requireList,
+			Package:    f.Package(),
+			Visibility: visibilityFn(f),
+			Source:     filePath,
+			Sum:        f.Sum(),
+			Require:    requireList,
 		})
 	}
 
@@ -279,30 +280,30 @@ func (m *Manifester) parseModuleList(b *bundle.Bundle, requireList map[string]*b
 	return result, nil
 }
 
-type parseRequireListInput struct {
+type prepareRequireListInput struct {
 	File        *regofile.File            // directly checked file
 	FileSet     map[string]*regofile.File // a set of files for the entire bundle
 	RequireList map[string]*bundle.Bundle // list of all registered requirements
 	Builtin     map[string]struct{}       // list of all built-in imports
 }
 
-func (m *Manifester) parseRequireList(input *parseRequireListInput) ([]string, error) {
+// prepareRequireList prepares the value of field `require` in lockfile modules list
+func (m *Manifester) prepareRequireList(input *prepareRequireListInput) (result []string, err error) {
 	if len(input.File.Parsed.Imports) == 0 {
 		return nil, nil
 	}
 
 	// list of known imports, it is required to detect duplicate imports
-	knownImports := make(map[string]struct{}, 0)
-	result := make([]string, 0, len(input.File.Parsed.Imports))
+	importsCache := make(map[string]struct{}, 0)
 	for _, v := range input.File.Parsed.Imports {
 		pathStr := v.Path.String()
 		importPath := strings.TrimPrefix(pathStr, regofile.ImportPathPrefix)
 
-		if _, exists := knownImports[importPath]; exists {
+		if _, exists := importsCache[importPath]; exists {
 			m.IO.PrintfWarn("duplicated import '%s' detected in %s:%d", pathStr, input.File.Path, v.Location.Row)
 			continue
 		}
-		knownImports[importPath] = struct{}{} // mark this import as already identified
+		importsCache[importPath] = struct{}{} // mark this import as already identified
 
 		packageName := importPath
 		dotIndex := strings.Index(importPath, ".")
@@ -316,13 +317,15 @@ func (m *Manifester) parseRequireList(input *parseRequireListInput) ([]string, e
 			continue
 		}
 
-		if _, existsAsBuiltin := input.Builtin[packageName]; existsAsBuiltin {
+		// checking that the import is not a built-in import
+		_, existsAsBuiltin := input.Builtin[packageName]
+		if existsAsBuiltin {
 			continue
 		}
 
 		// checking that the package used really existsAsBundle for this bundle
 		required, existsAsBundle := input.RequireList[packageName]
-		if !existsAsBundle && !existsAsFile {
+		if !existsAsBundle && !existsAsFile && !existsAsBuiltin {
 			return nil, fmt.Errorf("undefined import '%s' in %s", pathStr, input.File.Path)
 		}
 
