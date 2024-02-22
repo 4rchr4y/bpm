@@ -57,12 +57,14 @@ func (insp *Inspector) Validate(b *bundle.Bundle) (err error) {
 
 	for _, f := range b.RegoFiles {
 		packagePath := strings.ReplaceAll(f.Package(), ".", "/")
-		sourcePath := strings.TrimSuffix(f.Path, constant.RegoFileExt)
-		if packagePath != sourcePath {
+		pathWithNoExt := strings.TrimSuffix(f.Path, constant.RegoFileExt)
+		expectedPath := fmt.Sprintf("%s/%s", b.Name(), pathWithNoExt)
+
+		if packagePath != expectedPath {
 			err = multierror.Append(err, fmt.Errorf(
 				"invalid %s package definition\n\t> expected: %s,\n\t> actual: %s",
 				f.Path,
-				strings.ReplaceAll(sourcePath, "/", "."),
+				strings.ReplaceAll(expectedPath, "/", "."),
 				f.Package(),
 			))
 		}

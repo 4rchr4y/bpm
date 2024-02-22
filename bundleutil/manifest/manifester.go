@@ -180,10 +180,15 @@ func (m *Manifester) SyncLockfile(ctx context.Context, parent *bundle.Bundle) er
 
 			key := bundleutil.FormatSourceWithVersion(b.Repository(), b.Version.String())
 			if _, exists := requireCache[key]; !exists {
-				parent.LockFile.Require.List = append(
-					parent.LockFile.Require.List,
-					NewLockfileRequirementDecl(b, defineDirection(result.Target, b)),
-				)
+				decl := NewLockfileRequirementDecl(b, func() lockfile.DirectionType {
+					if b.Repository() == result.Target.Repository() {
+						return lockfile.Direct
+					} else {
+						return lockfile.Indirect
+					}
+				}())
+
+				parent.LockFile.Require.List = append(parent.LockFile.Require.List, decl)
 			}
 		}
 	}
@@ -198,16 +203,14 @@ func (m *Manifester) SyncLockfile(ctx context.Context, parent *bundle.Bundle) er
 	return nil
 }
 
-func defineDirection(target, actual *bundle.Bundle) lockfile.DirectionType {
-	if actual.Repository() == target.Repository() {
-		return lockfile.Direct
-	}
-
-	return lockfile.Indirect
-}
-
 func (m *Manifester) parseModuleList(b *bundle.Bundle, requireList map[string]*bundle.Bundle) ([]*lockfile.ModuleDecl, error) {
 	result := make([]*lockfile.ModuleDecl, 0, len(b.RegoFiles))
+
+	// make a map of all private modules
+	internalModules := make(map[string]struct{})
+	for i := range b.BundleFile.Internal {
+		internalModules[b.BundleFile.Internal[i]] = struct{}{}
+	}
 
 	for filePath, f := range b.RegoFiles {
 		requireList, err := m.parseRequireList(f, b.RegoFiles, requireList)
@@ -216,11 +219,17 @@ func (m *Manifester) parseModuleList(b *bundle.Bundle, requireList map[string]*b
 		}
 
 		result = append(result, &lockfile.ModuleDecl{
-			Package:    b.BundleFile.Package.Name + "." + f.Package(),
-			Visibility: checkModVisibility(b.BundleFile, f.Package()),
-			Source:     filePath,
-			Sum:        f.Sum(),
-			Require:    requireList,
+			Package: f.Package(),
+			Visibility: func() string {
+				if _, exists := internalModules[f.Package()]; exists {
+					return lockfile.Private.String()
+				} else {
+					return lockfile.Public.String()
+				}
+			}(),
+			Source:  filePath,
+			Sum:     f.Sum(),
+			Require: requireList,
 		})
 	}
 
@@ -323,18 +332,4 @@ func (m *Manifester) upgradeLockFile(workDir string, b *bundle.Bundle) error {
 	}
 
 	return nil
-}
-
-func checkModVisibility(bundleFile *bundlefile.Schema, source string) string {
-	if bundleFile.Internal == nil {
-		return lockfile.Public.String()
-	}
-
-	for _, item := range bundleFile.Internal {
-		if item == source {
-			return lockfile.Private.String()
-		}
-	}
-
-	return lockfile.Public.String()
 }
