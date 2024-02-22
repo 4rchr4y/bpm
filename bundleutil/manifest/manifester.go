@@ -121,7 +121,7 @@ func (m *Manifester) InsertRequirement(ctx context.Context, input *InsertRequire
 		)
 
 		input.Parent.BundleFile.Require.List[idx] = NewBundlefileRequirementDecl(result.Target)
-
+		input.Parent.BundleFile.Config.Builtin = syncBuiltinList(input.Parent, result.Target)
 		return m.SyncLockfile(ctx, input.Parent)
 	}
 
@@ -129,8 +129,31 @@ func (m *Manifester) InsertRequirement(ctx context.Context, input *InsertRequire
 		input.Parent.BundleFile.Require.List,
 		NewBundlefileRequirementDecl(result.Target),
 	)
+	input.Parent.BundleFile.Config.Builtin = syncBuiltinList(input.Parent, result.Target)
 
 	return m.SyncLockfile(ctx, input.Parent)
+}
+
+func syncBuiltinList(actual, coming *bundle.Bundle) []string {
+	result := make([]string, 0)
+	cache := make(map[string]struct{}, 0)
+
+	// iterating through current biotin imports to cache them
+	for i := range actual.BundleFile.Config.Builtin {
+		cache[actual.BundleFile.Config.Builtin[i]] = struct{}{}
+		result = append(result, actual.BundleFile.Config.Builtin[i])
+	}
+
+	for i := range coming.BundleFile.Config.Builtin {
+		if _, exists := cache[coming.BundleFile.Config.Builtin[i]]; exists {
+			continue
+		}
+
+		cache[coming.BundleFile.Config.Builtin[i]] = struct{}{}
+		result = append(result, coming.BundleFile.Config.Builtin[i])
+	}
+
+	return result
 }
 
 func (m *Manifester) SyncLockfile(ctx context.Context, parent *bundle.Bundle) error {
@@ -208,12 +231,28 @@ func (m *Manifester) parseModuleList(b *bundle.Bundle, requireList map[string]*b
 
 	// make a map of all private modules
 	internalModules := make(map[string]struct{})
-	for i := range b.BundleFile.Internal {
-		internalModules[b.BundleFile.Internal[i]] = struct{}{}
+	for i := range b.BundleFile.Config.Internal {
+		internalModules[b.BundleFile.Config.Internal[i]] = struct{}{}
+	}
+
+	// preparing general data for parsing each file
+	parseInput := &parseRequireListInput{
+		FileSet:     b.RegoFiles,
+		RequireList: requireList,
+		Builtin: func() map[string]struct{} {
+			result := make(map[string]struct{}, len(b.BundleFile.Config.Builtin))
+
+			for i := range b.BundleFile.Config.Builtin {
+				result[b.BundleFile.Config.Builtin[i]] = struct{}{}
+			}
+
+			return result
+		}(),
 	}
 
 	for filePath, f := range b.RegoFiles {
-		requireList, err := m.parseRequireList(f, b.RegoFiles, requireList)
+		parseInput.File = f // update the values of the file that is currently being parsed
+		requireList, err := m.parseRequireList(parseInput)
 		if err != nil {
 			return nil, err
 		}
@@ -240,20 +279,27 @@ func (m *Manifester) parseModuleList(b *bundle.Bundle, requireList map[string]*b
 	return result, nil
 }
 
-func (m *Manifester) parseRequireList(f *regofile.File, files map[string]*regofile.File, requireList map[string]*bundle.Bundle) ([]string, error) {
-	if len(f.Parsed.Imports) == 0 {
+type parseRequireListInput struct {
+	File        *regofile.File            // directly checked file
+	FileSet     map[string]*regofile.File // a set of files for the entire bundle
+	RequireList map[string]*bundle.Bundle // list of all registered requirements
+	Builtin     map[string]struct{}       // list of all built-in imports
+}
+
+func (m *Manifester) parseRequireList(input *parseRequireListInput) ([]string, error) {
+	if len(input.File.Parsed.Imports) == 0 {
 		return nil, nil
 	}
 
 	// list of known imports, it is required to detect duplicate imports
 	knownImports := make(map[string]struct{}, 0)
-	result := make([]string, 0, len(f.Parsed.Imports))
-	for _, v := range f.Parsed.Imports {
+	result := make([]string, 0, len(input.File.Parsed.Imports))
+	for _, v := range input.File.Parsed.Imports {
 		pathStr := v.Path.String()
 		importPath := strings.TrimPrefix(pathStr, regofile.ImportPathPrefix)
 
 		if _, exists := knownImports[importPath]; exists {
-			m.IO.PrintfWarn("duplicated import '%s' detected in %s:%d", pathStr, f.Path, v.Location.Row)
+			m.IO.PrintfWarn("duplicated import '%s' detected in %s:%d", pathStr, input.File.Path, v.Location.Row)
 			continue
 		}
 		knownImports[importPath] = struct{}{} // mark this import as already identified
@@ -265,27 +311,26 @@ func (m *Manifester) parseRequireList(f *regofile.File, files map[string]*regofi
 		}
 
 		// checking whether the specified import is a link to a file that exists locally within the bundle
-		_, existsAsFile := files[strings.Replace(importPath, ".", "/", -1)+constant.RegoFileExt]
+		_, existsAsFile := input.FileSet[strings.Replace(importPath, ".", "/", -1)+constant.RegoFileExt]
 		if existsAsFile {
 			continue
 		}
 
-		// TODO: create more flexible way of builtin imports checking
-		if packageName == "rego" {
+		if _, existsAsBuiltin := input.Builtin[packageName]; existsAsBuiltin {
 			continue
 		}
 
 		// checking that the package used really existsAsBundle for this bundle
-		required, existsAsBundle := requireList[packageName]
+		required, existsAsBundle := input.RequireList[packageName]
 		if !existsAsBundle && !existsAsFile {
-			return nil, fmt.Errorf("undefined import '%s' in %s", pathStr, f.Path)
+			return nil, fmt.Errorf("undefined import '%s' in %s", pathStr, input.File.Path)
 		}
 
 		// check that the module used exists in the specified package
 		if exists := required.LockFile.SomeModule(
 			lockfile.ModulesFilterByPackage(importPath),
 		); !exists {
-			return nil, fmt.Errorf("undefined import '%s' in %s", pathStr, f.Path)
+			return nil, fmt.Errorf("undefined import '%s' in %s", pathStr, input.File.Path)
 		}
 
 		// save information that this file requires a bundle of a specific version
