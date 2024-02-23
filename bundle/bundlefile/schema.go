@@ -37,15 +37,15 @@ type RequireBlock struct {
 	List []*RequirementDecl `hcl:"bundle,block"`
 }
 
-type ConfigBlock struct {
+type WorkspaceBlock struct {
 	Internal []string `hcl:"internal"`
 	Builtin  []string `hcl:"builtin"`
 }
 
 type Schema struct {
-	Package *PackageDecl  `hcl:"package,block"`
-	Require *RequireBlock `hcl:"require,block"`
-	Config  *ConfigBlock  `hcl:"config,block"`
+	Package   *PackageDecl    `hcl:"package,block"`
+	Workspace *WorkspaceBlock `hcl:"workspace,block"`
+	Require   *RequireBlock   `hcl:"require,block"`
 }
 
 func PrepareSchema(existing *Schema) *Schema {
@@ -59,18 +59,18 @@ func PrepareSchema(existing *Schema) *Schema {
 		}
 	}
 
-	if existing.Config == nil {
-		existing.Config = &ConfigBlock{
+	if existing.Workspace == nil {
+		existing.Workspace = &WorkspaceBlock{
 			Builtin:  make([]string, 0),
 			Internal: make([]string, 0),
 		}
 	} else {
-		if existing.Config.Builtin == nil {
-			existing.Config.Builtin = make([]string, 0)
+		if existing.Workspace.Builtin == nil {
+			existing.Workspace.Builtin = make([]string, 0)
 		}
 
-		if existing.Config.Internal == nil {
-			existing.Config.Internal = make([]string, 0)
+		if existing.Workspace.Internal == nil {
+			existing.Workspace.Internal = make([]string, 0)
 		}
 	}
 

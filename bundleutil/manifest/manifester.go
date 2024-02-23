@@ -118,7 +118,7 @@ func (m *Manifester) InsertRequirement(ctx context.Context, input *InsertRequire
 		)
 
 		input.Parent.BundleFile.Require.List[idx] = NewBundlefileRequirementDecl(result.Target)
-		input.Parent.BundleFile.Config.Builtin = syncBuiltinList(input.Parent, result.Target)
+		// input.Parent.BundleFile.Workspace.Builtin = syncBuiltinList(input.Parent, result.Target)
 		return m.SyncLockfile(ctx, input.Parent)
 	}
 
@@ -126,7 +126,7 @@ func (m *Manifester) InsertRequirement(ctx context.Context, input *InsertRequire
 		input.Parent.BundleFile.Require.List,
 		NewBundlefileRequirementDecl(result.Target),
 	)
-	input.Parent.BundleFile.Config.Builtin = syncBuiltinList(input.Parent, result.Target)
+	// input.Parent.BundleFile.Workspace.Builtin = syncBuiltinList(input.Parent, result.Target)
 
 	return m.SyncLockfile(ctx, input.Parent)
 }
@@ -136,18 +136,18 @@ func syncBuiltinList(actual, coming *bundle.Bundle) []string {
 	cache := make(map[string]struct{}, 0)
 
 	// iterating through current biotin imports to cache them
-	for i := range actual.BundleFile.Config.Builtin {
-		cache[actual.BundleFile.Config.Builtin[i]] = struct{}{}
-		result = append(result, actual.BundleFile.Config.Builtin[i])
+	for i := range actual.BundleFile.Workspace.Builtin {
+		cache[actual.BundleFile.Workspace.Builtin[i]] = struct{}{}
+		result = append(result, actual.BundleFile.Workspace.Builtin[i])
 	}
 
-	for i := range coming.BundleFile.Config.Builtin {
-		if _, exists := cache[coming.BundleFile.Config.Builtin[i]]; exists {
+	for i := range coming.BundleFile.Workspace.Builtin {
+		if _, exists := cache[coming.BundleFile.Workspace.Builtin[i]]; exists {
 			continue
 		}
 
-		cache[coming.BundleFile.Config.Builtin[i]] = struct{}{}
-		result = append(result, coming.BundleFile.Config.Builtin[i])
+		cache[coming.BundleFile.Workspace.Builtin[i]] = struct{}{}
+		result = append(result, coming.BundleFile.Workspace.Builtin[i])
 	}
 
 	return result
@@ -230,8 +230,8 @@ func (m *Manifester) prepareModuleList(b *bundle.Bundle, requireList map[string]
 
 	// make a map of all private modules
 	internalModules := make(map[string]struct{})
-	for i := range b.BundleFile.Config.Internal {
-		internalModules[b.BundleFile.Config.Internal[i]] = struct{}{}
+	for i := range b.BundleFile.Workspace.Internal {
+		internalModules[b.BundleFile.Workspace.Internal[i]] = struct{}{}
 	}
 
 	// preparing general data for preparing of each file require list
@@ -239,10 +239,10 @@ func (m *Manifester) prepareModuleList(b *bundle.Bundle, requireList map[string]
 		FileSet:     b.RegoFiles,
 		RequireList: requireList,
 		Builtin: func() map[string]struct{} {
-			result := make(map[string]struct{}, len(b.BundleFile.Config.Builtin))
+			result := make(map[string]struct{}, len(b.BundleFile.Workspace.Builtin))
 
-			for i := range b.BundleFile.Config.Builtin {
-				result[b.BundleFile.Config.Builtin[i]] = struct{}{}
+			for i := range b.BundleFile.Workspace.Builtin {
+				result[b.BundleFile.Workspace.Builtin[i]] = struct{}{}
 			}
 
 			return result
@@ -312,7 +312,8 @@ func (m *Manifester) prepareRequireList(input *prepareRequireListInput) (result 
 		}
 
 		// checking whether the specified import is a link to a file that exists locally within the bundle
-		_, existsAsFile := input.FileSet[strings.Replace(importPath, ".", "/", -1)+constant.RegoFileExt]
+		filePath := strings.Replace(importPath, ".", "/", -1) + constant.RegoFileExt
+		_, existsAsFile := input.FileSet[filePath]
 		if existsAsFile {
 			continue
 		}
