@@ -34,7 +34,7 @@ func (f *IgnoreFile) Store(fileName string) {
 }
 
 func (f *IgnoreFile) Some(path string) bool {
-	if path == "" || len(f.List) == 0 {
+	if f == nil || path == "" || len(f.List) == 0 {
 		return false
 	}
 

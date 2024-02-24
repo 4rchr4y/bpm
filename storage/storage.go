@@ -7,6 +7,7 @@ import (
 	"github.com/4rchr4y/bpm/bundle/bundlefile"
 	"github.com/4rchr4y/bpm/bundle/lockfile"
 	"github.com/4rchr4y/bpm/bundleutil"
+	"github.com/4rchr4y/bpm/bundleutil/encode"
 	"github.com/4rchr4y/bpm/iostream/iostreamiface"
 	"github.com/4rchr4y/godevkit/v3/syswrap/ioiface"
 	"github.com/4rchr4y/godevkit/v3/syswrap/osiface"
@@ -16,8 +17,10 @@ type storageHCLEncoder interface {
 	EncodeIgnoreFile(ignorefile *bundle.IgnoreFile) []byte
 	EncodeBundleFile(bundlefile *bundlefile.Schema) []byte
 	EncodeLockFile(lockfile *lockfile.Schema) []byte
+	DecodeLockFile(content []byte) (*lockfile.Schema, error)
 	DecodeIgnoreFile(content []byte) (*bundle.IgnoreFile, error)
-	Fileify(files map[string][]byte) (*bundle.BundleRaw, error)
+	DecodeBundleFile(content []byte) (*bundlefile.Schema, error)
+	Fileify(files map[string][]byte) (*encode.FileifyOutput, error)
 }
 
 type Storage struct {

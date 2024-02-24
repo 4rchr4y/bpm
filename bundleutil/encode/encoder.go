@@ -58,7 +58,7 @@ func (e *Encoder) DecodeBundleFile(content []byte) (*bundlefile.Schema, error) {
 		return nil, err
 	}
 
-	return bundlefile.PrepareSchema(schema), nil
+	return schema, nil
 }
 
 func (e *Encoder) DecodeLockFile(content []byte) (*lockfile.Schema, error) {
@@ -67,7 +67,7 @@ func (e *Encoder) DecodeLockFile(content []byte) (*lockfile.Schema, error) {
 		return nil, err
 	}
 
-	return lockfile.PrepareSchema(schema), nil
+	return schema, nil
 }
 
 func (e *Encoder) EncodeBundleFile(bundlefile *bundlefile.Schema) []byte {
@@ -112,9 +112,14 @@ func (e *Encoder) EncodeIgnoreFile(ignorefile *bundle.IgnoreFile) []byte {
 	return []byte(builder.String())
 }
 
-func (e *Encoder) Fileify(files map[string][]byte) (*bundle.BundleRaw, error) {
-	bundleRaw := &bundle.BundleRaw{
-		RegoFiles:  make(map[string]*regofile.File),
+type FileifyOutput struct {
+	RegoFiles  map[string]*regofile.File
+	OtherFiles map[string][]byte
+}
+
+func (e *Encoder) Fileify(files map[string][]byte) (*FileifyOutput, error) {
+	output := &FileifyOutput{
+		RegoFiles:  make(map[string]*regofile.File, len(files)),
 		OtherFiles: make(map[string][]byte),
 	}
 
@@ -126,33 +131,26 @@ func (e *Encoder) Fileify(files map[string][]byte) (*bundle.BundleRaw, error) {
 				return nil, fmt.Errorf("error parsing file contents: %v", err)
 			}
 
-			bundleRaw.RegoFiles[filePath] = &regofile.File{
+			output.RegoFiles[filePath] = &regofile.File{
 				Path:   filePath,
 				Parsed: parsed,
 				Raw:    content,
 			}
 
-		case isBundleFile(filePath):
-			bundlefile, err := e.DecodeBundleFile(content)
-			if err != nil {
-				return nil, fmt.Errorf("error occurred while decoding %s content: %v", constant.BundleFileName, err)
-			}
+		// case isLockFile(filePath):
+		// 	lockfile, err := e.DecodeLockFile(content)
+		// 	if err != nil {
+		// 		return nil, fmt.Errorf("error occurred while decoding %s content: %v", constant.BundleFileName, err)
+		// 	}
 
-			bundleRaw.BundleFile = bundlefile
+		// 	output.LockFile = lockfile
 
-		case isLockFile(filePath):
-			lockfile, err := e.DecodeLockFile(content)
-			if err != nil {
-				return nil, fmt.Errorf("error occurred while decoding %s content: %v", constant.BundleFileName, err)
-			}
-
-			bundleRaw.LockFile = lockfile
-
-		case isIgnoreFile(filePath):
+		case isIgnoreFile(filePath) || isBundleFile(filePath) || isLockFile(filePath):
 			// Ignoring this file is due to the fact that it must be read
 			// and processed BEFORE this function is executed in order to
 			// avoid loading files into memory that are not required at
-			// runtime.
+			// runtime(.bpmignore) or to prepare(bundle.hcl) the rego environment
+			// before parsing rego files.
 			//
 			// In addition, explicit ignoring of this file is necessary so
 			// that this file does not end up in the list of OtherFiles.
@@ -163,13 +161,11 @@ func (e *Encoder) Fileify(files map[string][]byte) (*bundle.BundleRaw, error) {
 			continue
 
 		default:
-			bundleRaw.OtherFiles[filePath] = content
+			output.OtherFiles[filePath] = content
 		}
 	}
 
-	bundleRaw.LockFile = lockfile.PrepareSchema(bundleRaw.LockFile)
-
-	return bundleRaw, nil
+	return output, nil
 }
 
 func isRegoFile(filePath string) bool   { return filepath.Ext(filePath) == constant.RegoFileExt }

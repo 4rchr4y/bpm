@@ -7,7 +7,10 @@ import (
 	"strings"
 
 	"github.com/4rchr4y/bpm/bundle"
+	"github.com/4rchr4y/bpm/bundle/bundlefile"
+	"github.com/4rchr4y/bpm/bundle/lockfile"
 	"github.com/4rchr4y/bpm/constant"
+	"github.com/4rchr4y/bpm/regoutil"
 )
 
 type ErrNotExist struct{}
@@ -41,22 +44,43 @@ func (s *Storage) LoadFromAbs(dir string, v *bundle.VersionSpec) (*bundle.Bundle
 
 	s.IO.PrintfInfo("loading from %s", absDirPath)
 
-	ignoreList, err := s.readIgnoreFile(absDirPath)
+	ignoreFile, err := s.readIgnoreFile(absDirPath)
 	if err != nil {
 		return nil, err
 	}
 
-	files, err := s.readBundleDir(absDirPath, ignoreList)
+	bundleFile, err := s.readBundleFile(absDirPath)
 	if err != nil {
 		return nil, err
 	}
 
-	bundle, err := s.Encoder.Fileify(files)
+	if err := regoutil.PrepareDocumentParser(bundleFile); err != nil {
+		return nil, err
+	}
+
+	lockFile, err := s.readLockFile(absDirPath)
 	if err != nil {
 		return nil, err
 	}
 
-	return bundle.ToBundle(v, ignoreList)
+	files, err := s.readBundleDir(absDirPath, ignoreFile)
+	if err != nil {
+		return nil, err
+	}
+
+	fileifyOutput, err := s.Encoder.Fileify(files)
+	if err != nil {
+		return nil, err
+	}
+
+	return &bundle.Bundle{
+		Version:    v,
+		BundleFile: bundlefile.PrepareSchema(bundleFile),
+		LockFile:   lockfile.PrepareSchema(lockFile),
+		RegoFiles:  fileifyOutput.RegoFiles,
+		IgnoreFile: ignoreFile,
+		OtherFiles: fileifyOutput.OtherFiles,
+	}, nil
 }
 
 func (fetcher *Storage) readBundleDir(abs string, ignoreFile *bundle.IgnoreFile) (map[string][]byte, error) {
@@ -108,21 +132,45 @@ func (fetcher *Storage) readFileContent(path string) ([]byte, error) {
 
 func (fetcher *Storage) readIgnoreFile(dir string) (*bundle.IgnoreFile, error) {
 	ignoreFilePath := filepath.Join(dir, constant.IgnoreFileName)
-	file, err := fetcher.OSWrap.OpenFile(ignoreFilePath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil
-		}
-
-		return nil, err
-	}
-	defer file.Close()
-
-	// TODO: use bufio buffer instead of ReadAll
-	content, err := fetcher.IOWrap.ReadAll(file)
+	content, err := fetcher.readFileContent(ignoreFilePath)
 	if err != nil {
 		return nil, err
 	}
 
-	return fetcher.Encoder.DecodeIgnoreFile(content)
+	ignoreFile, err := fetcher.Encoder.DecodeIgnoreFile(content)
+	if err != nil {
+		return nil, fmt.Errorf("error occurred while decoding %s content: %v", constant.IgnoreFileName, err)
+	}
+
+	return ignoreFile, nil
+}
+
+func (fetcher *Storage) readLockFile(dir string) (*lockfile.Schema, error) {
+	lockFilePath := filepath.Join(dir, constant.LockFileName)
+	content, err := fetcher.readFileContent(lockFilePath)
+	if err != nil {
+		return nil, err
+	}
+
+	lockFile, err := fetcher.Encoder.DecodeLockFile(content)
+	if err != nil {
+		return nil, fmt.Errorf("error occurred while decoding %s content: %v", constant.LockFileName, err)
+	}
+
+	return lockFile, nil
+}
+
+func (fetcher *Storage) readBundleFile(dir string) (*bundlefile.Schema, error) {
+	bundleFilePath := filepath.Join(dir, constant.BundleFileName)
+	content, err := fetcher.readFileContent(bundleFilePath)
+	if err != nil {
+		return nil, err
+	}
+
+	bundleFile, err := fetcher.Encoder.DecodeBundleFile(content)
+	if err != nil {
+		return nil, fmt.Errorf("error occurred while decoding %s content: %v", constant.BundleFileName, err)
+	}
+
+	return bundleFile, nil
 }

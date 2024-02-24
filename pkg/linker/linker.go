@@ -2,10 +2,8 @@ package linker
 
 import (
 	"context"
-	"strings"
 
 	"github.com/4rchr4y/bpm/bundle"
-	"github.com/4rchr4y/bpm/bundle/regofile"
 	"github.com/open-policy-agent/opa/ast"
 )
 
@@ -36,30 +34,20 @@ func (l *Linker) Link(ctx context.Context, b *bundle.Bundle) (map[string]*ast.Mo
 		return nil, err
 	}
 
-	result := make(map[string]*ast.Module)
-
+	result := make(map[string]*ast.Module, len(b.RegoFiles))
 	requireCache := make(map[string]struct{}, len(b.BundleFile.Require.List))
+
 	for _, r := range b.BundleFile.Require.List {
 		requireCache[r.Name] = struct{}{}
 	}
 
-	// save all the modules of the head bundle
 	for filePath, f := range b.RegoFiles {
-		result[filePath] = f.Parsed
+		// saving this file as a module of the head bundle
+		result[filePath] = ProcessModule(
+			f.Parsed,
+			WithImportProcessing(getRequireList(b)),
+		)
 
-		for _, _import := range f.Parsed.Imports {
-			importPathStr := _import.Path.String()
-			sourcePkg := strings.Index(importPathStr, ".")
-
-			if _, exists := requireCache[importPathStr[:sourcePkg]]; !exists {
-				continue
-			}
-
-			value := ast.VarTerm(regofile.ImportPathPrefix + importPathStr)
-			value.Location = _import.Path.Location
-
-			_import.Path = value
-		}
 	}
 
 	// iter over all required bundles
@@ -76,7 +64,10 @@ func (l *Linker) Link(ctx context.Context, b *bundle.Bundle) (map[string]*ast.Mo
 
 		// save all the modules of the required bundle
 		for filePath, f := range itemBundle.RegoFiles {
-			result[filePath] = f.Parsed
+			result[filePath] = ProcessModule(
+				f.Parsed,
+				WithImportProcessing(getRequireList(itemBundle)),
+			)
 		}
 	}
 

@@ -42,6 +42,7 @@
         "Rdirect",
         "rego",
         "regofile",
+        "regoutil",
         "Rindirect",
         "subregistry",
         "syswrap",

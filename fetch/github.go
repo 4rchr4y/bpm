@@ -6,9 +6,13 @@ import (
 	"strings"
 
 	"github.com/4rchr4y/bpm/bundle"
+	"github.com/4rchr4y/bpm/bundle/bundlefile"
+	"github.com/4rchr4y/bpm/bundle/lockfile"
 	"github.com/4rchr4y/bpm/bundleutil"
+	"github.com/4rchr4y/bpm/bundleutil/encode"
 	"github.com/4rchr4y/bpm/constant"
 	"github.com/4rchr4y/bpm/iostream/iostreamiface"
+	"github.com/4rchr4y/bpm/regoutil"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -16,8 +20,10 @@ import (
 )
 
 type githubFetcherEncoder interface {
+	DecodeBundleFile(content []byte) (*bundlefile.Schema, error)
 	DecodeIgnoreFile(content []byte) (*bundle.IgnoreFile, error)
-	Fileify(files map[string][]byte) (*bundle.BundleRaw, error)
+	DecodeLockFile(content []byte) (*lockfile.Schema, error)
+	Fileify(files map[string][]byte) (*encode.FileifyOutput, error)
 }
 
 type githubFetcherClient interface {
@@ -47,33 +53,63 @@ func (gh *GithubFetcher) Download(ctx context.Context, source string, tag *bundl
 		return nil, err
 	}
 
-	files, ignoreFile, err := gh.getFilesFromCommit(commit)
+	filesOutput, err := gh.getFilesFromCommit(commit)
 	if err != nil {
 		return nil, err
 	}
 
-	bundleRaw, err := gh.Encoder.Fileify(files)
+	fileifyOutput, err := gh.Encoder.Fileify(filesOutput.FileSet)
 	if err != nil {
 		return nil, err
 	}
 
-	return bundleRaw.ToBundle(v, ignoreFile)
+	return &bundle.Bundle{
+		Version:    v,
+		BundleFile: bundlefile.PrepareSchema(filesOutput.BundleFile),
+		LockFile:   lockfile.PrepareSchema(filesOutput.LockFile),
+		RegoFiles:  fileifyOutput.RegoFiles,
+		IgnoreFile: filesOutput.IgnoreFile,
+		OtherFiles: fileifyOutput.OtherFiles,
+	}, nil
 }
 
-func (gh *GithubFetcher) getFilesFromCommit(commit *object.Commit) (map[string][]byte, *bundle.IgnoreFile, error) {
+type getFilesOutput struct {
+	FileSet    map[string][]byte
+	BundleFile *bundlefile.Schema
+	LockFile   *lockfile.Schema
+	IgnoreFile *bundle.IgnoreFile
+}
+
+func (gh *GithubFetcher) getFilesFromCommit(commit *object.Commit) (output *getFilesOutput, err error) {
+	output = new(getFilesOutput)
+
+	output.IgnoreFile, err = gh.readIgnoreFileFromGitCommit(commit)
+	if err != nil {
+		return nil, err
+	}
+
+	output.BundleFile, err = gh.readBundleFileFromGitCommit(commit)
+	if err != nil {
+		return nil, err
+	}
+
+	output.LockFile, err = gh.readLockFileFromGitCommit(commit)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := regoutil.PrepareDocumentParser(output.BundleFile); err != nil {
+		return nil, err
+	}
+
 	filesIter, err := commit.Files()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	ignoreFile, err := gh.fetchIgnoreListFromGitCommit(commit)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	files := make(map[string][]byte)
+	output.FileSet = make(map[string][]byte)
 	err = filesIter.ForEach(func(f *object.File) error {
-		if ignoreFile.Some(f.Name) {
+		if output.IgnoreFile.Some(f.Name) {
 			return nil
 		}
 
@@ -82,30 +118,49 @@ func (gh *GithubFetcher) getFilesFromCommit(commit *object.Commit) (map[string][
 			return err
 		}
 
-		files[f.Name] = []byte(content)
+		output.FileSet[f.Name] = []byte(content)
 		return nil
 	})
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return files, ignoreFile, nil
-}
-
-func (gh *GithubFetcher) fetchIgnoreListFromGitCommit(commit *object.Commit) (*bundle.IgnoreFile, error) {
-	ignoreFile, err := commit.File(constant.IgnoreFileName)
-	if err != nil {
-		if err != object.ErrFileNotFound {
-			return nil, err
-		}
-	}
-
-	ignoreFileContent, err := ignoreFile.Contents()
 	if err != nil {
 		return nil, err
 	}
 
-	return gh.Encoder.DecodeIgnoreFile([]byte(ignoreFileContent))
+	return output, nil
+}
+
+func (gh *GithubFetcher) readIgnoreFileFromGitCommit(commit *object.Commit) (*bundle.IgnoreFile, error) {
+	content, err := readFileFromCommit(commit, constant.IgnoreFileName)
+	if err != nil {
+		if err != object.ErrFileNotFound {
+			return nil, err
+		}
+
+		return nil, nil
+	}
+
+	return gh.Encoder.DecodeIgnoreFile([]byte(content))
+}
+
+func (gh *GithubFetcher) readLockFileFromGitCommit(commit *object.Commit) (*lockfile.Schema, error) {
+	content, err := readFileFromCommit(commit, constant.LockFileName)
+	if err != nil {
+		if err != object.ErrFileNotFound {
+			return nil, err
+		}
+
+		return nil, nil
+	}
+
+	return gh.Encoder.DecodeLockFile([]byte(content))
+}
+
+func (gh *GithubFetcher) readBundleFileFromGitCommit(commit *object.Commit) (*bundlefile.Schema, error) {
+	content, err := readFileFromCommit(commit, constant.BundleFileName)
+	if err != nil {
+		return nil, err
+	}
+
+	return gh.Encoder.DecodeBundleFile([]byte(content))
 }
 
 func (gh *GithubFetcher) fetchCommitByTag(repo *git.Repository, v *bundle.VersionSpec) (*object.Commit, *bundle.VersionSpec, error) {
@@ -262,4 +317,18 @@ func getLatestCommit(repo *git.Repository) (*object.Commit, error) {
 		return nil, err
 	}
 	return repo.CommitObject(ref.Hash())
+}
+
+func readFileFromCommit(commit *object.Commit, fileName string) ([]byte, error) {
+	f, err := commit.File(fileName)
+	if err != nil {
+		return nil, err
+	}
+
+	content, err := f.Contents()
+	if err != nil {
+		return nil, err
+	}
+
+	return []byte(content), nil
 }

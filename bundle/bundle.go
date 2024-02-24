@@ -10,26 +10,6 @@ import (
 	"github.com/4rchr4y/bpm/bundle/regofile"
 )
 
-type BundleRaw struct {
-	BundleFile *bundlefile.Schema
-	LockFile   *lockfile.Schema
-	RegoFiles  map[string]*regofile.File
-	OtherFiles map[string][]byte
-}
-
-func (br *BundleRaw) ToBundle(v *VersionSpec, ignoreFile *IgnoreFile) (*Bundle, error) {
-	b := &Bundle{
-		Version:    v,
-		BundleFile: br.BundleFile,
-		LockFile:   br.LockFile,
-		RegoFiles:  br.RegoFiles,
-		IgnoreFile: ignoreFile,
-		OtherFiles: br.OtherFiles,
-	}
-
-	return b, nil
-}
-
 type Bundle struct {
 	Version    *VersionSpec
 	BundleFile *bundlefile.Schema
