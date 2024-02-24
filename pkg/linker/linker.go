@@ -57,7 +57,7 @@ func (l *Linker) Link(ctx context.Context, b *bundle.Bundle) (map[string]*ast.Mo
 			return nil, err
 		}
 
-		itemBundle, err := l.Fetcher.PlainFetch(ctx, item.Repository, v)
+		itemBundle, err := l.Fetcher.PlainFetch(ctx, item.Source, v)
 		if err != nil {
 			return nil, err
 		}

@@ -12,7 +12,7 @@ import (
 )
 
 func (s *Storage) StoreSome(b *bundle.Bundle) error {
-	if exists := s.Some(b.Repository(), b.Version.String()); exists {
+	if exists := s.Some(b.BundleFile.Package.Repository, b.Version.String()); exists {
 		return nil
 	}
 
@@ -20,7 +20,7 @@ func (s *Storage) StoreSome(b *bundle.Bundle) error {
 }
 
 func (s *Storage) Store(b *bundle.Bundle) error {
-	dirPath := s.MakeBundleSourcePath(b.Repository(), b.Version.String())
+	dirPath := s.MakeBundleSourcePath(b.BundleFile.Package.Repository, b.Version.String())
 
 	s.IO.PrintfInfo("saving to %s", dirPath)
 

@@ -74,12 +74,12 @@ func (md *ConsistBlock) Sort() *ConsistBlock {
 
 type (
 	RequirementDecl struct {
-		Repository string `hcl:"repository,label"` // bundle repository url						e.g. 'github.com/4rchr4y/example'
-		Direction  string `hcl:"direction,label"`  // direction type, e.g. direct or indirect	e.g. 'direct'
-		Name       string `hcl:"name"`             // name form bundle file						e.g. 'example'
-		Version    string `hcl:"version"`          // bundle version							e.g. 'v0.0.0+20240128102927-ab4647768668'
-		H1         string `hcl:"h1"`               // bundle file checksum						e.g. 'd973b71fd6dd925...'
-		H2         string `hcl:"h2"`               // bundle files + other files checksum		e.g. 'd973b71fd6dd925...'
+		Source    string `hcl:"source,label"`    // bundle repository url						e.g. 'github.com/4rchr4y/example'
+		Direction string `hcl:"direction,label"` // direction type, e.g. direct or indirect	e.g. 'direct'
+		Name      string `hcl:"name"`            // name form bundle file						e.g. 'example'
+		Version   string `hcl:"version"`         // bundle version							e.g. 'v0.0.0+20240128102927-ab4647768668'
+		H1        string `hcl:"h1"`              // bundle file checksum						e.g. 'd973b71fd6dd925...'
+		H2        string `hcl:"h2"`              // bundle files + other files checksum		e.g. 'd973b71fd6dd925...'
 	}
 
 	RequireBlock struct {
@@ -141,7 +141,7 @@ func RequireFilterByVersion(version string) RequireFilterFn {
 
 func RequireFilterBySource(source string) RequireFilterFn {
 	return func(r *RequirementDecl) bool {
-		return r.Repository == source
+		return r.Source == source
 	}
 }
 

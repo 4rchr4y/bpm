@@ -20,7 +20,7 @@ func (author *AuthorExpr) String() string {
 	return fmt.Sprintf("%s %s", author.Username, author.Email)
 }
 
-type PackageDecl struct {
+type PackageBlock struct {
 	Name        string   `hcl:"name"`
 	Author      []string `hcl:"author,optional"`
 	Repository  string   `hcl:"repository"`
@@ -28,9 +28,9 @@ type PackageDecl struct {
 }
 
 type RequirementDecl struct {
-	Repository string `hcl:"repository,label"`
-	Name       string `hcl:"name"`
-	Version    string `hcl:"version"`
+	Source  string `hcl:"source,label"`
+	Name    string `hcl:"name"`
+	Version string `hcl:"version"`
 }
 
 type RequireBlock struct {
@@ -43,7 +43,7 @@ type WorkspaceBlock struct {
 }
 
 type Schema struct {
-	Package   *PackageDecl    `hcl:"package,block"`
+	Package   *PackageBlock   `hcl:"package,block"`
 	Workspace *WorkspaceBlock `hcl:"workspace,block"`
 	Require   *RequireBlock   `hcl:"require,block"`
 }
@@ -99,7 +99,7 @@ func FilterByVersion(version string) FilterFn {
 
 func FilterBySource(source string) FilterFn {
 	return func(r *RequirementDecl) bool {
-		return r.Repository == source
+		return r.Source == source
 	}
 }
 

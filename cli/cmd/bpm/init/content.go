@@ -30,7 +30,7 @@ will be overwritten, but other files will be left alone.
 func bundleFileContent(encoder *encode.Encoder, repo string, author *bundlefile.AuthorExpr) []byte {
 	repoName := path.Base(repo)
 	bundlefile := &bundlefile.Schema{
-		Package: &bundlefile.PackageDecl{
+		Package: &bundlefile.PackageBlock{
 			Name:        repoName,
 			Author:      []string{author.String()},
 			Repository:  repo,

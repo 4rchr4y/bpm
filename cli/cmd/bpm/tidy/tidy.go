@@ -60,6 +60,6 @@ func tidyRun(ctx context.Context, opts *tidyOptions) error {
 		return err
 	}
 
-	opts.io.PrintfOk("bundle %s", b.Repository())
+	opts.io.PrintfOk("bundle %s", b.BundleFile.Package.Repository)
 	return nil
 }

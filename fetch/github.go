@@ -65,6 +65,7 @@ func (gh *GithubFetcher) Download(ctx context.Context, source string, tag *bundl
 
 	return &bundle.Bundle{
 		Version:    v,
+		Source:     source,
 		BundleFile: bundlefile.PrepareSchema(filesOutput.BundleFile),
 		LockFile:   lockfile.PrepareSchema(filesOutput.LockFile),
 		RegoFiles:  fileifyOutput.RegoFiles,

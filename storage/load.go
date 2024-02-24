@@ -28,8 +28,8 @@ func (s *Storage) Load(source string, version *bundle.VersionSpec) (*bundle.Bund
 	)
 }
 
-func (s *Storage) LoadFromAbs(dir string, v *bundle.VersionSpec) (*bundle.Bundle, error) {
-	ok, err := s.OSWrap.Exists(dir)
+func (s *Storage) LoadFromAbs(path string, v *bundle.VersionSpec) (*bundle.Bundle, error) {
+	ok, err := s.OSWrap.Exists(path)
 	if err != nil {
 		return nil, err
 	}
@@ -37,19 +37,21 @@ func (s *Storage) LoadFromAbs(dir string, v *bundle.VersionSpec) (*bundle.Bundle
 		return nil, ErrNotExist{}
 	}
 
-	absDirPath, err := filepath.Abs(dir)
-	if err != nil {
-		return nil, fmt.Errorf("error getting absolute path for %s: %v", dir, err)
-	}
+	fmt.Println("path", path)
 
-	s.IO.PrintfInfo("loading from %s", absDirPath)
+	// absDirPath, err := filepath.Abs(source)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("error getting absolute path for %s: %v", source, err)
+	// }
 
-	ignoreFile, err := s.readIgnoreFile(absDirPath)
+	s.IO.PrintfInfo("loading from %s", path)
+
+	ignoreFile, err := s.readIgnoreFile(path)
 	if err != nil {
 		return nil, err
 	}
 
-	bundleFile, err := s.readBundleFile(absDirPath)
+	bundleFile, err := s.readBundleFile(path)
 	if err != nil {
 		return nil, err
 	}
@@ -58,12 +60,12 @@ func (s *Storage) LoadFromAbs(dir string, v *bundle.VersionSpec) (*bundle.Bundle
 		return nil, err
 	}
 
-	lockFile, err := s.readLockFile(absDirPath)
+	lockFile, err := s.readLockFile(path)
 	if err != nil {
 		return nil, err
 	}
 
-	files, err := s.readBundleDir(absDirPath, ignoreFile)
+	files, err := s.readBundleDir(path, ignoreFile)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +76,22 @@ func (s *Storage) LoadFromAbs(dir string, v *bundle.VersionSpec) (*bundle.Bundle
 	}
 
 	return &bundle.Bundle{
-		Version:    v,
+		Version: v,
+		Source: func() string {
+			// This check is required to ensure that the correct
+			// information is stored in the `Source`.
+			// Since if the bundle is not completely local, but was
+			// simply loaded from the local cache, then it's `Source`
+			// must be the main source, that is, its repository itself.
+			//
+			// Otherwise, if this is a completely local bundle, then
+			// it's source should be the only other possible source.
+			if filepath.IsAbs(path) {
+				return bundleFile.Package.Repository
+			} else {
+				return path
+			}
+		}(),
 		BundleFile: bundlefile.PrepareSchema(bundleFile),
 		LockFile:   lockfile.PrepareSchema(lockFile),
 		RegoFiles:  fileifyOutput.RegoFiles,

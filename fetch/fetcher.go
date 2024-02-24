@@ -7,6 +7,7 @@ import (
 	"github.com/4rchr4y/bpm/bundle"
 	"github.com/4rchr4y/bpm/bundleutil"
 	"github.com/4rchr4y/bpm/iostream/iostreamiface"
+	"github.com/4rchr4y/godevkit/v3/regex"
 )
 
 type fetcherInspector interface {
@@ -17,6 +18,7 @@ type fetcherStorage interface {
 	Store(b *bundle.Bundle) error
 	Some(source string, version string) bool
 	Load(source string, version *bundle.VersionSpec) (*bundle.Bundle, error)
+	LoadFromAbs(source string, v *bundle.VersionSpec) (*bundle.Bundle, error)
 }
 
 type fetcherGitHub interface {
@@ -74,7 +76,7 @@ func (d *Fetcher) Fetch(ctx context.Context, source string, version *bundle.Vers
 			return nil, err
 		}
 
-		result, err := d.Fetch(ctx, r.Repository, v)
+		result, err := d.Fetch(ctx, r.Source, v)
 		if err != nil {
 			return nil, err
 		}
@@ -91,6 +93,17 @@ func (d *Fetcher) Fetch(ctx context.Context, source string, version *bundle.Vers
 }
 
 func (f *Fetcher) PlainFetch(ctx context.Context, source string, version *bundle.VersionSpec) (*bundle.Bundle, error) {
+	if !regex.UrlPattern.MatchString(source) {
+		fmt.Println("source,", source)
+
+		b, err := f.Storage.LoadFromAbs(source, version)
+		if err != nil {
+			return nil, err
+		}
+
+		return b, nil
+	}
+
 	b, err := f.FetchLocal(ctx, source, version)
 	if err != nil {
 		f.IO.PrintfErr(err.Error())

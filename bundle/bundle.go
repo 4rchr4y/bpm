@@ -11,6 +11,7 @@ import (
 )
 
 type Bundle struct {
+	Source     string
 	Version    *VersionSpec
 	BundleFile *bundlefile.Schema
 	LockFile   *lockfile.Schema

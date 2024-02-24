@@ -23,20 +23,20 @@ var compOp = map[bool]string{true: "=>", false: "<="}
 
 func NewBundlefileRequirementDecl(b *bundle.Bundle) *bundlefile.RequirementDecl {
 	return &bundlefile.RequirementDecl{
-		Repository: b.Repository(),
-		Name:       b.Name(),
-		Version:    b.Version.String(),
+		Source:  b.Source,
+		Name:    b.Name(),
+		Version: b.Version.String(),
 	}
 }
 
 func NewLockfileRequirementDecl(b *bundle.Bundle, direction lockfile.DirectionType) *lockfile.RequirementDecl {
 	return &lockfile.RequirementDecl{
-		Repository: b.Repository(),
-		Direction:  direction.String(),
-		Name:       b.Name(),
-		Version:    b.Version.String(),
-		H1:         b.BundleFile.Sum(),
-		H2:         b.Sum(),
+		Source:    b.Source,
+		Direction: direction.String(),
+		Name:      b.Name(),
+		Version:   b.Version.String(),
+		H1:        b.BundleFile.Sum(),
+		H2:        b.Sum(),
 	}
 }
 
@@ -161,7 +161,7 @@ func (m *Manifester) SyncLockfile(ctx context.Context, parent *bundle.Bundle) er
 		// while going through the lock requirements, simultaneously
 		// remove requirements that no longer exist in bundle file
 		if exists := parent.BundleFile.SomeRequirement(
-			bundlefile.FilterBySource(req.Repository),
+			bundlefile.FilterBySource(req.Source),
 			bundlefile.FilterByVersion(req.Version),
 		); !exists {
 			parent.LockFile.Require.List[i] = nil
@@ -169,7 +169,7 @@ func (m *Manifester) SyncLockfile(ctx context.Context, parent *bundle.Bundle) er
 		}
 
 		// creating a cache of lock requirements
-		formattedVersion := bundleutil.FormatSourceWithVersion(req.Repository, req.Version)
+		formattedVersion := bundleutil.FormatSourceWithVersion(req.Source, req.Version)
 		requireCache[formattedVersion] = struct{}{}
 
 	}
@@ -181,12 +181,12 @@ func (m *Manifester) SyncLockfile(ctx context.Context, parent *bundle.Bundle) er
 	// go through all direct requirements to ensure that the
 	// lock file is up to date
 	for _, r := range parent.BundleFile.Require.List {
-		v, err := bundle.ParseVersionExpr(r.Version)
-		if err != nil {
-			return err
-		}
+		v, _ := bundle.ParseVersionExpr(r.Version)
+		// ignore the error, because if this is a local bundle,
+		// then it will be impossible to get the version from it
+		// and it will always be equal to the `latest`
 
-		result, err := m.Fetcher.Fetch(ctx, r.Repository, v)
+		result, err := m.Fetcher.Fetch(ctx, r.Source, v)
 		if err != nil {
 			return err
 		}
@@ -194,7 +194,7 @@ func (m *Manifester) SyncLockfile(ctx context.Context, parent *bundle.Bundle) er
 		requireList[result.Target.Name()] = result.Target
 
 		directionFn := func(b *bundle.Bundle) lockfile.DirectionType {
-			if b.Repository() == result.Target.Repository() {
+			if b.BundleFile.Package.Repository == result.Target.BundleFile.Package.Repository {
 				return lockfile.Direct
 			} else {
 				return lockfile.Indirect
@@ -202,11 +202,16 @@ func (m *Manifester) SyncLockfile(ctx context.Context, parent *bundle.Bundle) er
 		}
 
 		for _, b := range result.Merge() {
-			if err := m.Storage.StoreSome(b); err != nil {
-				return err
+			// cannot save a bundle without a version, since
+			// it is impossible to obtain it correctly later
+			if v != nil {
+				if err := m.Storage.StoreSome(b); err != nil {
+					return err
+				}
 			}
 
-			key := bundleutil.FormatSourceWithVersion(b.Repository(), b.Version.String())
+			fmt.Println(b.Source)
+			key := bundleutil.FormatSourceWithVersion(b.Source, b.Version.String())
 			if _, exists := requireCache[key]; !exists {
 				decl := NewLockfileRequirementDecl(b, directionFn(b))
 				parent.LockFile.Require.List = append(parent.LockFile.Require.List, decl)
