@@ -2,6 +2,7 @@ package linker
 
 import (
 	"context"
+	"strings"
 
 	"github.com/4rchr4y/bpm/bundle"
 	"github.com/open-policy-agent/opa/ast"
@@ -36,9 +37,30 @@ func (l *Linker) Link(ctx context.Context, b *bundle.Bundle) (map[string]*ast.Mo
 
 	result := make(map[string]*ast.Module)
 
+	requireCache := make(map[string]struct{}, len(b.BundleFile.Require.List))
+	for _, r := range b.BundleFile.Require.List {
+		requireCache[r.Name] = struct{}{}
+	}
+
 	// save all the modules of the head bundle
 	for filePath, f := range b.RegoFiles {
 		result[filePath] = f.Parsed
+
+		for _, _import := range f.Parsed.Imports {
+			importPathStr := _import.Path.String()
+			sourcePkg := strings.Index(importPathStr, ".")
+
+			if _, exists := requireCache[importPathStr[:sourcePkg]]; !exists {
+				continue
+			}
+
+			value := ast.StringTerm("data." + importPathStr)
+
+			_import.Path = &ast.Term{
+				Value:    value.Value,
+				Location: _import.Location,
+			}
+		}
 	}
 
 	// iter over all required bundles
