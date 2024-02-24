@@ -2,10 +2,10 @@ package linker
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/4rchr4y/bpm/bundle"
+	"github.com/4rchr4y/bpm/bundle/regofile"
 	"github.com/open-policy-agent/opa/ast"
 )
 
@@ -46,7 +46,7 @@ func (l *Linker) Link(ctx context.Context, b *bundle.Bundle) (map[string]*ast.Mo
 	// save all the modules of the head bundle
 	for filePath, f := range b.RegoFiles {
 		result[filePath] = f.Parsed
-		fmt.Println("-----")
+
 		for _, _import := range f.Parsed.Imports {
 			importPathStr := _import.Path.String()
 			sourcePkg := strings.Index(importPathStr, ".")
@@ -55,19 +55,11 @@ func (l *Linker) Link(ctx context.Context, b *bundle.Bundle) (map[string]*ast.Mo
 				continue
 			}
 
-			value := ast.StringTerm("data." + importPathStr)
-			value.SetLocation(_import.Path.Location)
+			value := ast.VarTerm(regofile.ImportPathPrefix + importPathStr)
+			value.Location = _import.Path.Location
+
 			_import.Path = value
-
-			// value := ast.StringTerm("data." + importPathStr)
-
-			// _import.Path = &ast.Term{
-			// 	Value:    value.Value,
-			// 	Location: _import.Location,
-			// }
 		}
-
-		fmt.Println(f.Parsed.String())
 	}
 
 	// iter over all required bundles

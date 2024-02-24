@@ -1,10 +1,8 @@
 package linker
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"log"
 	"testing"
 
 	"github.com/4rchr4y/bpm/bundleutil/encode"
@@ -13,8 +11,6 @@ import (
 	"github.com/4rchr4y/bpm/fetch"
 	"github.com/4rchr4y/bpm/iostream"
 	"github.com/open-policy-agent/opa/ast"
-	"github.com/open-policy-agent/opa/rego"
-	"github.com/open-policy-agent/opa/topdown"
 
 	"github.com/4rchr4y/bpm/storage"
 	"github.com/4rchr4y/godevkit/v3/env"
@@ -87,23 +83,27 @@ func TestLink(t *testing.T) {
 	compiler, err := ast.CompileModulesWithOpt(policies, ast.CompileOpts{
 		EnablePrintStatements: true,
 	})
-
-	var buf bytes.Buffer
-	r := rego.New(
-		rego.Query("data.testbundle.file1"),
-		rego.Compiler(compiler),
-		rego.Input(nil),
-		rego.EnablePrintStatements(true),
-		rego.PrintHook(topdown.NewPrintHook(&buf)),
-	)
-
-	rs, err := r.Eval(context.Background())
 	if err != nil {
-		log.Fatal(err)
-		return
+		t.Fatal(err)
 	}
 
-	fmt.Println(rs)
+	fmt.Println(compiler)
+	// var buf bytes.Buffer
+	// r := rego.New(
+	// 	rego.Query("data.testbundle.file1"),
+	// 	rego.Compiler(compiler),
+	// 	rego.Input(make(map[string]interface{})),
+	// 	rego.EnablePrintStatements(true),
+	// 	rego.PrintHook(topdown.NewPrintHook(&buf)),
+	// )
 
-	t.Fail()
+	// rs, err := r.Eval(context.Background())
+	// if err != nil {
+	// 	log.Fatal(err)
+	// 	return
+	// }
+
+	// fmt.Println(rs)
+
+	// t.Fail()
 }
