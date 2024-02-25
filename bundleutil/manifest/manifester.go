@@ -53,7 +53,7 @@ type manifesterStorage interface {
 }
 
 type manifesterFetcher interface {
-	Fetch(ctx context.Context, source string, version *bundle.VersionSpec) (*fetch.FetchResult, error)
+	Fetch(ctx context.Context, source string, version *bundle.VersionSpec) (*fetch.FetchOutput, error)
 }
 
 type Manifester struct {

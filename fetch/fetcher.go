@@ -32,13 +32,13 @@ type Fetcher struct {
 	GitHub    fetcherGitHub
 }
 
-type FetchResult struct {
+type FetchOutput struct {
 	Target    *bundle.Bundle   // target bundle that needed to be downloaded
 	Rdirect   []*bundle.Bundle // directly required bundles
 	Rindirect []*bundle.Bundle // indirectly required bundles
 }
 
-func (fres *FetchResult) Merge() []*bundle.Bundle {
+func (fres *FetchOutput) Merge() []*bundle.Bundle {
 	totalLen := len(fres.Rdirect) + len(fres.Rindirect)
 	if fres.Target != nil {
 		totalLen++
@@ -58,14 +58,14 @@ func (fres *FetchResult) Merge() []*bundle.Bundle {
 	return result
 }
 
-func (d *Fetcher) Fetch(ctx context.Context, source string, version *bundle.VersionSpec) (*FetchResult, error) {
+func (d *Fetcher) Fetch(ctx context.Context, source string, version *bundle.VersionSpec) (*FetchOutput, error) {
 	target, err := d.PlainFetch(ctx, source, version)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch %s: %v", source, err)
 	}
 
 	if target.BundleFile.Require == nil {
-		return &FetchResult{Target: target}, nil
+		return &FetchOutput{Target: target}, nil
 	}
 
 	rindirect := make([]*bundle.Bundle, 0)
@@ -76,16 +76,16 @@ func (d *Fetcher) Fetch(ctx context.Context, source string, version *bundle.Vers
 			return nil, err
 		}
 
-		result, err := d.Fetch(ctx, r.Source, v)
+		fetchOutput, err := d.Fetch(ctx, r.Source, v)
 		if err != nil {
 			return nil, err
 		}
 
-		rdirect[i] = result.Target
-		rindirect = append(rindirect, result.Rdirect...)
+		rdirect[i] = fetchOutput.Target
+		rindirect = append(rindirect, fetchOutput.Rdirect...)
 	}
 
-	return &FetchResult{
+	return &FetchOutput{
 		Target:    target,
 		Rdirect:   rdirect,
 		Rindirect: rindirect,

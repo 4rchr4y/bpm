@@ -16,6 +16,8 @@ func (s *Storage) StoreSome(b *bundle.Bundle) error {
 		return nil
 	}
 
+	fmt.Println("formatter")
+
 	return s.Store(b)
 }
 
