@@ -29,6 +29,11 @@ func (s *Storage) Load(source string, version *bundle.VersionSpec) (*bundle.Bund
 }
 
 func (s *Storage) LoadFromAbs(path string, v *bundle.VersionSpec) (*bundle.Bundle, error) {
+	path, err := filepath.Abs(path)
+	if err != nil {
+		return nil, fmt.Errorf("error getting absolute path for %s: %v", path, err)
+	}
+
 	ok, err := s.OSWrap.Exists(path)
 	if err != nil {
 		return nil, err
@@ -36,13 +41,6 @@ func (s *Storage) LoadFromAbs(path string, v *bundle.VersionSpec) (*bundle.Bundl
 	if !ok {
 		return nil, ErrNotExist{}
 	}
-
-	fmt.Println("path", path)
-
-	// absDirPath, err := filepath.Abs(source)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("error getting absolute path for %s: %v", source, err)
-	// }
 
 	s.IO.PrintfInfo("loading from %s", path)
 

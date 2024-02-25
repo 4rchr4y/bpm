@@ -210,7 +210,6 @@ func (m *Manifester) SyncLockfile(ctx context.Context, parent *bundle.Bundle) er
 				}
 			}
 
-			fmt.Println(b.Source)
 			key := bundleutil.FormatSourceWithVersion(b.Source, b.Version.String())
 			if _, exists := requireCache[key]; !exists {
 				decl := NewLockfileRequirementDecl(b, directionFn(b))

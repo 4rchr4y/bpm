@@ -94,8 +94,6 @@ func (d *Fetcher) Fetch(ctx context.Context, source string, version *bundle.Vers
 
 func (f *Fetcher) PlainFetch(ctx context.Context, source string, version *bundle.VersionSpec) (*bundle.Bundle, error) {
 	if !regex.UrlPattern.MatchString(source) {
-		fmt.Println("source,", source)
-
 		b, err := f.Storage.LoadFromAbs(source, version)
 		if err != nil {
 			return nil, err
