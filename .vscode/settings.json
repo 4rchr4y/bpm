@@ -44,6 +44,7 @@
         "regofile",
         "regoutil",
         "Rindirect",
+        "storageiface",
         "subregistry",
         "syswrap",
         "termenv"
