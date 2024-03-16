@@ -8,7 +8,7 @@ import (
 	"github.com/4rchr4y/bpm/bundleutil/manifest"
 	"github.com/4rchr4y/bpm/cli/cmdutil/factory"
 	"github.com/4rchr4y/bpm/cli/cmdutil/require"
-	"github.com/4rchr4y/bpm/iostream/iostreamiface"
+	"github.com/4rchr4y/bpm/core"
 	"github.com/4rchr4y/bpm/storage"
 	"github.com/spf13/cobra"
 )
@@ -45,7 +45,7 @@ func NewCmdGet(f *factory.Factory) *cobra.Command {
 }
 
 type getOptions struct {
-	io         iostreamiface.IO
+	io         core.IO
 	workDir    string // bundle working directory
 	url        string // bundle repository that needs to be installed
 	version    string // specified bundle version

@@ -2,6 +2,7 @@
     "cSpell.words": [
         "bfencoder",
         "bparser",
+        "bpmiface",
         "bpmignore",
         "bpmwork",
         "bundlebuild",
@@ -11,6 +12,8 @@
         "bundleutil",
         "cmdutil",
         "emirpasic",
+        "encoderiface",
+        "fetchiface",
         "fidx",
         "filef",
         "Fileifier",

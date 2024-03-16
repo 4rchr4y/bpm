@@ -6,7 +6,7 @@ import (
 
 	"github.com/4rchr4y/bpm/bundle"
 	"github.com/4rchr4y/bpm/bundleutil"
-	"github.com/4rchr4y/bpm/iostream/iostreamiface"
+	"github.com/4rchr4y/bpm/core"
 	"github.com/4rchr4y/godevkit/v3/regex"
 )
 
@@ -26,7 +26,7 @@ type fetcherGitHub interface {
 }
 
 type Fetcher struct {
-	IO        iostreamiface.IO
+	IO        core.IO
 	Storage   fetcherStorage
 	Inspector fetcherInspector
 	GitHub    fetcherGitHub

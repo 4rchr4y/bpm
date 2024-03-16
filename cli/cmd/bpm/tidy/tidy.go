@@ -6,7 +6,7 @@ import (
 	"github.com/4rchr4y/bpm/bundleutil/inspect"
 	"github.com/4rchr4y/bpm/bundleutil/manifest"
 	"github.com/4rchr4y/bpm/cli/cmdutil/factory"
-	"github.com/4rchr4y/bpm/iostream/iostreamiface"
+	"github.com/4rchr4y/bpm/core"
 	"github.com/4rchr4y/bpm/storage"
 	"github.com/spf13/cobra"
 )
@@ -36,7 +36,7 @@ func NewCmdTidy(f *factory.Factory) *cobra.Command {
 
 type tidyOptions struct {
 	dir        string // specified bundle folder that should be verified
-	io         iostreamiface.IO
+	io         core.IO
 	storage    *storage.Storage
 	inspector  *inspect.Inspector
 	manifester *manifest.Manifester

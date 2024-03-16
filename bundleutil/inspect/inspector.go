@@ -7,12 +7,12 @@ import (
 
 	"github.com/4rchr4y/bpm/bundle"
 	"github.com/4rchr4y/bpm/constant"
-	"github.com/4rchr4y/bpm/iostream/iostreamiface"
+	"github.com/4rchr4y/bpm/core"
 	"github.com/hashicorp/go-multierror"
 )
 
 type Inspector struct {
-	IO iostreamiface.IO
+	IO core.IO
 }
 
 type VerificationError struct{ error }

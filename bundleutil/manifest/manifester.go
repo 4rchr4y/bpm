@@ -14,8 +14,8 @@ import (
 	"github.com/4rchr4y/bpm/bundle/regofile"
 	"github.com/4rchr4y/bpm/bundleutil"
 	"github.com/4rchr4y/bpm/constant"
+	"github.com/4rchr4y/bpm/core"
 	"github.com/4rchr4y/bpm/fetch"
-	"github.com/4rchr4y/bpm/iostream/iostreamiface"
 	"github.com/4rchr4y/godevkit/v3/syswrap/osiface"
 )
 
@@ -57,7 +57,7 @@ type manifesterFetcher interface {
 }
 
 type Manifester struct {
-	IO      iostreamiface.IO
+	IO      core.IO
 	OSWrap  osiface.OSWrapper
 	Storage manifesterStorage
 	Encoder manifesterEncoder

@@ -11,7 +11,7 @@ import (
 	"github.com/4rchr4y/bpm/bundleutil"
 	"github.com/4rchr4y/bpm/bundleutil/encode"
 	"github.com/4rchr4y/bpm/constant"
-	"github.com/4rchr4y/bpm/iostream/iostreamiface"
+	"github.com/4rchr4y/bpm/core"
 	"github.com/4rchr4y/bpm/regoutil"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -31,7 +31,7 @@ type githubFetcherClient interface {
 }
 
 type GithubFetcher struct {
-	IO      iostreamiface.IO
+	IO      core.IO
 	Client  githubFetcherClient
 	Encoder githubFetcherEncoder
 }
