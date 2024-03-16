@@ -15,6 +15,7 @@ import (
 	"github.com/4rchr4y/bpm/bundleutil"
 	"github.com/4rchr4y/bpm/constant"
 	"github.com/4rchr4y/bpm/iostream/iostreamiface"
+	"github.com/4rchr4y/bpm/pkg/hclfmt"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsimple"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
@@ -74,6 +75,7 @@ func (e *Encoder) EncodeBundleFile(bundlefile *bundlefile.Schema) []byte {
 	f := hclwrite.NewEmptyFile()
 	gohcl.EncodeIntoBody(bundlefile, f.Body())
 
+	hclfmt.FormatFile(f)
 	return bundleutil.FormatBundleFile(f.Bytes())
 }
 
